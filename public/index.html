@@ -6,15 +6,18 @@
     <title>Trials App</title>
     <!-- Tailwind via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <!-- Alpine.js -->
     <script
       src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
       defer
     ></script>
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   </head>
   <body class="bg-gray-50 text-gray-800">
+    <!-- Load app.js before Alpine initializes -->
+    <script src="app.js"></script>
+    
     <!-- container -->
     <div class="min-h-screen flex flex-col">
       <!-- contenuto dinamico -->
@@ -204,7 +207,6 @@
       </nav>
     </div>
 
-    <script src="app.js"></script>
     <style>
       .input-base {
         @apply border border-gray-300 rounded px-3 py-2;

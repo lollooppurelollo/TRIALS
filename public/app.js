@@ -148,17 +148,22 @@ function trialApp() {
 
     init() {
       // Configurazione Supabase - sostituisci con i tuoi valori reali
-      window.SUPABASE_URL = https://csuvcrhiuuhdmkzeulrw.supabase.co;
-      window.SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdXZjcmhpdXVoZG1remV1bHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxMzMzNDAsImV4cCI6MjA2OTcwOTM0MH0.UrefA07uBtGe5pz4_K4-4YuvLLKCS1Pe7KX0naHqSCI;
+      window.SUPABASE_URL = "https://csuvcrhiuuhdmkzeulrw.supabase.co";
+      window.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdXZjcmhpdXVoZG1remV1bHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxMzMzNDAsImV4cCI6MjA2OTcwOTM0MH0.UrefA07uBtGe5pz4_K4-4YuvLLKCS1Pe7KX0naHqSCI";
       this.fetchStudies();
     },
   };
 }
 
-// Inizializza Alpine.js
+// Inizializza Alpine.js quando tutto è caricato
+document.addEventListener('alpine:init', () => {
+  Alpine.data('trialApp', trialApp);
+});
+
+// Fallback per assicurarsi che Alpine sia inizializzato
 document.addEventListener('DOMContentLoaded', () => {
-  if (typeof Alpine !== 'undefined') {
-    Alpine.data("trialApp", trialApp);
+  if (typeof Alpine !== 'undefined' && Alpine.data) {
+    Alpine.data('trialApp', trialApp);
   }
 });
 
