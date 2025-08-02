@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="it" x-data="trialApp()">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Trials App</title>
+    <!-- Tailwind via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  </head>
+  <body class="bg-gray-50 text-gray-800">
+    <!-- container -->
+    <div class="min-h-screen flex flex-col">
+      <!-- contenuto dinamico -->
+      <main class="flex-1 p-4">
+        <template x-if="view==='trial'">
+          <div>
+            <h1 class="text-2xl mb-4">Gestione Studi Clinici</h1>
+            <button @click="openForm()" class="btn-primary mb-4">
+              + Nuovo Studio
+            </button>
+            <!-- lista studi -->
+            <template x-if="studies.length">
+              <ul>
+                <template x-for="s in studies" :key="s.id">
+                  <li
+                    class="border p-3 mb-2 rounded hover:shadow"
+                    @click="viewStudy(s.id)"
+                  >
+                    <h2 class="font-semibold" x-text="s.title"></h2>
+                    <p x-text="s.subtitle"></p>
+                  </li>
+                </template>
+              </ul>
+            </template>
+            <template x-if="!studies.length">
+              <p>Nessuno studio attivo.</p>
+            </template>
+            <!-- form inserimento -->
+            <div
+              x-show="showForm"
+              class="fixed inset-0 bg-black/30 flex items-center justify-center"
+            >
+              <div
+                class="bg-white p-6 rounded-lg w-full max-w-xl overflow-auto max-h-[90vh]"
+              >
+                <h2 class="text-xl mb-4">Nuovo Studio</h2>
+                <form @submit.prevent="submitStudy()">
+                  <!-- titolo, subtitolo -->
+                  <label class="block mb-2">Titolo</label>
+                  <input
+                    x-model="form.title"
+                    required
+                    class="input-base w-full mb-3"
+                  />
+
+                  <label class="block mb-2">Sottotitolo</label>
+                  <textarea
+                    x-model="form.subtitle"
+                    required
+                    class="input-base w-full mb-3"
+                  ></textarea>
+
+                  <!-- Area clinica -->
+                  <label class="block mb-2">Area Clinica di Interesse</label>
+                  <select
+                    x-model="form.areas"
+                    multiple
+                    class="input-base w-full mb-3"
+                  >
+                    <template x-for="a in areaOptions" :key="a">
+                      <option :value="a" x-text="a"></option>
+                    </template>
+                  </select>
+
+                  <!-- Specifiche (dipende da area) -->
+                  <template x-if="form.areas.length">
+                    <div class="mb-3">
+                      <label class="block mb-2"
+                        >Specifica Area Clinica (opzionale)</label
+                      >
+                      <select
+                        x-model="form.specifics"
+                        multiple
+                        class="input-base w-full"
+                      >
+                        <template x-for="sa in getSpecificOptions()" :key="sa">
+                          <option :value="sa" x-text="sa"></option>
+                        </template>
+                      </select>
+                    </div>
+                  </template>
+
+                  <!-- Setting e linee -->
+                  <label class="block mb-2">Setting</label>
+                  <select
+                    x-model="form.setting"
+                    @change="onSettingChange"
+                    required
+                    class="input-base w-full mb-3"
+                  >
+                    <option value="Metastatico">Metastatico</option>
+                    <option value="Adiuvante">Adiuvante</option>
+                    <option value="Neo-adiuvante">Neo-adiuvante</option>
+                  </select>
+
+                  <template x-if="form.setting==='Metastatico'">
+                    <div class="flex space-x-2 mb-3">
+                      <div class="flex-1">
+                        <label>Linea Minima</label>
+                        <input
+                          type="number"
+                          x-model.number="form.min_line"
+                          class="input-base w-full"
+                        />
+                      </div>
+                      <div class="flex-1">
+                        <label>Linea Massima</label>
+                        <input
+                          type="number"
+                          x-model.number="form.max_line"
+                          class="input-base w-full"
+                        />
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Domande Si/No -->
+                  <template x-for="(q, idx) in form.questions" :key="idx">
+                    <div class="border rounded p-2 mb-2">
+                      <input
+                        x-model="q.text"
+                        placeholder="Testo domanda"
+                        class="input-base w-full mb-1"
+                      />
+                      <div>
+                        <label
+                          ><input
+                            type="radio"
+                            value="true"
+                            x-model="q.inclusion"
+                          />
+                          Inclusione</label
+                        >
+                        <label class="ml-4"
+                          ><input
+                            type="radio"
+                            value="false"
+                            x-model="q.inclusion"
+                          />
+                          Esclusione</label
+                        >
+                      </div>
+                    </div>
+                  </template>
+                  <button
+                    type="button"
+                    @click="addQuestion()"
+                    class="btn-secondary mb-3"
+                  >
+                    + Domanda Sì/No
+                  </button>
+
+                  <div class="flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      @click="closeForm()"
+                      class="btn-secondary"
+                    >
+                      Annulla
+                    </button>
+                    <button type="submit" class="btn-primary">Salva</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- qui potrai aggiungere view per “paziente” e dettagli studi -->
+        <!-- … -->
+      </main>
+
+      <!-- navbar inferiore -->
+      <nav class="bg-white border-t p-2 flex justify-around">
+        <button
+          :class="{'text-green-600':view==='paziente'}"
+          @click="view='paziente'"
+        >
+          Paziente
+        </button>
+        <button
+          :class="{'text-green-600':view==='trial'}"
+          @click="view='trial'"
+        >
+          Trial
+        </button>
+      </nav>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
