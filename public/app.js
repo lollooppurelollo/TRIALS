@@ -148,8 +148,8 @@ function trialApp() {
 
     init() {
       // Configurazione Supabase - sostituisci con i tuoi valori reali
-      window.SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
-      window.SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+      window.SUPABASE_URL = https://csuvcrhiuuhdmkzeulrw.supabase.co;
+      window.SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdXZjcmhpdXVoZG1remV1bHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxMzMzNDAsImV4cCI6MjA2OTcwOTM0MH0.UrefA07uBtGe5pz4_K4-4YuvLLKCS1Pe7KX0naHqSCI;
       this.fetchStudies();
     },
   };
@@ -161,3 +161,4 @@ document.addEventListener('DOMContentLoaded', () => {
     Alpine.data("trialApp", trialApp);
   }
 });
+
