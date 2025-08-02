@@ -1,3 +1,4 @@
+
 function trialApp() {
   const supabase = supabaseJs.createClient(
     window.SUPABASE_URL,
@@ -146,13 +147,17 @@ function trialApp() {
     },
 
     init() {
-      // esponi env a client
-      window.SUPABASE_URL = `${import.meta.env.SUPABASE_URL}`;
-      window.SUPABASE_KEY = `${import.meta.env.SUPABASE_KEY}`;
+      // Configurazione Supabase - sostituisci con i tuoi valori reali
+      window.SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+      window.SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
       this.fetchStudies();
     },
   };
 }
-document.addEventListener("alpine:init", () => {
-  Alpine.data("trialApp", trialApp);
+
+// Inizializza Alpine.js
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Alpine !== 'undefined') {
+    Alpine.data("trialApp", trialApp);
+  }
 });
