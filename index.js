@@ -21,7 +21,7 @@ console.log("---");
 // Configurazione di Supabase
 // Per utilizzare questo codice, devi configurare le tue variabili d'ambiente SUPABASE_URL e SUPABASE_KEY
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_KEY; // Ho corretto qui il nome della variabile
+const supabaseAnonKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
     console.error(
@@ -45,7 +45,9 @@ app.use(express.json());
 
 // Rotte per le pagine EJS
 app.get("/patient", (req, res) => {
-    res.render("patient", { page: "patient" });
+    // Definizione delle aree cliniche disponibili
+    const clinicalAreas = ["Metastasi al fegato", "Tutto"];
+    res.render("patient", { page: "patient", clinicalAreas: clinicalAreas });
 });
 
 app.get("/trial", (req, res) => {
