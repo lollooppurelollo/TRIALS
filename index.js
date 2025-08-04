@@ -46,25 +46,30 @@ app.get("/", (req, res) => {
 });
 
 app.get("/patient", async (req, res) => {
-  // Passa i dati necessari per i menu a tendina
-  const clinicalAreas = [
-    "Mammella",
-    "Polmone",
-    "Gastro-Intestinale",
-    "Ginecologico",
-    "Prostata e Vie Urinarie",
-    "Melanoma e Cute",
-    "Testa-Collo",
-    "Fase 1",
-    "Altro",
-  ];
-  const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
-  res.render("patient", {
-    clinicalAreas,
-    treatmentSettings,
-    studies: null,
-    isSearch: false,
-  });
+  try {
+    // Passa i dati necessari per i menu a tendina
+    const clinicalAreas = [
+      "Mammella",
+      "Polmone",
+      "Gastro-Intestinale",
+      "Ginecologico",
+      "Prostata e Vie Urinarie",
+      "Melanoma e Cute",
+      "Testa-Collo",
+      "Fase 1",
+      "Altro",
+    ];
+    const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+    res.render("patient", {
+      clinicalAreas,
+      treatmentSettings,
+      studies: null,
+      isSearch: false,
+    });
+  } catch (error) {
+    console.error("Errore durante il rendering della pagina patient:", error);
+    res.status(500).send("Si è verificato un errore interno.");
+  }
 });
 
 app.get("/trial", async (req, res) => {
