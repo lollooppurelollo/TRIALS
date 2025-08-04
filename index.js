@@ -13,19 +13,19 @@ console.log(
     process.env.SUPABASE_URL ? "Caricata" : "Non Caricata",
 );
 console.log(
-    "SUPABASE_BASE_KEY:",
-    process.env.SUPABASE_BASE_KEY ? "Caricata" : "Non Caricata",
+    "SUPABASE_KEY:",
+    process.env.SUPABASE_KEY ? "Caricata" : "Non Caricata",
 );
 console.log("---");
 
 // Configurazione di Supabase
-// Per utilizzare questo codice, devi configurare le tue variabili d'ambiente SUPABASE_URL e SUPABASE_BASE_KEY
+// Per utilizzare questo codice, devi configurare le tue variabili d'ambiente SUPABASE_URL e SUPABASE_KEY
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_BASE_KEY; // Ho cambiato qui
+const supabaseAnonKey = process.env.SUPABASE_KEY; // Ho corretto qui il nome della variabile
 
 if (!supabaseUrl || !supabaseAnonKey) {
     console.error(
-        "Errore: le variabili d'ambiente SUPABASE_URL e SUPABASE_BASE_KEY non sono definite.",
+        "Errore: le variabili d'ambiente SUPABASE_URL e SUPABASE_KEY non sono definite.",
     );
     process.exit(1);
 }
