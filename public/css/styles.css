@@ -1,72 +1,13 @@
 /* public/css/style.css */
 
-/* Definisce i colori e le variabili globali */
-:root {
-    --sage-green: #A9B4A0;
-    --dark-green: #5C7C5A;
-    --light-gray: #F5F5F5;
-    --medium-gray: #E0E0E0;
-    --dark-text: #333333;
-    --secondary-text: #666666;
-    --primary-color: var(--dark-green);
-    --secondary-color: var(--sage-green);
+/* Stili personalizzati che non sono facilmente gestibili con Tailwind */
+
+body {
+    font-family: 'Inter', sans-serif;
 }
 
-/* Stile per lo slider (toggle) custom */
-.toggle-switch-container {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-}
-
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 55px;
-    height: 30px;
-    margin: 0 10px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--medium-gray);
-    transition: .4s;
-    border-radius: 34px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 22px;
-    width: 22px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked + .slider {
-    background-color: var(--dark-green);
-}
-
-input:focus + .slider {
-    box-shadow: 0 0 1px var(--dark-green);
-}
-
-input:checked + .slider:before {
-    transform: translateX(25px);
+/* Stile per i multi-select */
+select[multiple] {
+    min-height: 120px;
 }
 

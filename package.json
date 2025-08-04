@@ -1,15 +1,12 @@
 {
-  "name": "trials",
+  "name": "trials-app",
   "version": "1.0.0",
-  "description": "Applicazione per la gestione di studi clinici",
+  "description": "App per la gestione degli studi clinici",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.44.2",
     "ejs": "^3.1.10",
