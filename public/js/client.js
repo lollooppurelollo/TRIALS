@@ -26,6 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
         "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
     };
 
+    // --- Riferimenti DOM comuni per le pagine paziente e trial ---
+    const studyDetailModal = document.getElementById("studyDetailModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalSubtitle = document.getElementById("modalSubtitle");
+    const criteriaContainer = document.getElementById("criteriaContainer");
+
     // --- Logica per la pagina 'Paziente' ---
     const patientSearchForm = document.getElementById("patientSearchForm");
     const patientClinicalAreaSelect = document.getElementById("clinicalArea");
@@ -41,10 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "treatmentLineContainer",
     );
     const searchResultsDiv = document.getElementById("searchResults");
-    const studyDetailModal = document.getElementById("studyDetailModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
-    const criteriaContainer = document.getElementById("criteriaContainer");
     const checkEligibilityBtn = document.getElementById("checkEligibilityBtn");
     const eligibilityResultDiv = document.getElementById("eligibilityResult");
 
@@ -137,7 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const trialListDiv = document.getElementById("trialList");
 
     if (studyClinicalAreasSelect) {
-        // Popola i dropdown all'avvio
         populateTrialDropdowns();
 
         studyClinicalAreasSelect.addEventListener("change", () => {
@@ -159,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        addCriteriaBtn.addEventListener("click", addCriteriaRow);
+        addCriteriaBtn.addEventListener("click", () => addCriteriaRow());
 
         studyForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -193,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 studySpecificAreaContainer.classList.add("hidden");
                 studyTreatmentLineContainer.classList.add("hidden");
                 criteriaListDiv.innerHTML = "";
-                addCriteriaRow(); // Aggiungi il primo criterio vuoto
+                addCriteriaRow();
                 fetchAndRenderTrials();
             } else {
                 console.error("Errore durante il salvataggio dello studio.");
@@ -201,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         fetchAndRenderTrials();
-        addCriteriaRow(); // Aggiunge il primo criterio vuoto al caricamento della pagina
+        addCriteriaRow();
     }
 
     // --- Funzioni comuni ---
@@ -243,15 +244,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 text: item.querySelector(".criteria-input").value,
                 type: item.querySelector(".criteria-type").value,
             }))
-            .filter((c) => c.text); // Filtra i criteri vuoti
+            .filter((c) => c.text);
     }
 
     function addCriteriaRow(text = "", type = "inclusion") {
         const row = document.createElement("div");
         row.className = "criteria-item flex items-center space-x-2";
         row.innerHTML = `
-            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Descrizione del criterio">
-            <select class="criteria-type p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-32">
+            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" placeholder="Descrizione del criterio">
+            <select class="criteria-type p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] w-32">
                 <option value="inclusion" ${type === "inclusion" ? "selected" : ""}>Inclusione</option>
                 <option value="exclusion" ${type === "exclusion" ? "selected" : ""}>Esclusione</option>
             </select>
@@ -294,13 +295,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         ${studiesBySetting[setting]
                             .map(
                                 (study) => `
-                            <div class="bg-white p-6 rounded-xl shadow-md" data-study-id="${study.id}">
+                            <div class="bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200" data-study-id="${study.id}">
                                 <div class="flex justify-between items-center">
                                     <div>
                                         <h4 class="font-bold text-gray-900">${study.title}</h4>
                                         <p class="text-sm text-gray-600">${study.subtitle}</p>
                                     </div>
-                                    <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
+                                    <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}" onclick="event.stopPropagation();">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
@@ -312,6 +313,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
         }
+
+        document
+            .querySelectorAll("#trialList > div > div > div")
+            .forEach((card) => {
+                card.addEventListener("click", () =>
+                    showStudyDetails(card.dataset.studyId, studies),
+                );
+            });
 
         document.querySelectorAll(".remove-study-btn").forEach((btn) => {
             btn.addEventListener("click", async (e) => {
@@ -332,7 +341,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
-        eligibilityResultDiv.textContent = "";
+
+        // Nasconde il pulsante di eleggibilità sulla pagina trial
+        if (checkEligibilityBtn) checkEligibilityBtn.classList.add("hidden");
+        if (eligibilityResultDiv) eligibilityResultDiv.classList.add("hidden");
+
         criteriaContainer.innerHTML = "";
 
         study.criteria.forEach((criterion) => {
@@ -340,52 +353,17 @@ document.addEventListener("DOMContentLoaded", () => {
             row.className =
                 "flex items-center justify-between p-2 bg-gray-50 rounded-lg";
 
-            let preferred = "yes";
-            if (criterion.type === "exclusion") {
-                preferred = "no";
-            }
-
+            // Per la visualizzazione in sola lettura
             row.innerHTML = `
                 <span class="text-sm text-gray-700">${criterion.text}</span>
-                <div class="flex items-center space-x-2">
-                    <span class="text-xs text-gray-500">No</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" class="sr-only peer criteria-toggle" data-preferred="${preferred}" ${preferred === "yes" ? "checked" : ""}>
-                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
-                    </label>
-                    <span class="text-xs text-gray-500">Sì</span>
-                </div>
+                <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${criterion.type === "inclusion" ? "bg-[#9CA48D]" : "bg-red-500"}">
+                    ${criterion.type === "inclusion" ? "Inclusione" : "Esclusione"}
+                </span>
             `;
             criteriaContainer.appendChild(row);
         });
 
         studyDetailModal.classList.remove("hidden");
-
-        checkEligibilityBtn.onclick = () => {
-            let isEligible = true;
-            const toggles =
-                criteriaContainer.querySelectorAll(".criteria-toggle");
-
-            toggles.forEach((toggle) => {
-                const preferred = toggle.dataset.preferred;
-                const currentValue = toggle.checked ? "yes" : "no";
-                if (currentValue !== preferred) {
-                    isEligible = false;
-                }
-            });
-
-            if (isEligible) {
-                eligibilityResultDiv.textContent =
-                    "Paziente eleggibile per lo studio!";
-                eligibilityResultDiv.className =
-                    "font-bold text-center mt-4 text-green-600";
-            } else {
-                eligibilityResultDiv.textContent =
-                    "Paziente non eleggibile per lo studio.";
-                eligibilityResultDiv.className =
-                    "font-bold text-center mt-4 text-red-600";
-            }
-        };
     }
 
     // Funzione per aggiornare il dropdown delle aree specifiche (per pagina Paziente)

@@ -100,20 +100,28 @@ app.post("/api/search", async (req, res) => {
         patient_treatment_line,
     } = req.body;
 
-    let query = supabase.from("studies").select("*").eq("is_active", true);
+    let query = supabase
+        .from("studies")
+        .select("*")
+        .eq("is_active", true)
+        .contains("clinical_areas", [clinical_area])
+        .eq("treatment_setting", treatment_setting);
 
-    if (clinical_area) {
-        query = query.contains("clinical_areas", [clinical_area]);
-    }
+    // Gestione specifica dell'area clinica
     if (specific_area && specific_area !== "Qualsiasi") {
         query = query.contains("specific_clinical_areas", [specific_area]);
     }
-    if (treatment_setting) {
-        query = query.eq("treatment_setting", treatment_setting);
-    }
+
+    // Gestione specifica della linea di trattamento
     if (treatment_setting === "Metastatico" && patient_treatment_line) {
-        query = query.gte("min_treatment_line", patient_treatment_line);
-        query = query.lte("max_treatment_line", patient_treatment_line);
+        query = query.gte(
+            "min_treatment_line",
+            parseInt(patient_treatment_line),
+        );
+        query = query.lte(
+            "max_treatment_line",
+            parseInt(patient_treatment_line),
+        );
     }
 
     const { data, error } = await query;

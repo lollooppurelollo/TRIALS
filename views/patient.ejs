@@ -5,7 +5,7 @@
         <form id="patientSearchForm">
             <div class="mb-4">
                 <label for="clinicalArea" class="block text-gray-700 font-medium mb-1">Area Clinica:</label>
-                <select id="clinicalArea" name="clinical_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+                <select id="clinicalArea" name="clinical_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors">
                     <option value="" selected disabled>Seleziona un'area</option>
                     <% clinicalAreas.forEach(area => { %>
                         <option value="<%= area %>"><%= area %></option>
@@ -14,11 +14,11 @@
             </div>
             <div id="specificAreaContainer" class="mb-4 hidden">
                 <label for="specificClinicalArea" class="block text-gray-700 font-medium mb-1">Area Clinica Specifica:</label>
-                <select id="specificClinicalArea" name="specific_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"></select>
+                <select id="specificClinicalArea" name="specific_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors"></select>
             </div>
             <div class="mb-4">
                 <label for="treatmentSetting" class="block text-gray-700 font-medium mb-1">Setting di Trattamento:</label>
-                <select id="treatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+                <select id="treatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors">
                     <option value="" selected disabled>Seleziona un'opzione</option>
                     <% treatmentSettings.forEach(setting => { %>
                         <option value="<%= setting %>"><%= setting %></option>
@@ -27,9 +27,9 @@
             </div>
             <div id="treatmentLineContainer" class="mb-6 hidden">
                 <label for="patientTreatmentLine" class="block text-gray-700 font-medium mb-1">Linea di Trattamento:</label>
-                <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors" min="1">
+                <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors" min="1">
             </div>
-            <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Cerca Studi</button>
+            <button type="submit" class="w-full bg-[#9CA48D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#7D8372] transition-colors">Cerca Studi</button>
         </form>
     </div>
 
@@ -39,6 +39,7 @@
     </div>
 </main>
 
+<!-- Modal per i dettagli dello studio -->
 <div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
         <div class="flex justify-between items-center mb-4">
@@ -48,10 +49,11 @@
         <h3 id="modalSubtitle" class="text-lg text-gray-600 mb-4"></h3>
 
         <div id="criteriaContainer" class="space-y-4 max-h-64 overflow-y-auto pr-2">
-            </div>
+            <!-- I criteri verranno inseriti qui dal JS -->
+        </div>
 
         <div class="mt-6 pt-4 border-t border-gray-200">
-            <button id="checkEligibilityBtn" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Verifica Eleggibilità</button>
+            <button id="checkEligibilityBtn" class="w-full bg-[#9CA48D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#7D8372] transition-colors">Verifica Eleggibilità</button>
             <div id="eligibilityResult" class="font-bold text-center mt-4"></div>
         </div>
     </div>
