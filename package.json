@@ -1,7 +1,7 @@
 {
   "name": "trials",
   "version": "1.0.0",
-  "description": "",
+  "description": "Applicazione per la gestione di studi clinici",
   "main": "index.js",
   "type": "module",
   "scripts": {

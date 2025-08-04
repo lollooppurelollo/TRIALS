@@ -240,3 +240,8 @@ input:checked + .slider:before {
     font-weight: bold;
     cursor: pointer;
 }
+
+.modal.hidden {
+    display: none;
+    opacity: 0;
+}

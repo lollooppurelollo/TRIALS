@@ -26,6 +26,47 @@ document.addEventListener("DOMContentLoaded", () => {
         "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
     };
 
+    // Modal di conferma/avviso
+    const genericModal = document.getElementById("genericModal");
+    const genericModalContent = document.getElementById("genericModalContent");
+    const genericCloseBtn = document.getElementById("genericCloseBtn");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const okBtn = document.getElementById("okBtn");
+
+    function showModal(message, type, callback) {
+        genericModalContent.innerHTML = `<p>${message}</p>`;
+        genericModal.classList.remove("hidden");
+
+        confirmBtn.classList.add("hidden");
+        cancelBtn.classList.add("hidden");
+        okBtn.classList.add("hidden");
+
+        if (type === "confirm") {
+            confirmBtn.classList.remove("hidden");
+            cancelBtn.classList.remove("hidden");
+            confirmBtn.onclick = () => {
+                genericModal.classList.add("hidden");
+                callback(true);
+            };
+            cancelBtn.onclick = () => {
+                genericModal.classList.add("hidden");
+                callback(false);
+            };
+        } else {
+            // 'alert'
+            okBtn.classList.remove("hidden");
+            okBtn.onclick = () => {
+                genericModal.classList.add("hidden");
+                if (callback) callback();
+            };
+        }
+        genericCloseBtn.onclick = () => {
+            genericModal.classList.add("hidden");
+            if (callback) callback(false);
+        };
+    }
+
     // --- Logica per la pagina 'Paziente' ---
     const patientSearchForm = document.getElementById("patientSearchForm");
     const patientClinicalAreaSelect = document.getElementById("clinicalArea");
@@ -73,11 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData(patientSearchForm);
             const data = Object.fromEntries(formData.entries());
 
-            // Converte in numero la linea di trattamento
-            data.patient_treatment_line = parseInt(
-                data.patient_treatment_line,
-                10,
-            );
+            data.patient_treatment_line =
+                parseInt(data.patient_treatment_line, 10) || null;
 
             searchResultsDiv.innerHTML =
                 '<div class="text-center text-gray-500">Ricerca in corso...</div>';
@@ -113,16 +151,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } catch (error) {
                 console.error("Errore durante la ricerca:", error);
-                searchResultsDiv.innerHTML =
-                    '<div class="card p-4 text-center text-red-500">Si è verificato un errore durante la ricerca.</div>';
+                showModal(
+                    "Si è verificato un errore durante la ricerca.",
+                    "alert",
+                );
             }
         });
     }
 
     // --- Logica per la pagina 'Trial' ---
     const studyForm = document.getElementById("studyForm");
-    const studyTitleInput = document.getElementById("studyTitle");
-    const studySubtitleInput = document.getElementById("studySubtitle");
     const studyClinicalAreasSelect =
         document.getElementById("studyClinicalAreas");
     const studySpecificAreaContainer = document.getElementById(
@@ -137,8 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const studyTreatmentLineContainer = document.getElementById(
         "studyTreatmentLineContainer",
     );
-    const minTreatmentLineInput = document.getElementById("minTreatmentLine");
-    const maxTreatmentLineInput = document.getElementById("maxTreatmentLine");
     const criteriaListDiv = document.getElementById("criteriaList");
     const addCriteriaBtn = document.getElementById("addCriteriaBtn");
     const trialListDiv = document.getElementById("trialList");
@@ -163,7 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        addCriteriaBtn.addEventListener("click", addCriteriaRow);
+        if (addCriteriaBtn) {
+            addCriteriaBtn.addEventListener("click", addCriteriaRow);
+        }
 
         studyForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -185,7 +223,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 criteria: getCriteriaData(),
             };
 
-            // Invia i dati al server
             const response = await fetch("/api/studies", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -193,23 +230,18 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (response.ok) {
-                alert("Studio salvato con successo!");
-                studyForm.reset();
-                studySpecificAreaContainer.classList.add("hidden");
-                studyTreatmentLineContainer.classList.add("hidden");
-                criteriaListDiv.innerHTML = `<div class="criteria-item flex items-center space-x-2">
-                    <input type="text" class="criteria-input form-input flex-grow" placeholder="Inserisci un criterio di inclusione">
-                    <select class="criteria-type form-select w-32">
-                        <option value="inclusion" selected>Inclusione</option>
-                        <option value="exclusion">Esclusione</option>
-                    </select>
-                    <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>`;
-                fetchAndRenderTrials();
+                showModal("Studio salvato con successo!", "alert", () => {
+                    studyForm.reset();
+                    studySpecificAreaContainer.classList.add("hidden");
+                    studyTreatmentLineContainer.classList.add("hidden");
+                    resetCriteriaList();
+                    fetchAndRenderTrials();
+                });
             } else {
-                alert("Errore durante il salvataggio dello studio.");
+                showModal(
+                    "Errore durante il salvataggio dello studio.",
+                    "alert",
+                );
             }
         });
 
@@ -251,11 +283,23 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
+    function resetCriteriaList() {
+        criteriaListDiv.innerHTML = `<div class="criteria-item flex items-center space-x-2">
+            <input type="text" class="criteria-input form-input flex-grow" placeholder="Inserisci un criterio di inclusione">
+            <select class="criteria-type form-select w-32">
+                <option value="inclusion" selected>Inclusione</option>
+                <option value="exclusion">Esclusione</option>
+            </select>
+            <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>`;
+    }
+
     async function fetchAndRenderTrials() {
         const response = await fetch("/api/studies");
         const studies = await response.json();
 
-        // Raggruppa gli studi per Setting di Trattamento
         const studiesBySetting = studies.reduce((acc, study) => {
             const setting = study.treatment_setting;
             if (!acc[setting]) {
@@ -298,15 +342,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         document.querySelectorAll(".remove-study-btn").forEach((btn) => {
-            btn.addEventListener("click", async (e) => {
+            btn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const studyId = btn.dataset.id;
-                if (confirm("Sei sicuro di voler rimuovere questo studio?")) {
-                    await fetch(`/api/studies/${studyId}`, {
-                        method: "DELETE",
-                    });
-                    fetchAndRenderTrials();
-                }
+                showModal(
+                    "Sei sicuro di voler rimuovere questo studio?",
+                    "confirm",
+                    async (confirmed) => {
+                        if (confirmed) {
+                            await fetch(`/api/studies/${studyId}`, {
+                                method: "DELETE",
+                            });
+                            fetchAndRenderTrials();
+                        }
+                    },
+                );
             });
         });
 
@@ -381,7 +431,6 @@ document.addEventListener("DOMContentLoaded", () => {
         studyDetailModal.classList.add("hidden");
     });
 
-    // Funzione per aggiornare il dropdown delle aree specifiche (per pagina Paziente)
     function updateSpecificAreasDropdown(
         selectedArea,
         selectElement,
@@ -403,7 +452,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Funzione per aggiornare il dropdown delle aree specifiche (per pagina Trial)
     function updateSpecificAreasDropdownMultiple(
         selectedAreas,
         selectElement,

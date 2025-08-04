@@ -1,6 +1,4 @@
 <!-- views/patient.ejs -->
-<%- layout('layout', { page: 'patient' }) %>
-
 <div class="card p-6">
     <h1 class="text-2xl font-bold mb-4">Cerca Studi per Paziente</h1>
     <form id="patientSearchForm" class="space-y-4">
@@ -52,5 +50,18 @@
         <div id="criteriaContainer"></div>
         <button id="checkEligibilityBtn" class="btn btn-primary mt-4 w-full">Controlla eleggibilità</button>
         <div id="eligibilityResult" class="mt-4 font-bold text-center"></div>
+    </div>
+</div>
+
+<!-- Modal di conferma/allerta generico -->
+<div id="genericModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-button" id="genericCloseBtn">&times;</span>
+        <div id="genericModalContent"></div>
+        <div class="flex justify-end gap-2 mt-4">
+            <button id="confirmBtn" class="btn btn-primary hidden">Conferma</button>
+            <button id="cancelBtn" class="btn btn-secondary hidden">Annulla</button>
+            <button id="okBtn" class="btn btn-primary hidden">OK</button>
+        </div>
     </div>
 </div>
