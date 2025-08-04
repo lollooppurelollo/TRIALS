@@ -165,9 +165,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Gestione del filtro area clinica per la pagina Trial
     if (filterClinicalAreaSelect) {
-        filterClinicalAreaSelect.addEventListener("change", (e) => {
+        filterClinicalAreaSelect.addEventListener("change", () => {
             updateSpecificAreasDropdown(
-                e.target.value,
+                filterClinicalAreaSelect.value,
                 filterSpecificClinicalAreasSelect,
                 filterSpecificClinicalAreaContainer,
             );
@@ -444,7 +444,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                             <h4 class="font-bold text-dark-gray">${study.title}</h4>
                                             <p class="text-sm text-gray-600">${study.subtitle}</p>
                                         </div>
-                                        <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}" onclick="event.stopPropagation();">
+                                        <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
@@ -457,23 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
-            document
-                .querySelectorAll(
-                    "#trialListSection #trialList > div > div > div",
-                )
-                .forEach((card) => {
-                    const study = studies.find(
-                        (s) => s.id === card.dataset.studyId,
-                    );
-                    card.addEventListener("click", () =>
-                        showStudyDetails(
-                            card.dataset.studyId,
-                            studies,
-                            "trial",
-                        ),
-                    );
-                });
-
+            // Attacca i listener di click ai bottoni di rimozione
             document.querySelectorAll(".remove-study-btn").forEach((btn) => {
                 btn.addEventListener("click", async (e) => {
                     e.stopPropagation();
@@ -593,6 +577,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (closeModalBtn) {
         closeModalBtn.addEventListener("click", () => {
             studyDetailModal.classList.add("hidden");
+        });
+    }
+
+    // Gestore di eventi delegato per i click sui trial nella pagina Trial
+    if (doctorTrialListDiv) {
+        doctorTrialListDiv.addEventListener("click", async (e) => {
+            // Cerca l'elemento card più vicino con l'attributo data-study-id
+            const card = e.target.closest("[data-study-id]");
+            if (card) {
+                const studyId = card.dataset.studyId;
+                const response = await fetch("/api/studies");
+                const studies = await response.json();
+                showStudyDetails(studyId, studies, "trial");
+            }
         });
     }
 
