@@ -95,6 +95,17 @@ document.addEventListener("DOMContentLoaded", () => {
         "eligibilityResultDiv",
     );
     const closeModalBtn = document.getElementById("closeModalBtn");
+    const modalClinicalAreas = document.getElementById("modalClinicalAreas");
+    const modalSpecificClinicalAreas = document.getElementById(
+        "modalSpecificClinicalAreas",
+    );
+    const modalTreatmentSetting = document.getElementById(
+        "modalTreatmentSetting",
+    );
+    const modalTreatmentLineContainer = document.getElementById(
+        "modalTreatmentLineContainer",
+    );
+    const modalTreatmentLine = document.getElementById("modalTreatmentLine");
 
     // Funzione per aggiornare il dropdown delle aree specifiche
     function updateSpecificAreasDropdown(
@@ -490,6 +501,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const isPatientPage = page === "patient";
         checkEligibilityBtn.style.display = isPatientPage ? "block" : "none";
 
+        // Popola i dettagli dello studio solo sulla pagina "trials"
+        if (page === "trial") {
+            if (modalClinicalAreas)
+                modalClinicalAreas.textContent =
+                    study.clinical_areas.join(", ");
+            if (modalSpecificClinicalAreas)
+                modalSpecificClinicalAreas.textContent =
+                    study.specific_clinical_areas.join(", ");
+            if (modalTreatmentSetting)
+                modalTreatmentSetting.textContent = study.treatment_setting;
+
+            if (modalTreatmentLineContainer) {
+                if (study.treatment_setting === "Metastatico") {
+                    modalTreatmentLineContainer.classList.remove("hidden");
+                    if (modalTreatmentLine)
+                        modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
+                } else {
+                    modalTreatmentLineContainer.classList.add("hidden");
+                }
+            }
+        }
+
         study.criteria.forEach((criterion, index) => {
             const row = document.createElement("div");
             row.className = "flex items-center justify-between p-2 rounded-lg";
@@ -510,7 +543,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 labelText = `
                     <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${isPreselectedYes ? "bg-sage" : "bg-red-500"}">
-                        ${isPreselectedYes ? "Sì (Inclusione)" : "No (Esclusione)"}
+                        ${isPreselectedYes ? "Inclusione" : "Esclusione"}
                     </span>
                 `;
             }
