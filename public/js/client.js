@@ -1,5 +1,50 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Definizione dei selettori DOM
+    // Mappa delle aree cliniche specifiche
+    const specificClinicalAreasMap = {
+        Mammella: ["HER2 positive", "Luminali", "TNBC"],
+        Polmone: ["NSCLC", "SCLC", "Mesotelioma"],
+        "Gastro-Intestinale": [
+            "Esofago",
+            "Stomaco",
+            "Colon",
+            "Retto",
+            "Ano",
+            "Vie biliari",
+            "Pancreas",
+            "Fegato",
+        ],
+        Ginecologico: ["Endometrio", "Ovaio", "Cervice", "Vulva", "Altri"],
+        "Prostata e Vie Urinarie": [
+            "Prostata",
+            "Rene",
+            "Vescica",
+            "Altre vie Urinarie",
+        ],
+        "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
+    };
+
+    // ----- Selettori per la Pagina Paziente -----
+    const searchForm = document.getElementById("searchForm");
+    const clinicalAreaSelect = document.getElementById("clinicalArea");
+    const specificClinicalAreasSelect = document.getElementById(
+        "specificClinicalAreas",
+    );
+    const specificClinicalAreaContainer = document.getElementById(
+        "specificClinicalAreaContainer",
+    );
+    const treatmentSettingSelect = document.getElementById("treatmentSetting");
+    const treatmentLineContainer = document.getElementById(
+        "treatmentLineContainer",
+    );
+    const patientTreatmentLineInput = document.getElementById(
+        "patientTreatmentLine",
+    );
+    const searchResultsDiv = document.getElementById("searchResults");
+    const patientTrialListDiv = document.querySelector(
+        "#searchResults #trialList",
+    );
+
+    // ----- Selettori per la Pagina Trial -----
     const studyForm = document.getElementById("studyForm");
     const criteriaListDiv = document.getElementById("criteriaList");
     const addCriteriaBtn = document.getElementById("addCriteriaBtn");
@@ -21,22 +66,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const studySpecificClinicalAreaContainer = document.getElementById(
         "studySpecificClinicalAreaContainer",
     );
+    const trialListSection = document.getElementById("trialListSection");
+    const doctorTrialListDiv = document.querySelector(
+        "#trialListSection #trialList",
+    );
 
-    const searchForm = document.getElementById("searchForm");
-    const clinicalAreaSelect = document.getElementById("clinicalArea");
-    const specificClinicalAreasSelect = document.getElementById(
-        "specificClinicalAreas",
-    );
-    const specificClinicalAreaContainer = document.getElementById(
-        "specificClinicalAreaContainer",
-    );
-    const treatmentSettingSelect = document.getElementById("treatmentSetting");
-    const treatmentLineContainer = document.getElementById(
-        "treatmentLineContainer",
-    );
-    const treatmentLineInput = document.getElementById("treatmentLine");
-
-    const trialListDiv = document.getElementById("trialList");
+    // ----- Selettori per il Modale -----
     const studyDetailModal = document.getElementById("studyDetailModal");
     const modalTitle = document.getElementById("modalTitle");
     const modalSubtitle = document.getElementById("modalSubtitle");
@@ -47,37 +82,35 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     const closeModalBtn = document.getElementById("closeModalBtn");
 
-    // Mappa delle aree cliniche specifiche
-    const specificClinicalAreasMap = {
-        Oncologia: ["Melanoma", "Carcinoma polmonare", "Leucemia"],
-        Cardiologia: ["Aritmie", "Scompenso cardiaco"],
-        Immunologia: ["Artrite reumatoide", "Lupus"],
-    };
+    // Funzione per aggiornare il dropdown delle aree specifiche
+    function updateSpecificAreasDropdown(
+        selectedAreas,
+        selectElement,
+        container,
+    ) {
+        const allSpecificAreas = new Set();
+        (Array.isArray(selectedAreas)
+            ? selectedAreas
+            : [selectedAreas]
+        ).forEach((area) => {
+            const specificAreas = specificClinicalAreasMap[area];
+            if (specificAreas) {
+                specificAreas.forEach((sa) => allSpecificAreas.add(sa));
+            }
+        });
 
-    // Aggiungi un nuovo criterio al modulo
-    function addCriteriaRow(text = "", type = "inclusion") {
-        const row = document.createElement("div");
-        row.className = "criteria-item flex items-center space-x-2";
-        row.innerHTML = `
-            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Descrizione del criterio">
-            <select class="criteria-type p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage w-32">
-                <option value="inclusion" ${type === "inclusion" ? "selected" : ""}>Inclusione</option>
-                <option value="exclusion" ${type === "exclusion" ? "selected" : ""}>Esclusione</option>
-            </select>
-            <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700 transition-colors">
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        `;
-        criteriaListDiv.appendChild(row);
-        row.querySelector(".remove-criteria-btn").addEventListener(
-            "click",
-            (e) => e.target.closest(".criteria-item").remove(),
-        );
-    }
-
-    // Aggiungi un listener solo se il pulsante esiste (pagina Trial)
-    if (addCriteriaBtn) {
-        addCriteriaBtn.addEventListener("click", () => addCriteriaRow());
+        selectElement.innerHTML = "";
+        if (allSpecificAreas.size > 0) {
+            Array.from(allSpecificAreas).forEach((area) => {
+                const option = document.createElement("option");
+                option.value = area;
+                option.textContent = area;
+                selectElement.appendChild(option);
+            });
+            container.classList.remove("hidden");
+        } else {
+            container.classList.add("hidden");
+        }
     }
 
     // Gestione del menu a tendina dell'area clinica per la pagina Paziente
@@ -97,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedOptions = Array.from(e.target.selectedOptions).map(
                 (option) => option.value,
             );
-            updateSpecificAreasDropdownMultiple(
+            updateSpecificAreasDropdown(
                 selectedOptions,
                 studySpecificClinicalAreasSelect,
                 studySpecificClinicalAreaContainer,
@@ -114,7 +147,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 treatmentLineContainer.classList.add("hidden");
             }
         });
-        checkInitialPatientTreatmentSetting();
     }
 
     // Gestione del setting di trattamento per la pagina Trial
@@ -126,78 +158,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 studyTreatmentLineContainer.classList.add("hidden");
             }
         });
-        checkInitialTrialTreatmentSetting();
     }
 
-    // Funzione per aggiornare il dropdown delle aree specifiche (per pagina Paziente)
-    function updateSpecificAreasDropdown(
-        selectedArea,
-        selectElement,
-        container,
-    ) {
-        const specificAreas = specificClinicalAreasMap[selectedArea] || [];
-        selectElement.innerHTML =
-            '<option value="" selected>Qualsiasi</option>';
-        if (specificAreas.length > 0) {
-            specificAreas.forEach((area) => {
-                const option = document.createElement("option");
-                option.value = area;
-                option.textContent = area;
-                selectElement.appendChild(option);
-            });
-            container.classList.remove("hidden");
-        } else {
-            container.classList.add("hidden");
-        }
+    // Aggiungi un nuovo criterio al modulo (pagina Trial)
+    function addCriteriaRow(text = "", type = "inclusion") {
+        const row = document.createElement("div");
+        row.className = "criteria-item flex items-center space-x-2";
+        row.innerHTML = `
+            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Descrizione del criterio" required>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-semibold text-gray-500 w-16 text-right">Inclusione</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer criteria-toggle" data-preferred-type="inclusion" ${type === "exclusion" ? "checked" : ""}>
+                    <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sage"></div>
+                </label>
+                <span class="text-xs font-semibold text-gray-500 w-16">Esclusione</span>
+            </div>
+            <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700 transition-colors">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        `;
+        criteriaListDiv.appendChild(row);
+        row.querySelector(".remove-criteria-btn").addEventListener(
+            "click",
+            (e) => e.target.closest(".criteria-item").remove(),
+        );
     }
 
-    // Funzione per aggiornare il dropdown delle aree specifiche (per pagina Trial)
-    function updateSpecificAreasDropdownMultiple(
-        selectedAreas,
-        selectElement,
-        container,
-    ) {
-        const allSpecificAreas = new Set();
-        selectedAreas.forEach((area) => {
-            const specificAreas = specificClinicalAreasMap[area];
-            if (specificAreas) {
-                specificAreas.forEach((sa) => allSpecificAreas.add(sa));
-            }
-        });
-        selectElement.innerHTML = "";
-        if (allSpecificAreas.size > 0) {
-            Array.from(allSpecificAreas).forEach((area) => {
-                const option = document.createElement("option");
-                option.value = area;
-                option.textContent = area;
-                selectElement.appendChild(option);
-            });
-            container.classList.remove("hidden");
-        } else {
-            container.classList.add("hidden");
-        }
-    }
-
-    // Funzione per controllare lo stato iniziale del setting di trattamento per la pagina Paziente
-    function checkInitialPatientTreatmentSetting() {
-        if (treatmentSettingSelect && treatmentLineContainer) {
-            if (treatmentSettingSelect.value === "Metastatico") {
-                treatmentLineContainer.classList.remove("hidden");
-            } else {
-                treatmentLineContainer.classList.add("hidden");
-            }
-        }
-    }
-
-    // Funzione per controllare lo stato iniziale del setting di trattamento per la pagina Trial
-    function checkInitialTrialTreatmentSetting() {
-        if (studyTreatmentSettingSelect && studyTreatmentLineContainer) {
-            if (studyTreatmentSettingSelect.value === "Metastatico") {
-                studyTreatmentLineContainer.classList.remove("hidden");
-            } else {
-                studyTreatmentLineContainer.classList.add("hidden");
-            }
-        }
+    // Aggiungi un listener solo se il pulsante esiste (pagina Trial)
+    if (addCriteriaBtn) {
+        addCriteriaBtn.addEventListener("click", () => addCriteriaRow());
     }
 
     // Gestione del form per l'aggiunta di un nuovo studio (pagina Trial)
@@ -209,7 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const criteria = Array.from(criteriaItems).map((item) => {
                 return {
                     text: item.querySelector(".criteria-input").value,
-                    type: item.querySelector(".criteria-type").value,
+                    type: item.querySelector(".criteria-toggle").checked
+                        ? "exclusion"
+                        : "inclusion",
                 };
             });
 
@@ -254,16 +246,11 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
 
             const patientData = {
-                age: parseInt(document.getElementById("age").value),
-                gender: document.getElementById("gender").value,
-                clinicalAreas: document.getElementById("clinicalArea").value,
-                specificClinicalAreas: document.getElementById(
-                    "specificClinicalAreas",
-                ).value,
-                treatmentSetting:
-                    document.getElementById("treatmentSetting").value,
-                treatmentLine: document.getElementById("treatmentLine").value
-                    ? parseInt(document.getElementById("treatmentLine").value)
+                clinicalAreas: clinicalAreaSelect.value,
+                specificClinicalAreas: specificClinicalAreasSelect.value,
+                treatmentSetting: treatmentSettingSelect.value,
+                treatmentLine: patientTreatmentLineInput.value
+                    ? parseInt(patientTreatmentLineInput.value)
                     : null,
             };
 
@@ -276,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
                 const specificClinicalAreaMatch =
                     !patientData.specificClinicalAreas ||
+                    patientData.specificClinicalAreas === "" ||
                     study.specific_clinical_areas.includes(
                         patientData.specificClinicalAreas,
                     );
@@ -287,8 +275,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     patientData.treatmentSetting === "Metastatico" &&
                     patientData.treatmentLine !== null
                 ) {
-                    const minLine = study.min_treatment_line || 1; // Default a 1 se non specificato
-                    const maxLine = study.max_treatment_line || 10; // Default a 10 se non specificato
+                    const minLine = study.min_treatment_line || 1;
+                    const maxLine = study.max_treatment_line || 10;
                     treatmentLineMatch =
                         patientData.treatmentLine >= minLine &&
                         patientData.treatmentLine <= maxLine;
@@ -302,16 +290,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
             });
 
-            renderSearchResults(filteredStudies);
+            renderSearchResults(filteredStudies, "patient");
         });
     }
 
     // Renderizza i risultati della ricerca
-    function renderSearchResults(studies) {
-        if (!trialListDiv) return;
-        trialListDiv.innerHTML = "";
+    function renderSearchResults(studies, page) {
+        const targetDiv =
+            page === "patient" ? patientTrialListDiv : doctorTrialListDiv;
+        if (!targetDiv) return;
+        targetDiv.innerHTML = "";
         if (studies.length === 0) {
-            trialListDiv.innerHTML =
+            targetDiv.innerHTML =
                 '<div class="p-6 text-center text-gray-500 bg-white rounded-xl shadow-md">Nessuno studio compatibile trovato.</div>';
             return;
         }
@@ -327,9 +317,9 @@ document.addEventListener("DOMContentLoaded", () => {
                      <p class="text-sm text-gray-600">${study.subtitle}</p>
                  </div>
              `;
-            trialListDiv.appendChild(card);
+            targetDiv.appendChild(card);
             card.addEventListener("click", () =>
-                showStudyDetails(card.dataset.studyId, studies, "patient"),
+                showStudyDetails(card.dataset.studyId, studies, page),
             );
         });
     }
@@ -339,26 +329,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const response = await fetch("/api/studies");
         const studies = await response.json();
 
-        const studiesBySetting = studies.reduce((acc, study) => {
-            const setting = study.treatment_setting;
-            if (!acc[setting]) {
-                acc[setting] = [];
-            }
-            acc[setting].push(study);
-            return acc;
-        }, {});
-
-        if (trialListDiv) {
-            trialListDiv.innerHTML = "";
+        if (doctorTrialListDiv) {
+            doctorTrialListDiv.innerHTML = "";
             if (studies.length === 0) {
-                trialListDiv.innerHTML =
+                doctorTrialListDiv.innerHTML =
                     '<div class="p-6 text-center text-gray-500 bg-white rounded-xl shadow-md">Nessuno studio attivo trovato.</div>';
                 return;
             }
 
+            const studiesBySetting = studies.reduce((acc, study) => {
+                const setting = study.treatment_setting;
+                if (!acc[setting]) {
+                    acc[setting] = [];
+                }
+                acc[setting].push(study);
+                return acc;
+            }, {});
+
             for (const setting in studiesBySetting) {
                 const studiesInSetting = studiesBySetting[setting];
-                trialListDiv.innerHTML += `
+                doctorTrialListDiv.innerHTML += `
                     <div class="mb-6">
                         <h3 class="text-xl font-bold text-dark-gray mb-4">${setting}</h3>
                         <div class="space-y-4">
@@ -419,26 +409,27 @@ document.addEventListener("DOMContentLoaded", () => {
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
         criteriaContainer.innerHTML = "";
+        eligibilityResultDiv.classList.add("hidden");
+        checkEligibilityBtn.classList.add("hidden");
 
         const isPatientPage = page === "patient";
 
         if (isPatientPage) {
             checkEligibilityBtn.classList.remove("hidden");
-            eligibilityResultDiv.classList.add("hidden");
-
-            study.criteria.forEach((criterion) => {
+            study.criteria.forEach((criterion, index) => {
                 const row = document.createElement("div");
                 row.className =
                     "flex items-center justify-between p-2 bg-gray-100 rounded-lg";
-                const isPreferredYes = criterion.type === "inclusion";
-
+                const isPreselectedYes = criterion.type === "inclusion";
                 row.innerHTML = `
                     <span class="text-sm text-dark-gray">${criterion.text}</span>
                     <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer criteria-toggle" data-preferred-type="${criterion.type}" ${isPreferredYes ? "" : "checked"}>
+                            <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}" ${isPreselectedYes ? "checked" : ""}>
                             <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sage"></div>
                         </label>
+                        <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
                     </div>
                 `;
                 criteriaContainer.appendChild(row);
@@ -450,7 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     criteriaContainer.querySelectorAll(".criteria-toggle");
 
                 toggles.forEach((toggle) => {
-                    const preferredType = toggle.dataset.preferredType;
+                    const preferredType = toggle.dataset.preferred - type;
                     const isChecked = toggle.checked;
 
                     if (
@@ -462,11 +453,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (isEligible) {
-                    eligibilityResultDiv.textContent = `Il paziente è arruolabile per lo studio clinico: ${study.title}`;
+                    eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio`;
                     eligibilityResultDiv.className =
                         "font-bold text-center mt-4 text-sage";
                 } else {
-                    eligibilityResultDiv.textContent = `Mi dispiace, non è arruolabile per lo studio clinico: ${study.title}`;
+                    eligibilityResultDiv.textContent = `Paziente al momento non eleggibile per lo studio`;
                     eligibilityResultDiv.className =
                         "font-bold text-center mt-4 text-red-600";
                 }
@@ -474,11 +465,6 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         } else {
             // Pagina Trial: mostra i criteri in sola lettura
-            if (checkEligibilityBtn)
-                checkEligibilityBtn.classList.add("hidden");
-            if (eligibilityResultDiv)
-                eligibilityResultDiv.classList.add("hidden");
-
             study.criteria.forEach((criterion) => {
                 const row = document.createElement("div");
                 row.className =
@@ -486,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 row.innerHTML = `
                     <span class="text-sm text-dark-gray">${criterion.text}</span>
                     <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${criterion.type === "inclusion" ? "bg-sage" : "bg-red-500"}">
-                        ${criterion.type === "inclusion" ? "Inclusione" : "Esclusione"}
+                        ${criterion.type === "inclusion" ? "Sì (Inclusione)" : "No (Esclusione)"}
                     </span>
                 `;
                 criteriaContainer.appendChild(row);
@@ -504,6 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inizializzazione: se siamo sulla pagina dei trial, carichiamo gli studi
     if (window.location.pathname === "/trials") {
         fetchAndRenderTrials();
+        // Aggiungi un criterio iniziale al caricamento della pagina per la pagina Trial
         addCriteriaRow();
     }
 });

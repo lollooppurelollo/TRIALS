@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import expressLayouts from "express-ejs-layouts";
 
 // Carica le variabili d'ambiente dal file .env
-// Nota: su Render, le variabili d'ambiente verranno lette dalla configurazione del servizio
 dotenv.config();
 
 const app = express();
@@ -28,12 +27,12 @@ app.use(express.json());
 
 // Rotta principale per la pagina del paziente
 app.get("/", async (req, res) => {
-  res.render("patient");
+  res.render("patient", { layout: "layout" });
 });
 
 // Rotta per la pagina di gestione dei trial (per il medico)
 app.get("/trials", (req, res) => {
-  res.render("trial");
+  res.render("trial", { layout: "layout" });
 });
 
 // API per ottenere tutti gli studi

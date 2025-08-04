@@ -1,6 +1,6 @@
 <div class="bg-white p-8 rounded-xl shadow-md mb-8">
     <h1 class="text-2xl font-bold text-dark-sage mb-4">Gestione Studi Clinici</h1>
-    <p class="text-gray-600 mb-6">Aggiungi, modifica o visualizza gli studi clinici disponibili.</p>
+    <p class="text-gray-600 mb-6">Aggiungi o visualizza gli studi clinici disponibili.</p>
 
     <form id="studyForm" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -13,23 +13,30 @@
                 <input type="text" id="studySubtitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
-                <label for="studyClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica Principale</label>
+                <label for="studyClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
                 <select id="studyClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="Oncologia">Oncologia</option>
-                    <option value="Cardiologia">Cardiologia</option>
-                    <option value="Immunologia">Immunologia</option>
+                    <option value="Mammella">Mammella</option>
+                    <option value="Polmone">Polmone</option>
+                    <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+                    <option value="Ginecologico">Ginecologico</option>
+                    <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+                    <option value="Melanoma e Cute">Melanoma e Cute</option>
+                    <option value="Testa-Collo">Testa-Collo</option>
+                    <option value="Fase 1">Fase 1</option>
+                    <option value="Altro">Altro</option>
                 </select>
             </div>
             <div id="studySpecificClinicalAreaContainer" class="hidden">
-                <label for="studySpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica Specifica</label>
+                <label for="studySpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
                 <select id="studySpecificClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
             </div>
             <div>
-                <label for="studyTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting di Trattamento</label>
+                <label for="studyTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
                 <select id="studyTreatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="Adiuvante">Adiuvante</option>
-                    <option value="Neoaduvante">Neoaduvante</option>
+                    <option value="" disabled selected>Seleziona un setting</option>
                     <option value="Metastatico">Metastatico</option>
+                    <option value="Adiuvante">Adiuvante</option>
+                    <option value="Neo-adiuvante">Neo-adiuvante</option>
                 </select>
             </div>
             <div id="studyTreatmentLineContainer" class="hidden">

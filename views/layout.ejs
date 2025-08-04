@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Trials App</title>
+    <title>Clinical Trials</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,11 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             color: #4a5568;
+            padding-bottom: 72px; /* Spazio per la navbar inferiore */
         }
         .container {
             max-width: 1200px;
         }
-        /* Definizioni dei colori personalizzati per Tailwind */
         :root {
             --color-sage: #9baf93; /* Verde salvia */
             --color-light-sage: #c7d2c1; /* Verde salvia chiaro */
@@ -37,23 +37,22 @@
     </style>
 </head>
 <body>
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-dark-sage">Clinical Trials</a>
-            <div class="flex items-center space-x-4">
-                <a href="/" class="text-dark-gray hover:text-sage transition-colors">Paziente</a>
-                <a href="/trials" class="text-dark-gray hover:text-sage transition-colors">Medico</a>
-            </div>
-        </nav>
-    </header>
-
     <main class="container mx-auto px-4 sm:px-6 py-8">
         <%- body %>
     </main>
 
-    <footer class="bg-white shadow-inner mt-12 py-4 text-center text-gray-500 text-sm">
-        <p>&copy; 2024 Clinical Trials App. Tutti i diritti riservati.</p>
-    </footer>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-50">
+        <div class="container mx-auto flex justify-around items-center h-16">
+            <a href="/" class="flex-1 text-center py-2 transition-colors hover:bg-gray-100">
+                <i class="fas fa-user text-xl mb-1 text-dark-sage"></i>
+                <span class="block text-sm font-medium text-dark-sage">Paziente</span>
+            </a>
+            <a href="/trials" class="flex-1 text-center py-2 transition-colors hover:bg-gray-100">
+                <i class="fas fa-stethoscope text-xl mb-1 text-dark-sage"></i>
+                <span class="block text-sm font-medium text-dark-sage">Trial</span>
+            </a>
+        </div>
+    </nav>
 
     <script src="/js/client.js"></script>
 </body>

@@ -1,49 +1,43 @@
 <div class="bg-white p-8 rounded-xl shadow-md mb-8">
-    <h1 class="text-2xl font-bold text-dark-sage mb-4">Cerca studi clinici per un paziente</h1>
-    <p class="text-gray-600 mb-6">Inserisci i dati del paziente per trovare gli studi clinici a cui potrebbe partecipare.</p>
+    <h1 class="text-2xl font-bold text-dark-sage mb-4">Ricerca Studi Clinici</h1>
+    <p class="text-gray-600 mb-6">Inserisci i criteri per trovare gli studi clinici disponibili.</p>
 
     <form id="searchForm" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="age" class="block text-sm font-medium text-dark-gray">Età</label>
-                <input type="number" id="age" name="age" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-            </div>
-            <div>
-                <label for="gender" class="block text-sm font-medium text-dark-gray">Genere</label>
-                <select id="gender" name="gender" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="male">Maschio</option>
-                    <option value="female">Femmina</option>
-                </select>
-            </div>
-            <div>
-                <label for="clinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica Principale</label>
-                <select id="clinicalArea" name="clinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="" disabled selected>Seleziona un'area</option>
-                    <option value="Oncologia">Oncologia</option>
-                    <option value="Cardiologia">Cardiologia</option>
-                    <option value="Immunologia">Immunologia</option>
-                </select>
-            </div>
-            <div id="specificClinicalAreaContainer" class="hidden">
-                <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica Specifica</label>
-                <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
-            </div>
-            <div>
-                <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting di Trattamento</label>
-                <select id="treatmentSetting" name="treatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="Adiuvante">Adiuvante</option>
-                    <option value="Neoaduvante">Neoaduvante</option>
-                    <option value="Metastatico">Metastatico</option>
-                </select>
-            </div>
-            <div id="treatmentLineContainer" class="hidden">
-                <label for="treatmentLine" class="block text-sm font-medium text-dark-gray">Linea di Trattamento</label>
-                <input type="number" id="treatmentLine" name="treatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-            </div>
+        <div>
+            <label for="clinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
+            <select id="clinicalArea" name="clinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                <option value="" disabled selected>Seleziona un'area</option>
+                <option value="Mammella">Mammella</option>
+                <option value="Polmone">Polmone</option>
+                <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+                <option value="Ginecologico">Ginecologico</option>
+                <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+                <option value="Melanoma e Cute">Melanoma e Cute</option>
+                <option value="Testa-Collo">Testa-Collo</option>
+                <option value="Fase 1">Fase 1</option>
+                <option value="Altro">Altro</option>
+            </select>
+        </div>
+        <div id="specificClinicalAreaContainer" class="hidden">
+            <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
+            <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
+        </div>
+        <div>
+            <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
+            <select id="treatmentSetting" name="treatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                <option value="" disabled selected>Seleziona un setting</option>
+                <option value="Metastatico">Metastatico</option>
+                <option value="Adiuvante">Adiuvante</option>
+                <option value="Neo-adiuvante">Neo-adiuvante</option>
+            </select>
+        </div>
+        <div id="treatmentLineContainer" class="hidden">
+            <label for="patientTreatmentLine" class="block text-sm font-medium text-dark-gray">Linea di trattamento del paziente</label>
+            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
         </div>
 
         <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
-            Cerca Studi
+            Cerca
         </button>
     </form>
 </div>
@@ -66,12 +60,12 @@
                 <div class="flex flex-col space-y-2" id="criteriaContainer">
                     <!-- I criteri verranno iniettati qui -->
                 </div>
-                <div class="hidden" id="eligibilityResultDiv"></div>
             </div>
             <div class="items-center px-4 py-3">
-                <button id="checkEligibilityBtn" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors hidden">
-                    Verifica Eleggibilità
+                <button id="checkEligibilityBtn" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
+                    Controlla eleggibilità
                 </button>
+                <div id="eligibilityResultDiv" class="font-bold text-center mt-4 hidden"></div>
                 <button id="closeModalBtn" class="mt-4 px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
                     Chiudi
                 </button>
