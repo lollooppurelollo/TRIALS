@@ -1,206 +1,81 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ricerca Paziente</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Un grigio molto chiaro come sfondo */
-        }
-        .main-bg {
-            background-color: #f0f4f8;
-        }
-        .primary-color {
-            background-color: #B2AC88; /* Verde Salvia più caldo */
-        }
-        .secondary-color {
-            background-color: #D1C4C0; /* Morbido Rosa Polvere per un tocco elegante */
-        }
-        .text-primary {
-            color: #B2AC88;
-        }
-        .text-secondary {
-            color: #D1C4C0;
-        }
-        .text-dark {
-            color: #333333; /* Grigio molto scuro per il testo importante */
-        }
-        .hover-effect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .focus-ring-primary:focus {
-            ring: 4px;
-            ring-color: #B2AC88;
-        }
-    </style>
-</head>
-<body class="main-bg flex flex-col min-h-screen">
+<div class="bg-white p-8 rounded-xl shadow-md mb-8">
+    <h1 class="text-2xl font-bold text-dark-sage mb-4">Cerca studi clinici per un paziente</h1>
+    <p class="text-gray-600 mb-6">Inserisci i dati del paziente per trovare gli studi clinici a cui potrebbe partecipare.</p>
 
-    <!-- Header con navigazione -->
-    <header class="primary-color shadow-lg p-4">
-        <nav class="flex justify-between items-center max-w-7xl mx-auto">
-            <h1 class="text-2xl font-bold text-white">Trial Finder</h1>
-            <div class="space-x-4">
-                <a href="/patient" class="text-white font-medium hover:underline">Paziente</a>
-                <a href="/trial" class="text-white font-medium hover:underline">Studi Clinici</a>
+    <form id="searchForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="age" class="block text-sm font-medium text-dark-gray">Età</label>
+                <input type="number" id="age" name="age" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
             </div>
-        </nav>
-    </header>
-
-    <main class="flex-grow flex items-center justify-center p-6">
-        <div class="bg-white rounded-3xl shadow-xl p-8 w-full max-w-2xl transform transition-all duration-300 hover-effect">
-            <h2 class="text-3xl font-bold text-dark mb-6 text-center">Criteri di Ricerca Paziente</h2>
-
-            <form id="searchForm" class="space-y-6">
-                <!-- Sezione Area Clinica -->
-                <div>
-                    <label for="clinicalArea" class="block text-dark font-medium mb-2">Area Clinica di interesse</label>
-                    <select id="clinicalArea" name="clinical_area" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors">
-                        <option value="" selected disabled>Seleziona un'area</option>
-                        <% clinicalAreas.forEach(area => { %>
-                            <option value="<%= area %>"><%= area %></option>
-                        <% }); %>
-                    </select>
-                </div>
-
-                <!-- Sezione Specifica Area Clinica -->
-                <div id="specificAreaContainer" class="hidden">
-                    <label for="specificClinicalArea" class="block text-dark font-medium mb-2">Specifica Area Clinica di interesse</label>
-                    <select id="specificClinicalArea" name="specific_clinical_area" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors">
-                        <option value="" selected disabled>Seleziona un'opzione</option>
-                        <!-- Le opzioni saranno popolate dinamicamente con JavaScript -->
-                    </select>
-                </div>
-
-                <!-- Sezione Setting del Trattamento -->
-                <div>
-                    <label for="treatmentSetting" class="block text-dark font-medium mb-2">Setting del Trattamento</label>
-                    <select id="treatmentSetting" name="treatment_setting" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors">
-                        <option value="" selected disabled>Seleziona un'opzione</option>
-                        <% treatmentSettings.forEach(setting => { %>
-                            <option value="<%= setting %>"><%= setting %></option>
-                        <% }); %>
-                    </select>
-                </div>
-
-                <!-- Sezione Linea di Trattamento (visibile solo per Metastatico) -->
-                <div id="treatmentLineContainer" class="hidden">
-                    <label for="patientTreatmentLine" class="block text-dark font-medium mb-2">Linea di Trattamento del paziente</label>
-                    <input type="number" id="patientTreatmentLine" name="patient_treatment_line" min="1" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors" placeholder="Inserisci la linea di trattamento">
-                </div>
-
-                <div class="flex justify-center">
-                    <button type="submit" class="secondary-color text-dark font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus-ring-primary transition-all duration-300">
-                        Cerca Studi
-                    </button>
-                </div>
-            </form>
-
-            <!-- Sezione dei risultati di ricerca -->
-            <div id="resultsContainer" class="mt-8 border-t-2 border-gray-100 pt-6 hidden">
-                <h3 class="text-2xl font-semibold text-dark mb-4 text-center">Studi Trovati</h3>
-                <div id="searchResults" class="space-y-4">
-                    <!-- I risultati verranno inseriti qui da JavaScript -->
-                </div>
+            <div>
+                <label for="gender" class="block text-sm font-medium text-dark-gray">Genere</label>
+                <select id="gender" name="gender" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                    <option value="male">Maschio</option>
+                    <option value="female">Femmina</option>
+                </select>
+            </div>
+            <div>
+                <label for="clinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica Principale</label>
+                <select id="clinicalArea" name="clinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                    <option value="" disabled selected>Seleziona un'area</option>
+                    <option value="Oncologia">Oncologia</option>
+                    <option value="Cardiologia">Cardiologia</option>
+                    <option value="Immunologia">Immunologia</option>
+                </select>
+            </div>
+            <div id="specificClinicalAreaContainer" class="hidden">
+                <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica Specifica</label>
+                <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
+            </div>
+            <div>
+                <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting di Trattamento</label>
+                <select id="treatmentSetting" name="treatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                    <option value="Adiuvante">Adiuvante</option>
+                    <option value="Neoaduvante">Neoaduvante</option>
+                    <option value="Metastatico">Metastatico</option>
+                </select>
+            </div>
+            <div id="treatmentLineContainer" class="hidden">
+                <label for="treatmentLine" class="block text-sm font-medium text-dark-gray">Linea di Trattamento</label>
+                <input type="number" id="treatmentLine" name="treatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
             </div>
         </div>
-    </main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const clinicalAreaSelect = document.getElementById('clinicalArea');
-            const specificAreaContainer = document.getElementById('specificAreaContainer');
-            const specificClinicalAreaSelect = document.getElementById('specificClinicalArea');
-            const treatmentSettingSelect = document.getElementById('treatmentSetting');
-            const treatmentLineContainer = document.getElementById('treatmentLineContainer');
-            const searchForm = document.getElementById('searchForm');
-            const resultsContainer = document.getElementById('resultsContainer');
-            const searchResults = document.getElementById('searchResults');
+        <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+            Cerca Studi
+        </button>
+    </form>
+</div>
 
-            const specificAreasMap = <%- JSON.stringify(specificClinicalAreasMap) %>;
+<div id="searchResults" class="mt-8">
+    <h2 class="text-xl font-bold text-dark-sage mb-4">Studi compatibili</h2>
+    <div id="trialList" class="space-y-4">
+        <!-- I risultati verranno iniettati qui -->
+    </div>
+</div>
 
-            // Logica per popolare dinamicamente il menu a tendina "Specifica Area Clinica"
-            clinicalAreaSelect.addEventListener('change', (e) => {
-                const selectedArea = e.target.value;
-                const specificAreas = specificAreasMap[selectedArea] || [];
-
-                specificClinicalAreaSelect.innerHTML = '<option value="" selected disabled>Seleziona un\'opzione</option>';
-
-                if (specificAreas.length > 0) {
-                    specificAreaContainer.classList.remove('hidden');
-                    specificAreas.forEach(area => {
-                        const option = document.createElement('option');
-                        option.value = area;
-                        option.textContent = area;
-                        specificClinicalAreaSelect.appendChild(option);
-                    });
-                } else {
-                    specificAreaContainer.classList.add('hidden');
-                }
-            });
-
-            // Logica per mostrare la Linea di Trattamento solo per "Metastatico"
-            treatmentSettingSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'Metastatico') {
-                    treatmentLineContainer.classList.remove('hidden');
-                } else {
-                    treatmentLineContainer.classList.add('hidden');
-                }
-            });
-
-            // Logica per la sottomissione del form di ricerca
-            searchForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const formData = new FormData(searchForm);
-                const patientCriteria = Object.fromEntries(formData.entries());
-
-                // Converto la linea di trattamento in numero
-                if (patientCriteria.patient_treatment_line) {
-                    patientCriteria.patient_treatment_line = parseInt(patientCriteria.patient_treatment_line, 10);
-                }
-
-                try {
-                    const response = await fetch('/api/search', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(patientCriteria)
-                    });
-
-                    const data = await response.json();
-
-                    searchResults.innerHTML = '';
-                    resultsContainer.classList.remove('hidden');
-
-                    if (data.length > 0) {
-                        data.forEach(study => {
-                            const studyCard = `
-                                <div class="p-4 bg-gray-50 rounded-xl shadow-sm border border-gray-200">
-                                    <h4 class="text-xl font-semibold text-dark">${study.title}</h4>
-                                    <p class="text-gray-600 mt-1">${study.subtitle}</p>
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        <strong>Area Clinica:</strong> ${study.clinical_areas.join(', ')}
-                                    </p>
-                                    ${study.treatment_setting ? `<p class="text-sm text-gray-500">
-                                        <strong>Setting:</strong> ${study.treatment_setting}
-                                    </p>` : ''}
-                                </div>
-                            `;
-                            searchResults.innerHTML += studyCard;
-                        });
-                    } else {
-                        searchResults.innerHTML = '<p class="text-center text-gray-500">Nessuno studio trovato con i criteri selezionati.</p>';
-                    }
-
-                } catch (error) {
-                    console.error('Errore durante la ricerca:', error);
-                    searchResults.innerHTML = '<p class="text-center text-red-500">Si è verificato un errore durante la ricerca.</p>';
-                }
-            });
+<!-- Modal Dettagli Studio -->
+<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>
+            <p class="text-sm text-gray-500" id="modalSubtitle"></p>
+            <div class="mt-4 px-7 py-3">
+                <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
+                <div class="flex flex-col space-y-2" id="criteriaContainer">
+                    <!-- I criteri verranno iniettati qui -->
+                </div>
+                <div class="hidden" id="eligibilityResultDiv"></div>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="checkEligibilityBtn" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors hidden">
+                    Verifica Eleggibilità
+                </button>
+                <button id="closeModalBtn" class="mt-4 px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

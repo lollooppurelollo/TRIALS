@@ -10,7 +10,7 @@ services:
     envVars:
       - key: SUPABASE_URL
         # Inserisci qui l'URL del tuo progetto Supabase
-        value: "https://csuvcrhiuuhdmkzeulrw.supabase.co" 
+        value: "https://csuvcrhiuuhdmkzeulrw.supabase.co"  
       - key: SUPABASE_KEY
         # Inserisci qui la tua chiave anon public Supabase
         value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdXZjcmhpdXVoZG1remV1bHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxMzMzNDAsImV4cCI6MjA2OTcwOTM0MH0.UrefA07uBtGe5pz4_K4-4YuvLLKCS1Pe7KX0naHqSCI"

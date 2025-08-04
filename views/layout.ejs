@@ -1,51 +1,52 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studi Clinici - <%= page %></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrialMatch</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'sage': '#7C966E',
-                        'dark-sage': '#5B6A56',
-                        'light-sage': '#C4CDAB',
-                        'off-white': '#F7F7F0',
-                        'dark-gray': '#333333',
-                    },
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+    <!-- Stili personalizzati -->
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        :root {
+            --light-sage: #c1d5bb;
+            --sage: #91ad86;
+            --dark-sage: #5e7256;
+            --off-white: #f5f5f5;
+            --dark-gray: #333333;
         }
-    </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body class="bg-off-white font-inter text-dark-gray">
-    <div class="max-w-xl mx-auto p-4">
-        <%- body %>
-    </div>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-3">
-        <div class="flex justify-around max-w-xl mx-auto">
-            <a href="/patient" class="flex flex-col items-center text-dark-gray hover:text-sage transition-colors duration-200 <%= page === 'patient' ? 'text-sage font-semibold' : '' %>">
-                <i class="fas fa-search text-xl"></i>
-                <span class="text-xs mt-1">Paziente</span>
-            </a>
-            <a href="/trial" class="flex flex-col items-center text-dark-gray hover:text-sage transition-colors duration-200 <%= page === 'trial' ? 'text-sage font-semibold' : '' %>">
-                <i class="fas fa-hospital text-xl"></i>
-                <span class="text-xs mt-1">Trial</span>
-            </a>
+        .bg-light-sage { background-color: var(--light-sage); }
+        .bg-sage { background-color: var(--sage); }
+        .bg-dark-sage { background-color: var(--dark-sage); }
+        .bg-off-white { background-color: var(--off-white); }
+        .text-dark-gray { color: var(--dark-gray); }
+        .text-sage { color: var(--sage); }
+        .focus\:ring-light-sage:focus {
+            --tw-ring-color: var(--light-sage);
+        }
+
+        .peer-checked\:bg-sage:checked {
+            background-color: var(--sage);
+        }
+    </style>
+</head>
+<body class="bg-off-white font-sans text-dark-gray">
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-dark-sage">TrialMatch</a>
+            <nav class="space-x-4">
+                <a href="/" class="text-gray-600 hover:text-dark-gray transition-colors">Paziente</a>
+                <a href="/trials" class="text-gray-600 hover:text-dark-gray transition-colors">Trial</a>
+            </nav>
         </div>
-    </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <%- body %>
+    </main>
 
     <script src="/js/client.js"></script>
 </body>
