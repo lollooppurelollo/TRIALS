@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs"; // Importa il modulo 'fs' per la gestione del file system
+import expressLayouts from "express-ejs-layouts"; // Importa il middleware per i layout di EJS
 
 // Questa parte è necessaria per replicare la variabile __dirname nei moduli ES
 const __filename = fileURLToPath(import.meta.url);
@@ -22,7 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 // Imposta EJS come motore di template
 // IMPORTANTE: Assicurati che tutti i tuoi file .ejs (es. patient.ejs) si trovino in una cartella chiamata "views"
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
+// Imposta il middleware per i layout di EJS
+app.use(expressLayouts);
+app.set("views", [
+  path.join(__dirname, "views"),
+  path.join(__dirname, "views/patient"),
+  path.join(__dirname, "views/Patient"),
+]);
 
 // Serve i file statici dalla cartella 'public'
 app.use(express.static(path.join(__dirname, "public")));
@@ -67,6 +74,7 @@ app.get("/patient", async (req, res) => {
       treatmentSettings,
       studies: null,
       isSearch: false,
+      layout: "layout",
     });
   } catch (error) {
     console.error("Errore durante il rendering della pagina patient:", error);
@@ -93,6 +101,7 @@ app.get("/trial", async (req, res) => {
       treatmentSettings,
       studies: [],
       editingStudy: null,
+      layout: "layout",
     });
   } catch (error) {
     console.error("Errore durante il rendering della pagina trial:", error);
