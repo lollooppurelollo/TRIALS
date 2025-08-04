@@ -165,7 +165,7 @@ app.post("/api/search", async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 
-  // Filtraggio aggiuntivo in memoria
+  // Filtro aggiuntivo in memoria
   const filteredData = data.filter((study) => {
     // Filtro per Specifica Area Clinica
     const specificAreaMatch =
@@ -183,6 +183,11 @@ app.post("/api/search", async (req, res) => {
   });
 
   res.json(filteredData);
+});
+
+// Avvia il server
+app.listen(port, () => {
+  console.log(`Server in ascolto sulla porta ${port}`);
 });
 
 // Avvia il server
