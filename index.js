@@ -1,10 +1,15 @@
 // index.js
 // Questo è il file principale del server Express. Gestisce le rotte e la logica del backend.
 
-// Importa i moduli necessari
-const express = require("express");
-const path = require("path");
-const { createClient } = require("@supabase/supabase-js");
+// Importa i moduli necessari usando la sintassi ES Module
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
+
+// Questa parte è necessaria per replicare la variabile __dirname nei moduli ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -29,7 +34,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Log di avviso se le chiavi non sono configurate
 if (!supabaseUrl || !supabaseKey) {
   console.error(
-    "ERRORE: Le variabili d'ambiente SUPABASE_URL e/o SUPABASE_KEY non sono definite. Assicurati di configurarle su Render.",
+    "ERRORE: Le variabili d'ambiente SUPABASE_URL e/o SUPABASE_KEY non sono definite. Assicurati di configurarle su Replit o Render.",
   );
 } else {
   console.log("Connessione a Supabase stabilita.");
@@ -180,6 +185,10 @@ app.post("/api/search", async (req, res) => {
   res.json(filteredData);
 });
 
+// Avvia il server
+app.listen(port, () => {
+  console.log(`Server in ascolto sulla porta ${port}`);
+});
 // Avvia il server
 app.listen(port, () => {
   console.log(`Server in ascolto sulla porta ${port}`);
