@@ -60,12 +60,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         patientTreatmentSettingSelect.addEventListener("change", (e) => {
+            console.log(
+                "Patient treatment setting changed to:",
+                e.target.value,
+            );
             if (e.target.value === "Metastatico") {
                 treatmentLineContainer.classList.remove("hidden");
             } else {
                 treatmentLineContainer.classList.add("hidden");
             }
         });
+
+        // Controlla lo stato iniziale al caricamento della pagina
+        checkInitialPatientTreatmentSetting();
 
         patientSearchForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -157,12 +164,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         studyTreatmentSettingSelect.addEventListener("change", (e) => {
+            console.log("Trial treatment setting changed to:", e.target.value);
             if (e.target.value === "Metastatico") {
                 studyTreatmentLineContainer.classList.remove("hidden");
             } else {
                 studyTreatmentLineContainer.classList.add("hidden");
             }
         });
+
+        // Controlla lo stato iniziale al caricamento della pagina
+        checkInitialTrialTreatmentSetting();
 
         addCriteriaBtn.addEventListener("click", () => addCriteriaRow());
 
@@ -476,6 +487,39 @@ document.addEventListener("DOMContentLoaded", () => {
             container.classList.remove("hidden");
         } else {
             container.classList.add("hidden");
+        }
+    }
+
+    // Funzione per controllare lo stato iniziale del setting di trattamento per la pagina Paziente
+    function checkInitialPatientTreatmentSetting() {
+        const patientTreatmentSettingSelect =
+            document.getElementById("treatmentSetting");
+        const treatmentLineContainer = document.getElementById(
+            "treatmentLineContainer",
+        );
+        if (patientTreatmentSettingSelect && treatmentLineContainer) {
+            if (patientTreatmentSettingSelect.value === "Metastatico") {
+                treatmentLineContainer.classList.remove("hidden");
+            } else {
+                treatmentLineContainer.classList.add("hidden");
+            }
+        }
+    }
+
+    // Funzione per controllare lo stato iniziale del setting di trattamento per la pagina Trial
+    function checkInitialTrialTreatmentSetting() {
+        const studyTreatmentSettingSelect = document.getElementById(
+            "studyTreatmentSetting",
+        );
+        const studyTreatmentLineContainer = document.getElementById(
+            "studyTreatmentLineContainer",
+        );
+        if (studyTreatmentSettingSelect && studyTreatmentLineContainer) {
+            if (studyTreatmentSettingSelect.value === "Metastatico") {
+                studyTreatmentLineContainer.classList.remove("hidden");
+            } else {
+                studyTreatmentLineContainer.classList.add("hidden");
+            }
         }
     }
 });
