@@ -6,6 +6,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
+import fs from "fs"; // Importa il modulo 'fs' per la gestione del file system
 
 // Questa parte è necessaria per replicare la variabile __dirname nei moduli ES
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Imposta EJS come motore di template
+// IMPORTANTE: Assicurati che tutti i tuoi file .ejs (es. patient.ejs) si trovino in una cartella chiamata "views"
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
@@ -73,24 +75,29 @@ app.get("/patient", async (req, res) => {
 });
 
 app.get("/trial", async (req, res) => {
-  const clinicalAreas = [
-    "Mammella",
-    "Polmone",
-    "Gastro-Intestinale",
-    "Ginecologico",
-    "Prostata e Vie Urinarie",
-    "Melanoma e Cute",
-    "Testa-Collo",
-    "Fase 1",
-    "Altro",
-  ];
-  const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
-  res.render("trial", {
-    clinicalAreas,
-    treatmentSettings,
-    studies: [],
-    editingStudy: null,
-  });
+  try {
+    const clinicalAreas = [
+      "Mammella",
+      "Polmone",
+      "Gastro-Intestinale",
+      "Ginecologico",
+      "Prostata e Vie Urinarie",
+      "Melanoma e Cute",
+      "Testa-Collo",
+      "Fase 1",
+      "Altro",
+    ];
+    const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+    res.render("trial", {
+      clinicalAreas,
+      treatmentSettings,
+      studies: [],
+      editingStudy: null,
+    });
+  } catch (error) {
+    console.error("Errore durante il rendering della pagina trial:", error);
+    res.status(500).send("Si è verificato un errore interno.");
+  }
 });
 
 // Rotta API per creare un nuovo studio
@@ -190,8 +197,20 @@ app.post("/api/search", async (req, res) => {
   res.json(filteredData);
 });
 
+// Nuova rotta di debug per controllare i file nella cartella views
+app.get("/debug-views", (req, res) => {
+  const viewsPath = path.join(__dirname, "views");
+  fs.readdir(viewsPath, (err, files) => {
+    if (err) {
+      return res
+        .status(500)
+        .send(`Errore durante la lettura della cartella views: ${err.message}`);
+    }
+    res.send(`File trovati nella cartella views: <br>${files.join("<br>")}`);
+  });
+});
+
 // Avvia il server
 app.listen(port, () => {
   console.log(`Server in ascolto sulla porta ${port}`);
 });
-// Force update
