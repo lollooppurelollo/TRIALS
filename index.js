@@ -1,6 +1,7 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import expressLayouts from "express-ejs-layouts";
 
 // Carica le variabili d'ambiente dal file .env
 // Nota: su Render, le variabili d'ambiente verranno lette dalla configurazione del servizio
@@ -17,6 +18,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Configura EJS come motore di template
 app.set("view engine", "ejs");
 app.set("views", "./views");
+
+// Abilita il layout per le pagine EJS
+app.use(expressLayouts);
 
 // Middleware per servire i file statici e per il parsing del body JSON
 app.use(express.static("public"));
