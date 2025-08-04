@@ -1,0 +1,56 @@
+<!-- views/patient.ejs -->
+<%- layout('layout', { page: 'patient' }) %>
+
+<div class="card p-6">
+    <h1 class="text-2xl font-bold mb-4">Cerca Studi per Paziente</h1>
+    <form id="patientSearchForm" class="space-y-4">
+        <div>
+            <label for="clinicalArea" class="form-label">Area Clinica di interesse</label>
+            <select id="clinicalArea" name="clinical_area" class="form-select" required>
+                <option value="" disabled selected>Seleziona un'area...</option>
+                <% clinicalAreas.forEach(area => { %>
+                    <option value="<%= area %>"><%= area %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <div id="specificAreaContainer" class="hidden">
+            <label for="specificClinicalArea" class="form-label">Specifica Area Clinica di interesse (Opzionale)</label>
+            <select id="specificClinicalArea" name="specific_area" class="form-select">
+                <option value="" selected>Qualsiasi</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="treatmentSetting" class="form-label">Setting del Trattamento</label>
+            <select id="treatmentSetting" name="treatment_setting" class="form-select" required>
+                <option value="" disabled selected>Seleziona un setting...</option>
+                <% treatmentSettings.forEach(setting => { %>
+                    <option value="<%= setting %>"><%= setting %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <div id="treatmentLineContainer" class="hidden">
+            <label for="patientTreatmentLine" class="form-label">Linea di trattamento del paziente</label>
+            <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="form-input" min="1" placeholder="Es. 1">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full">Cerca</button>
+    </form>
+</div>
+
+<div id="searchResults" class="mt-8 space-y-4">
+    <!-- I risultati della ricerca verranno inseriti qui -->
+</div>
+
+<div id="studyDetailModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 id="modalTitle" class="text-xl font-bold mb-2"></h2>
+        <p id="modalSubtitle" class="text-gray-600 mb-4"></p>
+        <div id="criteriaContainer"></div>
+        <button id="checkEligibilityBtn" class="btn btn-primary mt-4 w-full">Controlla eleggibilità</button>
+        <div id="eligibilityResult" class="mt-4 font-bold text-center"></div>
+    </div>
+</div>

@@ -1,14 +1,186 @@
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
+// index.js
+// Questo è il file principale del server Express. Gestisce le rotte e la logica del backend.
+
+// Importa i moduli necessari
+const express = require("express");
+const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const port = process.env.PORT || 3000;
 
-// static files
+// Middleware per analizzare le richieste JSON e URL-encoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Imposta EJS come motore di template
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+// Serve i file statici dalla cartella 'public'
 app.use(express.static(path.join(__dirname, "public")));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () =>
-  console.log(`Server listening on http://0.0.0.0:${PORT}`),
-);
+// Configura la connessione a Supabase
+// Render inietterà queste variabili d'ambiente automaticamente
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Log di avviso se le chiavi non sono configurate
+if (!supabaseUrl || !supabaseKey) {
+  console.error(
+    "ERRORE: Le variabili d'ambiente SUPABASE_URL e/o SUPABASE_KEY non sono definite. Assicurati di configurarle su Render.",
+  );
+} else {
+  console.log("Connessione a Supabase stabilita.");
+}
+
+// Rotte per le pagine
+app.get("/", (req, res) => {
+  res.redirect("/patient");
+});
+
+app.get("/patient", async (req, res) => {
+  // Passa i dati necessari per i menu a tendina
+  const clinicalAreas = [
+    "Mammella",
+    "Polmone",
+    "Gastro-Intestinale",
+    "Ginecologico",
+    "Prostata e Vie Urinarie",
+    "Melanoma e Cute",
+    "Testa-Collo",
+    "Fase 1",
+    "Altro",
+  ];
+  const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+  res.render("patient", {
+    clinicalAreas,
+    treatmentSettings,
+    studies: null,
+    isSearch: false,
+  });
+});
+
+app.get("/trial", async (req, res) => {
+  const clinicalAreas = [
+    "Mammella",
+    "Polmone",
+    "Gastro-Intestinale",
+    "Ginecologico",
+    "Prostata e Vie Urinarie",
+    "Melanoma e Cute",
+    "Testa-Collo",
+    "Fase 1",
+    "Altro",
+  ];
+  const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+  res.render("trial", {
+    clinicalAreas,
+    treatmentSettings,
+    studies: [],
+    editingStudy: null,
+  });
+});
+
+// Rotta API per creare un nuovo studio
+app.post("/api/studies", async (req, res) => {
+  const newStudy = req.body;
+  const { data, error } = await supabase
+    .from("studies")
+    .insert([newStudy])
+    .select();
+  if (error) {
+    console.error("Errore durante l'inserimento dello studio:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+  res.status(201).json({ success: true, study: data[0] });
+});
+
+// Rotta API per recuperare tutti gli studi (o filtrati per area)
+app.get("/api/studies", async (req, res) => {
+  const { clinical_area, specific_area } = req.query;
+  let query = supabase.from("studies").select("*").eq("is_active", true);
+
+  if (clinical_area) {
+    query = query.contains("clinical_areas", [clinical_area]);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Errore durante il recupero degli studi:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  // Filtro aggiuntivo in memoria per la specifica area, poiché Supabase non supporta `contains` su un array di stringhe JSONB nidificato
+  const filteredData = data.filter((study) => {
+    if (specific_area && study.specific_clinical_areas) {
+      return study.specific_clinical_areas.includes(specific_area);
+    }
+    return true;
+  });
+
+  res.json(filteredData);
+});
+
+// Rotta API per rimuovere uno studio (imposta is_active a false)
+app.delete("/api/studies/:id", async (req, res) => {
+  const { id } = req.params;
+  const { data, error } = await supabase
+    .from("studies")
+    .update({ is_active: false })
+    .eq("id", id)
+    .select();
+  if (error) {
+    console.error("Errore durante la rimozione dello studio:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+  res.status(200).json({ success: true, study: data[0] });
+});
+
+// Rotta API per la ricerca di studi per un paziente
+app.post("/api/search", async (req, res) => {
+  const {
+    clinical_area,
+    specific_area,
+    treatment_setting,
+    patient_treatment_line,
+  } = req.body;
+
+  let query = supabase
+    .from("studies")
+    .select("*")
+    .eq("is_active", true)
+    .contains("clinical_areas", [clinical_area])
+    .eq("treatment_setting", treatment_setting);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Errore durante la ricerca degli studi:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  // Filtraggio aggiuntivo in memoria
+  const filteredData = data.filter((study) => {
+    // Filtro per Specifica Area Clinica
+    const specificAreaMatch =
+      !specific_area ||
+      (study.specific_clinical_areas &&
+        study.specific_clinical_areas.includes(specific_area));
+
+    // Filtro per Linea di Trattamento se il setting è Metastatico
+    const treatmentLineMatch =
+      treatment_setting !== "Metastatico" ||
+      (patient_treatment_line >= study.min_treatment_line &&
+        patient_treatment_line <= study.max_treatment_line);
+
+    return specificAreaMatch && treatmentLineMatch;
+  });
+
+  res.json(filteredData);
+});
+
+// Avvia il server
+app.listen(port, () => {
+  console.log(`Server in ascolto sulla porta ${port}`);
+});

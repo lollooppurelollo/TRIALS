@@ -1,0 +1,86 @@
+<!-- views/trial.ejs -->
+<%- layout('layout', { page: 'trial' }) %>
+
+<div id="addStudyContainer" class="card p-6 mb-8">
+    <h1 class="text-2xl font-bold mb-4">Gestione Studi Clinici</h1>
+    <form id="studyForm" class="space-y-4">
+        <h2 class="text-xl font-semibold">Aggiungi/Modifica Studio</h2>
+        <input type="hidden" id="studyId">
+
+        <div>
+            <label for="studyTitle" class="form-label">Titolo dello Studio</label>
+            <input type="text" id="studyTitle" name="title" class="form-input" required>
+        </div>
+
+        <div>
+            <label for="studySubtitle" class="form-label">Sottotitolo (Riassunto)</label>
+            <textarea id="studySubtitle" name="subtitle" class="form-input" rows="3" required></textarea>
+        </div>
+
+        <div>
+            <label for="studyClinicalAreas" class="form-label">Area Clinica di interesse (multiselezione)</label>
+            <select id="studyClinicalAreas" name="clinical_areas" class="form-select" multiple required>
+                <option value="Mammella">Mammella</option>
+                <option value="Polmone">Polmone</option>
+                <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+                <option value="Ginecologico">Ginecologico</option>
+                <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+                <option value="Melanoma e Cute">Melanoma e Cute</option>
+                <option value="Testa-Collo">Testa-Collo</option>
+                <option value="Fase 1">Fase 1</option>
+                <option value="Altro">Altro</option>
+            </select>
+        </div>
+
+        <div id="studySpecificAreaContainer" class="hidden">
+            <label for="studySpecificClinicalAreas" class="form-label">Specifica Area Clinica di interesse (multiselezione)</label>
+            <select id="studySpecificClinicalAreas" name="specific_clinical_areas" class="form-select" multiple>
+            </select>
+        </div>
+
+        <div>
+            <label for="studyTreatmentSetting" class="form-label">Setting del Trattamento</label>
+            <select id="studyTreatmentSetting" name="treatment_setting" class="form-select" required>
+                <option value="" disabled selected>Seleziona un setting...</option>
+                <option value="Metastatico">Metastatico</option>
+                <option value="Adiuvante">Adiuvante</option>
+                <option value="Neo-adiuvante">Neo-adiuvante</option>
+            </select>
+        </div>
+
+        <div id="studyTreatmentLineContainer" class="hidden grid grid-cols-2 gap-4">
+            <div>
+                <label for="minTreatmentLine" class="form-label">Linea minima di Trattamento</label>
+                <input type="number" id="minTreatmentLine" name="min_treatment_line" class="form-input">
+            </div>
+            <div>
+                <label for="maxTreatmentLine" class="form-label">Linea massima di Trattamento</label>
+                <input type="number" id="maxTreatmentLine" name="max_treatment_line" class="form-input">
+            </div>
+        </div>
+
+        <h3 class="text-lg font-semibold mt-4">Criteri di Inclusione/Esclusione</h3>
+        <div id="criteriaList" class="space-y-2">
+            <div class="criteria-item flex items-center space-x-2">
+                <input type="text" class="criteria-input form-input flex-grow" placeholder="Inserisci un criterio di inclusione">
+                <select class="criteria-type form-select w-32">
+                    <option value="inclusion" selected>Inclusione</option>
+                    <option value="exclusion">Esclusione</option>
+                </select>
+                <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+        <button type="button" id="addCriteriaBtn" class="btn btn-secondary w-full">Aggiungi Criterio</button>
+
+        <button type="submit" class="btn btn-primary w-full">Salva Studio</button>
+    </form>
+</div>
+
+<div class="card p-6">
+    <h2 class="text-xl font-bold mb-4">Elenco Studi Attivi</h2>
+    <div id="trialList" class="space-y-4">
+        <!-- L'elenco degli studi verrà caricato qui -->
+    </div>
+</div>
