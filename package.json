@@ -14,7 +14,6 @@
     "@supabase/supabase-js": "^2.44.2",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
-    "nodemon": "^3.1.4"
-  },
-  "updateTrigger": "2025-08-04T16:06:00Z"
+    "express-ejs-layouts": "^2.5.1"
+  }
 }
