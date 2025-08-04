@@ -430,44 +430,53 @@ document.addEventListener("DOMContentLoaded", () => {
             }, {});
 
             for (const setting in studiesBySetting) {
-                const studiesInSetting = studiesBySetting[setting];
-                doctorTrialListDiv.innerHTML += `
-                    <div class="mb-6">
-                        <h3 class="text-xl font-bold text-dark-gray mb-4">${setting}</h3>
-                        <div class="space-y-4">
-                            ${studiesInSetting
-                                .map(
-                                    (study) => `
-                                <div class="bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200" data-study-id="${study.id}">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <h4 class="font-bold text-dark-gray">${study.title}</h4>
-                                            <p class="text-sm text-gray-600">${study.subtitle}</p>
-                                        </div>
-                                        <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `,
-                                )
-                                .join("")}
-                        </div>
-                    </div>
-                `;
-            }
+                const settingSection = document.createElement("div");
+                settingSection.className = "mb-6";
+                settingSection.innerHTML = `<h3 class="text-xl font-bold text-dark-gray mb-4">${setting}</h3>`;
 
-            // Attacca i listener di click ai bottoni di rimozione
-            document.querySelectorAll(".remove-study-btn").forEach((btn) => {
-                btn.addEventListener("click", async (e) => {
-                    e.stopPropagation();
-                    const studyId = btn.dataset.id;
-                    await fetch(`/api/studies/${studyId}`, {
-                        method: "DELETE",
-                    });
-                    fetchAndRenderTrials();
+                const cardsContainer = document.createElement("div");
+                cardsContainer.className = "space-y-4";
+
+                const studiesInSetting = studiesBySetting[setting];
+                studiesInSetting.forEach((study) => {
+                    const card = document.createElement("div");
+                    card.className =
+                        "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
+                    card.dataset.studyId = study.id;
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-dark-gray">${study.title}</h4>
+                                <p class="text-sm text-gray-600">${study.subtitle}</p>
+                            </div>
+                            <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    // Attacca il listener per mostrare il modale a ogni card
+                    card.addEventListener("click", () =>
+                        showStudyDetails(study.id, studies, "trial"),
+                    );
+
+                    // Assicurati che il bottone di rimozione non attivi il click sulla card
+                    card.querySelector(".remove-study-btn").addEventListener(
+                        "click",
+                        async (e) => {
+                            e.stopPropagation();
+                            await fetch(`/api/studies/${study.id}`, {
+                                method: "DELETE",
+                            });
+                            fetchAndRenderTrials();
+                        },
+                    );
+
+                    cardsContainer.appendChild(card);
                 });
-            });
+
+                settingSection.appendChild(cardsContainer);
+                doctorTrialListDiv.appendChild(settingSection);
+            }
         }
     }
 
@@ -577,20 +586,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (closeModalBtn) {
         closeModalBtn.addEventListener("click", () => {
             studyDetailModal.classList.add("hidden");
-        });
-    }
-
-    // Gestore di eventi delegato per i click sui trial nella pagina Trial
-    if (doctorTrialListDiv) {
-        doctorTrialListDiv.addEventListener("click", async (e) => {
-            // Cerca l'elemento card più vicino con l'attributo data-study-id
-            const card = e.target.closest("[data-study-id]");
-            if (card) {
-                const studyId = card.dataset.studyId;
-                const response = await fetch("/api/studies");
-                const studies = await response.json();
-                showStudyDetails(studyId, studies, "trial");
-            }
         });
     }
 
