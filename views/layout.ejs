@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -8,21 +8,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sage': '#7C966E',
+                        'dark-sage': '#5B6A56',
+                        'light-sage': '#C4CDAB',
+                        'off-white': '#F7F7F0',
+                        'dark-gray': '#333333',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-gray-100 font-inter text-gray-800">
+<body class="bg-off-white font-inter text-dark-gray">
     <div class="max-w-xl mx-auto p-4">
         <%- body %>
     </div>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-3">
         <div class="flex justify-around max-w-xl mx-auto">
-            <a href="/patient" class="flex flex-col items-center text-gray-500 hover:text-green-600 transition-colors duration-200 <%= page === 'patient' ? 'text-green-600 font-semibold' : '' %>">
+            <a href="/patient" class="flex flex-col items-center text-dark-gray hover:text-sage transition-colors duration-200 <%= page === 'patient' ? 'text-sage font-semibold' : '' %>">
                 <i class="fas fa-search text-xl"></i>
                 <span class="text-xs mt-1">Paziente</span>
             </a>
-            <a href="/trial" class="flex flex-col items-center text-gray-500 hover:text-green-600 transition-colors duration-200 <%= page === 'trial' ? 'text-green-600 font-semibold' : '' %>">
+            <a href="/trial" class="flex flex-col items-center text-dark-gray hover:text-sage transition-colors duration-200 <%= page === 'trial' ? 'text-sage font-semibold' : '' %>">
                 <i class="fas fa-hospital text-xl"></i>
                 <span class="text-xs mt-1">Trial</span>
             </a>

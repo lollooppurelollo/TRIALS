@@ -1,48 +1,48 @@
 <main class="py-8 mb-20">
-    <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Gestione Studi Clinici</h1>
+    <h1 class="text-3xl font-bold text-center text-dark-gray mb-8">Gestione Studi Clinici</h1>
 
     <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Aggiungi un nuovo Studio</h2>
+        <h2 class="text-xl font-bold text-dark-gray mb-4">Aggiungi un nuovo Studio</h2>
         <form id="studyForm">
             <div class="mb-4">
-                <label for="studyTitle" class="block text-gray-700 font-medium mb-1">Titolo:</label>
-                <input type="text" id="studyTitle" name="title" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" required>
+                <label for="studyTitle" class="block text-dark-gray font-medium mb-1">Titolo:</label>
+                <input type="text" id="studyTitle" name="title" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
             </div>
             <div class="mb-4">
-                <label for="studySubtitle" class="block text-gray-700 font-medium mb-1">Sottotitolo:</label>
-                <input type="text" id="studySubtitle" name="subtitle" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]">
+                <label for="studySubtitle" class="block text-dark-gray font-medium mb-1">Sottotitolo:</label>
+                <input type="text" id="studySubtitle" name="subtitle" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
             </div>
             <div class="mb-4">
-                <label for="studyClinicalAreas" class="block text-gray-700 font-medium mb-1">Aree Cliniche:</label>
-                <select id="studyClinicalAreas" name="clinical_areas" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" multiple required></select>
+                <label for="studyClinicalAreas" class="block text-dark-gray font-medium mb-1">Aree Cliniche:</label>
+                <select id="studyClinicalAreas" name="clinical_areas" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" multiple required></select>
             </div>
             <div id="studySpecificAreaContainer" class="mb-4 hidden">
-                <label for="studySpecificClinicalAreas" class="block text-gray-700 font-medium mb-1">Aree Cliniche Specifiche:</label>
-                <select id="studySpecificClinicalAreas" name="specific_clinical_areas" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" multiple></select>
+                <label for="studySpecificClinicalAreas" class="block text-dark-gray font-medium mb-1">Aree Cliniche Specifiche:</label>
+                <select id="studySpecificClinicalAreas" name="specific_clinical_areas" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" multiple></select>
             </div>
             <div class="mb-4">
-                <label for="studyTreatmentSetting" class="block text-gray-700 font-medium mb-1">Setting di Trattamento:</label>
-                <select id="studyTreatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" required></select>
+                <label for="studyTreatmentSetting" class="block text-dark-gray font-medium mb-1">Setting di Trattamento:</label>
+                <select id="studyTreatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required></select>
             </div>
             <div id="studyTreatmentLineContainer" class="mb-6 hidden">
-                <label class="block text-gray-700 font-medium mb-1">Linea di Trattamento:</label>
+                <label class="block text-dark-gray font-medium mb-1">Linea di Trattamento:</label>
                 <div class="flex space-x-2">
-                    <input type="number" id="minTreatmentLine" name="min_treatment_line" class="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" placeholder="Min" min="1">
-                    <input type="number" id="maxTreatmentLine" name="max_treatment_line" class="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB]" placeholder="Max" min="1">
+                    <input type="number" id="minTreatmentLine" name="min_treatment_line" class="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Min" min="1">
+                    <input type="number" id="maxTreatmentLine" name="max_treatment_line" class="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Max" min="1">
                 </div>
             </div>
             <div class="mb-4">
-                <h3 class="font-bold text-gray-700 mb-2">Criteri:</h3>
+                <h3 class="font-bold text-dark-gray mb-2">Criteri:</h3>
                 <div id="criteriaList" class="space-y-2">
                     <!-- I criteri verranno inseriti qui -->
                 </div>
-                <button type="button" id="addCriteriaBtn" class="w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mt-2 hover:bg-gray-300 transition-colors">Aggiungi Criterio</button>
+                <button type="button" id="addCriteriaBtn" class="w-full bg-gray-200 text-dark-gray font-bold py-2 px-4 rounded-lg mt-2 hover:bg-gray-300 transition-colors">Aggiungi Criterio</button>
             </div>
-            <button type="submit" class="w-full bg-[#9CA48D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#7D8372] transition-colors">Salva Studio</button>
+            <button type="submit" class="w-full bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Salva Studio</button>
         </form>
     </div>
 
-    <h2 class="text-2xl font-bold text-center text-gray-900 mb-4">Studi Attivi</h2>
+    <h2 class="text-2xl font-bold text-center text-dark-gray mb-4">Studi Attivi</h2>
     <div id="trialList" class="space-y-4">
         <p class="text-center text-gray-500">Caricamento studi...</p>
     </div>

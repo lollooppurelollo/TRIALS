@@ -1,11 +1,11 @@
 <main class="py-8 mb-20">
-    <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Ricerca Studi Clinici</h1>
+    <h1 class="text-3xl font-bold text-center text-dark-gray mb-8">Ricerca Studi Clinici</h1>
 
     <div class="bg-white p-6 rounded-xl shadow-md mb-8">
         <form id="patientSearchForm">
             <div class="mb-4">
-                <label for="clinicalArea" class="block text-gray-700 font-medium mb-1">Area Clinica:</label>
-                <select id="clinicalArea" name="clinical_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors">
+                <label for="clinicalArea" class="block text-dark-gray font-medium mb-1">Area Clinica:</label>
+                <select id="clinicalArea" name="clinical_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors">
                     <option value="" selected disabled>Seleziona un'area</option>
                     <% clinicalAreas.forEach(area => { %>
                         <option value="<%= area %>"><%= area %></option>
@@ -13,12 +13,12 @@
                 </select>
             </div>
             <div id="specificAreaContainer" class="mb-4 hidden">
-                <label for="specificClinicalArea" class="block text-gray-700 font-medium mb-1">Area Clinica Specifica:</label>
-                <select id="specificClinicalArea" name="specific_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors"></select>
+                <label for="specificClinicalArea" class="block text-dark-gray font-medium mb-1">Area Clinica Specifica:</label>
+                <select id="specificClinicalArea" name="specific_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors"></select>
             </div>
             <div class="mb-4">
-                <label for="treatmentSetting" class="block text-gray-700 font-medium mb-1">Setting di Trattamento:</label>
-                <select id="treatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors">
+                <label for="treatmentSetting" class="block text-dark-gray font-medium mb-1">Setting di Trattamento:</label>
+                <select id="treatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors">
                     <option value="" selected disabled>Seleziona un'opzione</option>
                     <% treatmentSettings.forEach(setting => { %>
                         <option value="<%= setting %>"><%= setting %></option>
@@ -26,14 +26,14 @@
                 </select>
             </div>
             <div id="treatmentLineContainer" class="mb-6 hidden">
-                <label for="patientTreatmentLine" class="block text-gray-700 font-medium mb-1">Linea di Trattamento:</label>
-                <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4CDAB] transition-colors" min="1">
+                <label for="patientTreatmentLine" class="block text-dark-gray font-medium mb-1">Linea di Trattamento:</label>
+                <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors" min="1">
             </div>
-            <button type="submit" class="w-full bg-[#9CA48D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#7D8372] transition-colors">Cerca Studi</button>
+            <button type="submit" class="w-full bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Cerca Studi</button>
         </form>
     </div>
 
-    <h2 class="text-2xl font-bold text-center text-gray-900 mb-4">Risultati della Ricerca</h2>
+    <h2 class="text-2xl font-bold text-center text-dark-gray mb-4">Risultati della Ricerca</h2>
     <div id="searchResults" class="space-y-4">
         <div class="p-6 text-center text-gray-500 bg-white rounded-xl shadow-md">Nessuna ricerca effettuata.</div>
     </div>
@@ -43,7 +43,7 @@
 <div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
         <div class="flex justify-between items-center mb-4">
-            <h2 id="modalTitle" class="text-2xl font-bold text-gray-900"></h2>
+            <h2 id="modalTitle" class="text-2xl font-bold text-dark-gray"></h2>
             <button class="text-gray-400 hover:text-gray-600 transition-colors" onclick="document.getElementById('studyDetailModal').classList.add('hidden')">&times;</button>
         </div>
         <h3 id="modalSubtitle" class="text-lg text-gray-600 mb-4"></h3>
@@ -53,8 +53,8 @@
         </div>
 
         <div class="mt-6 pt-4 border-t border-gray-200">
-            <button id="checkEligibilityBtn" class="w-full bg-[#9CA48D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#7D8372] transition-colors">Verifica Eleggibilità</button>
-            <div id="eligibilityResult" class="font-bold text-center mt-4"></div>
+            <button id="checkEligibilityBtn" class="w-full bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Verifica Eleggibilità</button>
+            <div id="eligibilityResult" class="font-bold text-center mt-4 hidden"></div>
         </div>
     </div>
 </div>
