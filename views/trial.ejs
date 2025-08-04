@@ -65,7 +65,41 @@
 
 <div id="trialListSection" class="mt-8">
     <h2 class="text-xl font-bold text-dark-sage mb-4">Studi Attivi</h2>
-    <div id="trialList" class="space-y-4">
+    <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+        <form id="trialFilterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="filterClinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica</label>
+                <select id="filterClinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+                    <option value="">Tutte le Aree</option>
+                    <option value="Mammella">Mammella</option>
+                    <option value="Polmone">Polmone</option>
+                    <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+                    <option value="Ginecologico">Ginecologico</option>
+                    <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+                    <option value="Melanoma e Cute">Melanoma e Cute</option>
+                    <option value="Testa-Collo">Testa-Collo</option>
+                    <option value="Fase 1">Fase 1</option>
+                    <option value="Altro">Altro</option>
+                </select>
+            </div>
+            <div id="filterSpecificClinicalAreaContainer" class="hidden">
+                <label for="filterSpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area</label>
+                <select id="filterSpecificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+                    <option value="">Tutte le Specifiche</option>
+                </select>
+            </div>
+            <div>
+                <label for="filterTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting</label>
+                <select id="filterTreatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+                    <option value="">Tutti i Setting</option>
+                    <option value="Metastatico">Metastatico</option>
+                    <option value="Adiuvante">Adiuvante</option>
+                    <option value="Neo-adiuvante">Neo-adiuvante</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    <div id="trialList" class="space-y-4 mt-4">
         <!-- I risultati verranno iniettati qui -->
     </div>
 </div>

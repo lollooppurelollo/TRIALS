@@ -71,6 +71,20 @@ document.addEventListener("DOMContentLoaded", () => {
         "#trialListSection #trialList",
     );
 
+    // Filtri per la pagina Trial
+    const trialFilterForm = document.getElementById("trialFilterForm");
+    const filterClinicalAreaSelect =
+        document.getElementById("filterClinicalArea");
+    const filterSpecificClinicalAreasSelect = document.getElementById(
+        "filterSpecificClinicalAreas",
+    );
+    const filterSpecificClinicalAreaContainer = document.getElementById(
+        "filterSpecificClinicalAreaContainer",
+    );
+    const filterTreatmentSettingSelect = document.getElementById(
+        "filterTreatmentSetting",
+    );
+
     // ----- Selettori per il Modale -----
     const studyDetailModal = document.getElementById("studyDetailModal");
     const modalTitle = document.getElementById("modalTitle");
@@ -138,6 +152,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Gestione del filtro area clinica per la pagina Trial
+    if (filterClinicalAreaSelect) {
+        filterClinicalAreaSelect.addEventListener("change", (e) => {
+            updateSpecificAreasDropdown(
+                e.target.value,
+                filterSpecificClinicalAreasSelect,
+                filterSpecificClinicalAreaContainer,
+            );
+            fetchAndRenderTrials();
+        });
+    }
+
+    if (filterSpecificClinicalAreasSelect) {
+        filterSpecificClinicalAreasSelect.addEventListener("change", () => {
+            fetchAndRenderTrials();
+        });
+    }
+
+    if (filterTreatmentSettingSelect) {
+        filterTreatmentSettingSelect.addEventListener("change", () => {
+            fetchAndRenderTrials();
+        });
+    }
+
     // Gestione del setting di trattamento per la pagina Paziente
     if (treatmentSettingSelect) {
         treatmentSettingSelect.addEventListener("change", (e) => {
@@ -145,6 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 treatmentLineContainer.classList.remove("hidden");
             } else {
                 treatmentLineContainer.classList.add("hidden");
+                patientTreatmentLineInput.value = "";
             }
         });
     }
@@ -156,6 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 studyTreatmentLineContainer.classList.remove("hidden");
             } else {
                 studyTreatmentLineContainer.classList.add("hidden");
+                minTreatmentLineInput.value = "";
+                maxTreatmentLineInput.value = "";
             }
         });
     }
@@ -218,12 +259,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 clinical_areas: selectedClinicalAreas,
                 specific_clinical_areas: selectedSpecificClinicalAreas,
                 treatment_setting: studyTreatmentSettingSelect.value,
-                min_treatment_line: minTreatmentLineInput.value
-                    ? parseInt(minTreatmentLineInput.value)
-                    : null,
-                max_treatment_line: maxTreatmentLineInput.value
-                    ? parseInt(maxTreatmentLineInput.value)
-                    : null,
+                min_treatment_line:
+                    studyTreatmentSettingSelect.value === "Metastatico"
+                        ? parseInt(minTreatmentLineInput.value)
+                        : null,
+                max_treatment_line:
+                    studyTreatmentSettingSelect.value === "Metastatico"
+                        ? parseInt(maxTreatmentLineInput.value)
+                        : null,
                 criteria: criteria,
             };
 
@@ -234,6 +277,8 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             studyForm.reset();
+            studySpecificClinicalAreaContainer.classList.add("hidden");
+            studyTreatmentLineContainer.classList.add("hidden");
             criteriaListDiv.innerHTML = "";
             addCriteriaRow();
             fetchAndRenderTrials();
@@ -262,8 +307,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     patientData.clinicalAreas,
                 );
                 const specificClinicalAreaMatch =
-                    !patientData.specificClinicalAreas ||
                     patientData.specificClinicalAreas === "" ||
+                    !patientData.specificClinicalAreas ||
                     study.specific_clinical_areas.includes(
                         patientData.specificClinicalAreas,
                     );
@@ -275,8 +320,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     patientData.treatmentSetting === "Metastatico" &&
                     patientData.treatmentLine !== null
                 ) {
-                    const minLine = study.min_treatment_line || 1;
-                    const maxLine = study.max_treatment_line || 10;
+                    const minLine = study.min_treatment_line || 0;
+                    const maxLine = study.max_treatment_line || 999;
                     treatmentLineMatch =
                         patientData.treatmentLine >= minLine &&
                         patientData.treatmentLine <= maxLine;
@@ -327,7 +372,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fetch e renderizza i trial (per la pagina Trial)
     async function fetchAndRenderTrials() {
         const response = await fetch("/api/studies");
-        const studies = await response.json();
+        let studies = await response.json();
+
+        // Applicazione dei filtri
+        const filterClinicalArea = filterClinicalAreaSelect?.value || "";
+        const filterSpecificClinicalArea =
+            filterSpecificClinicalAreasSelect?.value || "";
+        const filterTreatmentSetting =
+            filterTreatmentSettingSelect?.value || "";
+
+        if (filterClinicalArea !== "") {
+            studies = studies.filter((study) =>
+                study.clinical_areas.includes(filterClinicalArea),
+            );
+        }
+
+        if (filterSpecificClinicalArea !== "") {
+            studies = studies.filter((study) =>
+                study.specific_clinical_areas.includes(
+                    filterSpecificClinicalArea,
+                ),
+            );
+        }
+
+        if (filterTreatmentSetting !== "") {
+            studies = studies.filter(
+                (study) => study.treatment_setting === filterTreatmentSetting,
+            );
+        }
 
         if (doctorTrialListDiv) {
             doctorTrialListDiv.innerHTML = "";
@@ -374,6 +446,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
+            document
+                .querySelectorAll(
+                    "#trialListSection #trialList > div > div > div",
+                )
+                .forEach((card) => {
+                    const study = studies.find(
+                        (s) => s.id === card.dataset.studyId,
+                    );
+                    card.addEventListener("click", () =>
+                        showStudyDetails(
+                            card.dataset.studyId,
+                            studies,
+                            "trial",
+                        ),
+                    );
+                });
+
             document.querySelectorAll(".remove-study-btn").forEach((btn) => {
                 btn.addEventListener("click", async (e) => {
                     e.stopPropagation();
@@ -384,20 +473,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     fetchAndRenderTrials();
                 });
             });
-
-            document
-                .querySelectorAll(
-                    "#trialListSection #trialList > div > div > div",
-                )
-                .forEach((card) => {
-                    card.addEventListener("click", () =>
-                        showStudyDetails(
-                            card.dataset.studyId,
-                            studies,
-                            "trial",
-                        ),
-                    );
-                });
         }
     }
 
@@ -410,19 +485,19 @@ document.addEventListener("DOMContentLoaded", () => {
         modalSubtitle.textContent = study.subtitle;
         criteriaContainer.innerHTML = "";
         eligibilityResultDiv.classList.add("hidden");
-        checkEligibilityBtn.classList.add("hidden");
+        eligibilityResultDiv.textContent = "";
 
         const isPatientPage = page === "patient";
+        checkEligibilityBtn.style.display = isPatientPage ? "block" : "none";
 
-        if (isPatientPage) {
-            checkEligibilityBtn.classList.remove("hidden");
-            study.criteria.forEach((criterion, index) => {
-                const row = document.createElement("div");
-                row.className =
-                    "flex items-center justify-between p-2 bg-gray-100 rounded-lg";
-                const isPreselectedYes = criterion.type === "inclusion";
-                row.innerHTML = `
-                    <span class="text-sm text-dark-gray">${criterion.text}</span>
+        study.criteria.forEach((criterion, index) => {
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between p-2 rounded-lg";
+            const isPreselectedYes = criterion.type === "inclusion";
+
+            let labelText;
+            if (isPatientPage) {
+                labelText = `
                     <div class="flex items-center space-x-2">
                         <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
                         <label class="relative inline-flex items-center cursor-pointer">
@@ -432,18 +507,32 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
                     </div>
                 `;
-                criteriaContainer.appendChild(row);
-            });
+            } else {
+                labelText = `
+                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${isPreselectedYes ? "bg-sage" : "bg-red-500"}">
+                        ${isPreselectedYes ? "Sì (Inclusione)" : "No (Esclusione)"}
+                    </span>
+                `;
+            }
 
+            row.innerHTML = `
+                <span class="text-sm text-dark-gray">${criterion.text}</span>
+                ${labelText}
+            `;
+            criteriaContainer.appendChild(row);
+        });
+
+        if (isPatientPage) {
             checkEligibilityBtn.onclick = () => {
                 let isEligible = true;
                 const toggles =
                     criteriaContainer.querySelectorAll(".criteria-toggle");
 
                 toggles.forEach((toggle) => {
-                    const preferredType = toggle.dataset.preferred - type;
+                    const preferredType = toggle.dataset.preferredType;
                     const isChecked = toggle.checked;
 
+                    // Condizione per non idoneità
                     if (
                         (preferredType === "inclusion" && !isChecked) ||
                         (preferredType === "exclusion" && isChecked)
@@ -452,32 +541,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
-                if (isEligible) {
-                    eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio`;
-                    eligibilityResultDiv.className =
-                        "font-bold text-center mt-4 text-sage";
-                } else {
-                    eligibilityResultDiv.textContent = `Paziente al momento non eleggibile per lo studio`;
-                    eligibilityResultDiv.className =
-                        "font-bold text-center mt-4 text-red-600";
-                }
                 eligibilityResultDiv.classList.remove("hidden");
+                if (isEligible) {
+                    eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio: ${study.title}`;
+                    eligibilityResultDiv.className =
+                        "font-bold text-center mt-4 text-dark-gray bg-sage p-3 rounded-lg";
+                } else {
+                    eligibilityResultDiv.textContent = `Paziente non eleggibile per lo studio: ${study.title}`;
+                    eligibilityResultDiv.className =
+                        "font-bold text-center mt-4 text-dark-gray bg-red-300 p-3 rounded-lg";
+                }
             };
-        } else {
-            // Pagina Trial: mostra i criteri in sola lettura
-            study.criteria.forEach((criterion) => {
-                const row = document.createElement("div");
-                row.className =
-                    "flex items-center justify-between p-2 bg-gray-100 rounded-lg";
-                row.innerHTML = `
-                    <span class="text-sm text-dark-gray">${criterion.text}</span>
-                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${criterion.type === "inclusion" ? "bg-sage" : "bg-red-500"}">
-                        ${criterion.type === "inclusion" ? "Sì (Inclusione)" : "No (Esclusione)"}
-                    </span>
-                `;
-                criteriaContainer.appendChild(row);
-            });
         }
+
         studyDetailModal.classList.remove("hidden");
     }
 

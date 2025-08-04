@@ -20,7 +20,9 @@
         </div>
         <div id="specificClinicalAreaContainer" class="hidden">
             <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
-            <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
+            <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+                <option value="" disabled selected>Seleziona un'area specifica (opzionale)</option>
+            </select>
         </div>
         <div>
             <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
@@ -33,7 +35,7 @@
         </div>
         <div id="treatmentLineContainer" class="hidden">
             <label for="patientTreatmentLine" class="block text-sm font-medium text-dark-gray">Linea di trattamento del paziente</label>
-            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Esempio: 2">
         </div>
 
         <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
