@@ -1,16 +1,17 @@
 {
-  "name": "trials-app",
+  "name": "clinical-trials-app",
   "version": "1.0.0",
-  "description": "Applicazione per la gestione di studi clinici",
+  "description": "An application for managing and searching clinical trials.",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.44.2",
+    "@supabase/supabase-js": "^2.43.4",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "express-ejs-layouts": "^2.5.1"
   }
 }
