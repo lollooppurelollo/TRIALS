@@ -189,12 +189,3 @@ app.post("/api/search", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server in ascolto sulla porta ${port}`);
 });
-
-// Avvia il server
-app.listen(port, () => {
-  console.log(`Server in ascolto sulla porta ${port}`);
-});
-// Avvia il server
-app.listen(port, () => {
-  console.log(`Server in ascolto sulla porta ${port}`);
-});
