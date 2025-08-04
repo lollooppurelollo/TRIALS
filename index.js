@@ -43,15 +43,62 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
+// Dati che verranno utilizzati per il rendering delle pagine EJS
+const clinicalAreas = [
+    "Mammella",
+    "Polmone",
+    "Gastro-Intestinale",
+    "Ginecologico",
+    "Prostata e Vie Urinarie",
+    "Melanoma e Cute",
+    "Testa-Collo",
+    "Fase 1",
+    "Altro",
+];
+const specificClinicalAreasMap = {
+    Mammella: ["HER2 positive", "Luminali", "TNBC"],
+    Polmone: ["NSCLC", "SCLC", "Mesotelioma"],
+    "Gastro-Intestinale": [
+        "Esofago",
+        "Stomaco",
+        "Colon",
+        "Retto",
+        "Ano",
+        "Vie biliari",
+        "Pancreas",
+        "Fegato",
+    ],
+    "Prostata e Vie Urinarie": [
+        "Prostata",
+        "Rene",
+        "Vescica",
+        "Altre vie Urinarie",
+    ],
+    Ginecologico: ["Endometrio", "Ovaio", "Cervice", "Vulva", "Altri"],
+    "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
+};
+const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+const patientTreatmentLines = ["1", "2", "3+"];
+
 // Rotte per le pagine EJS
 app.get("/patient", (req, res) => {
-    // Definizione delle aree cliniche disponibili
-    const clinicalAreas = ["Metastasi al fegato", "Tutto"];
-    res.render("patient", { page: "patient", clinicalAreas: clinicalAreas });
+    res.render("patient", {
+        page: "patient",
+        clinicalAreas: clinicalAreas,
+        specificClinicalAreasMap: specificClinicalAreasMap,
+        treatmentSettings: treatmentSettings,
+        patientTreatmentLines: patientTreatmentLines,
+    });
 });
 
 app.get("/trial", (req, res) => {
-    res.render("trial", { page: "trial" });
+    res.render("trial", {
+        page: "trial",
+        clinicalAreas: clinicalAreas,
+        specificClinicalAreasMap: specificClinicalAreasMap,
+        treatmentSettings: treatmentSettings,
+        patientTreatmentLines: patientTreatmentLines,
+    });
 });
 
 app.get("/", (req, res) => {
