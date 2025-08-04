@@ -1,60 +1,206 @@
-<main class="py-8 mb-20">
-    <h1 class="text-3xl font-bold text-center text-dark-gray mb-8">Ricerca Studi Clinici</h1>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ricerca Paziente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un grigio molto chiaro come sfondo */
+        }
+        .main-bg {
+            background-color: #f0f4f8;
+        }
+        .primary-color {
+            background-color: #B2AC88; /* Verde Salvia più caldo */
+        }
+        .secondary-color {
+            background-color: #D1C4C0; /* Morbido Rosa Polvere per un tocco elegante */
+        }
+        .text-primary {
+            color: #B2AC88;
+        }
+        .text-secondary {
+            color: #D1C4C0;
+        }
+        .text-dark {
+            color: #333333; /* Grigio molto scuro per il testo importante */
+        }
+        .hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .focus-ring-primary:focus {
+            ring: 4px;
+            ring-color: #B2AC88;
+        }
+    </style>
+</head>
+<body class="main-bg flex flex-col min-h-screen">
 
-    <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-        <form id="patientSearchForm">
-            <div class="mb-4">
-                <label for="clinicalArea" class="block text-dark-gray font-medium mb-1">Area Clinica:</label>
-                <select id="clinicalArea" name="clinical_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors">
-                    <option value="" selected disabled>Seleziona un'area</option>
-                    <% clinicalAreas.forEach(area => { %>
-                        <option value="<%= area %>"><%= area %></option>
-                    <% }); %>
-                </select>
+    <!-- Header con navigazione -->
+    <header class="primary-color shadow-lg p-4">
+        <nav class="flex justify-between items-center max-w-7xl mx-auto">
+            <h1 class="text-2xl font-bold text-white">Trial Finder</h1>
+            <div class="space-x-4">
+                <a href="/patient" class="text-white font-medium hover:underline">Paziente</a>
+                <a href="/trial" class="text-white font-medium hover:underline">Studi Clinici</a>
             </div>
-            <div id="specificAreaContainer" class="mb-4 hidden">
-                <label for="specificClinicalArea" class="block text-dark-gray font-medium mb-1">Area Clinica Specifica:</label>
-                <select id="specificClinicalArea" name="specific_area" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors"></select>
-            </div>
-            <div class="mb-4">
-                <label for="treatmentSetting" class="block text-dark-gray font-medium mb-1">Setting di Trattamento:</label>
-                <select id="treatmentSetting" name="treatment_setting" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors">
-                    <option value="" selected disabled>Seleziona un'opzione</option>
-                    <% treatmentSettings.forEach(setting => { %>
-                        <option value="<%= setting %>"><%= setting %></option>
-                    <% }); %>
-                </select>
-            </div>
-            <div id="treatmentLineContainer" class="mb-6 hidden">
-                <label for="patientTreatmentLine" class="block text-dark-gray font-medium mb-1">Linea di Trattamento:</label>
-                <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage transition-colors" min="1">
-            </div>
-            <button type="submit" class="w-full bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Cerca Studi</button>
-        </form>
-    </div>
+        </nav>
+    </header>
 
-    <h2 class="text-2xl font-bold text-center text-dark-gray mb-4">Risultati della Ricerca</h2>
-    <div id="searchResults" class="space-y-4">
-        <div class="p-6 text-center text-gray-500 bg-white rounded-xl shadow-md">Nessuna ricerca effettuata.</div>
-    </div>
-</main>
+    <main class="flex-grow flex items-center justify-center p-6">
+        <div class="bg-white rounded-3xl shadow-xl p-8 w-full max-w-2xl transform transition-all duration-300 hover-effect">
+            <h2 class="text-3xl font-bold text-dark mb-6 text-center">Criteri di Ricerca Paziente</h2>
 
-<!-- Modal per i dettagli dello studio -->
-<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
-        <div class="flex justify-between items-center mb-4">
-            <h2 id="modalTitle" class="text-2xl font-bold text-dark-gray"></h2>
-            <button class="text-gray-400 hover:text-gray-600 transition-colors" onclick="document.getElementById('studyDetailModal').classList.add('hidden')">&times;</button>
+            <form id="searchForm" class="space-y-6">
+                <!-- Sezione Area Clinica -->
+                <div>
+                    <label for="clinicalArea" class="block text-dark font-medium mb-2">Area Clinica di interesse</label>
+                    <select id="clinicalArea" name="clinical_area" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors">
+                        <option value="" selected disabled>Seleziona un'area</option>
+                        <% clinicalAreas.forEach(area => { %>
+                            <option value="<%= area %>"><%= area %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <!-- Sezione Specifica Area Clinica -->
+                <div id="specificAreaContainer" class="hidden">
+                    <label for="specificClinicalArea" class="block text-dark font-medium mb-2">Specifica Area Clinica di interesse</label>
+                    <select id="specificClinicalArea" name="specific_clinical_area" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors">
+                        <option value="" selected disabled>Seleziona un'opzione</option>
+                        <!-- Le opzioni saranno popolate dinamicamente con JavaScript -->
+                    </select>
+                </div>
+
+                <!-- Sezione Setting del Trattamento -->
+                <div>
+                    <label for="treatmentSetting" class="block text-dark font-medium mb-2">Setting del Trattamento</label>
+                    <select id="treatmentSetting" name="treatment_setting" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors">
+                        <option value="" selected disabled>Seleziona un'opzione</option>
+                        <% treatmentSettings.forEach(setting => { %>
+                            <option value="<%= setting %>"><%= setting %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <!-- Sezione Linea di Trattamento (visibile solo per Metastatico) -->
+                <div id="treatmentLineContainer" class="hidden">
+                    <label for="patientTreatmentLine" class="block text-dark font-medium mb-2">Linea di Trattamento del paziente</label>
+                    <input type="number" id="patientTreatmentLine" name="patient_treatment_line" min="1" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary transition-colors" placeholder="Inserisci la linea di trattamento">
+                </div>
+
+                <div class="flex justify-center">
+                    <button type="submit" class="secondary-color text-dark font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus-ring-primary transition-all duration-300">
+                        Cerca Studi
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sezione dei risultati di ricerca -->
+            <div id="resultsContainer" class="mt-8 border-t-2 border-gray-100 pt-6 hidden">
+                <h3 class="text-2xl font-semibold text-dark mb-4 text-center">Studi Trovati</h3>
+                <div id="searchResults" class="space-y-4">
+                    <!-- I risultati verranno inseriti qui da JavaScript -->
+                </div>
+            </div>
         </div>
-        <h3 id="modalSubtitle" class="text-lg text-gray-600 mb-4"></h3>
+    </main>
 
-        <div id="criteriaContainer" class="space-y-4 max-h-64 overflow-y-auto pr-2">
-            <!-- I criteri verranno inseriti qui dal JS -->
-        </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const clinicalAreaSelect = document.getElementById('clinicalArea');
+            const specificAreaContainer = document.getElementById('specificAreaContainer');
+            const specificClinicalAreaSelect = document.getElementById('specificClinicalArea');
+            const treatmentSettingSelect = document.getElementById('treatmentSetting');
+            const treatmentLineContainer = document.getElementById('treatmentLineContainer');
+            const searchForm = document.getElementById('searchForm');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const searchResults = document.getElementById('searchResults');
 
-        <div class="mt-6 pt-4 border-t border-gray-200">
-            <button id="checkEligibilityBtn" class="w-full bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Verifica Eleggibilità</button>
-            <div id="eligibilityResult" class="font-bold text-center mt-4 hidden"></div>
-        </div>
-    </div>
-</div>
+            const specificAreasMap = <%- JSON.stringify(specificClinicalAreasMap) %>;
+
+            // Logica per popolare dinamicamente il menu a tendina "Specifica Area Clinica"
+            clinicalAreaSelect.addEventListener('change', (e) => {
+                const selectedArea = e.target.value;
+                const specificAreas = specificAreasMap[selectedArea] || [];
+
+                specificClinicalAreaSelect.innerHTML = '<option value="" selected disabled>Seleziona un\'opzione</option>';
+
+                if (specificAreas.length > 0) {
+                    specificAreaContainer.classList.remove('hidden');
+                    specificAreas.forEach(area => {
+                        const option = document.createElement('option');
+                        option.value = area;
+                        option.textContent = area;
+                        specificClinicalAreaSelect.appendChild(option);
+                    });
+                } else {
+                    specificAreaContainer.classList.add('hidden');
+                }
+            });
+
+            // Logica per mostrare la Linea di Trattamento solo per "Metastatico"
+            treatmentSettingSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'Metastatico') {
+                    treatmentLineContainer.classList.remove('hidden');
+                } else {
+                    treatmentLineContainer.classList.add('hidden');
+                }
+            });
+
+            // Logica per la sottomissione del form di ricerca
+            searchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(searchForm);
+                const patientCriteria = Object.fromEntries(formData.entries());
+
+                // Converto la linea di trattamento in numero
+                if (patientCriteria.patient_treatment_line) {
+                    patientCriteria.patient_treatment_line = parseInt(patientCriteria.patient_treatment_line, 10);
+                }
+
+                try {
+                    const response = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(patientCriteria)
+                    });
+
+                    const data = await response.json();
+
+                    searchResults.innerHTML = '';
+                    resultsContainer.classList.remove('hidden');
+
+                    if (data.length > 0) {
+                        data.forEach(study => {
+                            const studyCard = `
+                                <div class="p-4 bg-gray-50 rounded-xl shadow-sm border border-gray-200">
+                                    <h4 class="text-xl font-semibold text-dark">${study.title}</h4>
+                                    <p class="text-gray-600 mt-1">${study.subtitle}</p>
+                                    <p class="mt-2 text-sm text-gray-500">
+                                        <strong>Area Clinica:</strong> ${study.clinical_areas.join(', ')}
+                                    </p>
+                                    ${study.treatment_setting ? `<p class="text-sm text-gray-500">
+                                        <strong>Setting:</strong> ${study.treatment_setting}
+                                    </p>` : ''}
+                                </div>
+                            `;
+                            searchResults.innerHTML += studyCard;
+                        });
+                    } else {
+                        searchResults.innerHTML = '<p class="text-center text-gray-500">Nessuno studio trovato con i criteri selezionati.</p>';
+                    }
+
+                } catch (error) {
+                    console.error('Errore durante la ricerca:', error);
+                    searchResults.innerHTML = '<p class="text-center text-red-500">Si è verificato un errore durante la ricerca.</p>';
+                }
+            });

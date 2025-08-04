@@ -6,18 +6,6 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-// Debugging: stampa le variabili d'ambiente per verificare se sono caricate
-console.log("Variabili d'ambiente caricate:");
-console.log(
-    "SUPABASE_URL:",
-    process.env.SUPABASE_URL ? "Caricata" : "Non Caricata",
-);
-console.log(
-    "SUPABASE_KEY:",
-    process.env.SUPABASE_KEY ? "Caricata" : "Non Caricata",
-);
-console.log("---");
-
 // Configurazione di Supabase
 // Per utilizzare questo codice, devi configurare le tue variabili d'ambiente SUPABASE_URL e SUPABASE_KEY
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -78,9 +66,9 @@ const specificClinicalAreasMap = {
     "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
 };
 const treatmentSettings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
-const patientTreatmentLines = ["1", "2", "3+"];
+const patientTreatmentLines = []; // Questo array non è più necessario, ma lo lascio per coerenza
 
-// Rotte per le pagine EJS
+// Rotte per il rendering delle pagine EJS
 app.get("/patient", (req, res) => {
     res.render("patient", {
         page: "patient",
@@ -97,7 +85,6 @@ app.get("/trial", (req, res) => {
         clinicalAreas: clinicalAreas,
         specificClinicalAreasMap: specificClinicalAreasMap,
         treatmentSettings: treatmentSettings,
-        patientTreatmentLines: patientTreatmentLines,
     });
 });
 
@@ -114,10 +101,13 @@ app.get("/api/studies", async (req, res) => {
             .select("*")
             .order("created_at", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error("Errore Supabase nel recupero degli studi:", error);
+            return res.status(500).json({ error: "Errore interno del server" });
+        }
         res.status(200).json(data);
     } catch (error) {
-        console.error("Errore nel recupero degli studi:", error);
+        console.error("Errore generico nel recupero degli studi:", error);
         res.status(500).json({ error: "Errore interno del server" });
     }
 });
@@ -130,10 +120,16 @@ app.post("/api/studies", async (req, res) => {
             .insert(req.body)
             .select();
 
-        if (error) throw error;
+        if (error) {
+            console.error(
+                "Errore Supabase nel salvataggio dello studio:",
+                error,
+            );
+            return res.status(500).json({ error: "Errore interno del server" });
+        }
         res.status(201).json(data[0]);
     } catch (error) {
-        console.error("Errore nel salvataggio dello studio:", error);
+        console.error("Errore generico nel salvataggio dello studio:", error);
         res.status(500).json({ error: "Errore interno del server" });
     }
 });
@@ -144,10 +140,16 @@ app.delete("/api/studies/:id", async (req, res) => {
         const { id } = req.params;
         const { error } = await supabase.from("trials").delete().eq("id", id);
 
-        if (error) throw error;
+        if (error) {
+            console.error(
+                "Errore Supabase nella rimozione dello studio:",
+                error,
+            );
+            return res.status(500).json({ error: "Errore interno del server" });
+        }
         res.status(204).send();
     } catch (error) {
-        console.error("Errore nella rimozione dello studio:", error);
+        console.error("Errore generico nella rimozione dello studio:", error);
         res.status(500).json({ error: "Errore interno del server" });
     }
 });
@@ -162,7 +164,13 @@ app.post("/api/search", async (req, res) => {
             .from("trials")
             .select("*");
 
-        if (error) throw error;
+        if (error) {
+            console.error(
+                "Errore Supabase durante la ricerca degli studi:",
+                error,
+            );
+            return res.status(500).json({ error: "Errore interno del server" });
+        }
 
         const matchingStudies = allStudies.filter((study) => {
             // Criteri di ricerca obbligatori
@@ -215,9 +223,19 @@ app.post("/api/search", async (req, res) => {
 
         res.status(200).json(matchingStudies);
     } catch (error) {
-        console.error("Errore durante la ricerca degli studi:", error);
+        console.error("Errore generico durante la ricerca degli studi:", error);
         res.status(500).json({ error: "Errore interno del server" });
     }
+});
+
+// Gestione degli errori 404 per le rotte API, in modo che restituiscano JSON
+app.use((req, res, next) => {
+    // Se la richiesta è per un endpoint API che non esiste, restituisci un errore JSON
+    if (req.path.startsWith("/api")) {
+        return res.status(404).json({ error: "Endpoint API non trovato." });
+    }
+    // Altrimenti, continua con la gestione predefinita di Express
+    next();
 });
 
 app.listen(port, () => {
