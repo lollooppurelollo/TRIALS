@@ -6,6 +6,18 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
+// Debugging: stampa le variabili d'ambiente per verificare se sono caricate
+console.log("Variabili d'ambiente caricate:");
+console.log(
+    "SUPABASE_URL:",
+    process.env.SUPABASE_URL ? "Caricata" : "Non Caricata",
+);
+console.log(
+    "SUPABASE_ANON_KEY:",
+    process.env.SUPABASE_ANON_KEY ? "Caricata" : "Non Caricata",
+);
+console.log("---");
+
 // Configurazione di Supabase
 // Per utilizzare questo codice, devi configurare le tue variabili d'ambiente SUPABASE_URL e SUPABASE_ANON_KEY
 const supabaseUrl = process.env.SUPABASE_URL;
