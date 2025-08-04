@@ -1,10 +1,10 @@
 <!-- views/patient.ejs -->
-<div class="card p-6">
-    <h1 class="text-2xl font-bold mb-4">Cerca Studi per Paziente</h1>
-    <form id="patientSearchForm" class="space-y-4">
+<div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+    <h1 class="text-2xl font-bold mb-6 text-green-800">Cerca Studi per Paziente</h1>
+    <form id="patientSearchForm" class="space-y-6">
         <div>
-            <label for="clinicalArea" class="form-label">Area Clinica di interesse</label>
-            <select id="clinicalArea" name="clinical_area" class="form-select" required>
+            <label for="clinicalArea" class="block text-gray-700 font-semibold mb-2">Area Clinica di interesse</label>
+            <select id="clinicalArea" name="clinical_area" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" required>
                 <option value="" disabled selected>Seleziona un'area...</option>
                 <% clinicalAreas.forEach(area => { %>
                     <option value="<%= area %>"><%= area %></option>
@@ -13,15 +13,15 @@
         </div>
 
         <div id="specificAreaContainer" class="hidden">
-            <label for="specificClinicalArea" class="form-label">Specifica Area Clinica di interesse (Opzionale)</label>
-            <select id="specificClinicalArea" name="specific_area" class="form-select">
+            <label for="specificClinicalArea" class="block text-gray-700 font-semibold mb-2">Specifica Area Clinica di interesse (Opzionale)</label>
+            <select id="specificClinicalArea" name="specific_area" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200">
                 <option value="" selected>Qualsiasi</option>
             </select>
         </div>
 
         <div>
-            <label for="treatmentSetting" class="form-label">Setting del Trattamento</label>
-            <select id="treatmentSetting" name="treatment_setting" class="form-select" required>
+            <label for="treatmentSetting" class="block text-gray-700 font-semibold mb-2">Setting del Trattamento</label>
+            <select id="treatmentSetting" name="treatment_setting" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" required>
                 <option value="" disabled selected>Seleziona un setting...</option>
                 <% treatmentSettings.forEach(setting => { %>
                     <option value="<%= setting %>"><%= setting %></option>
@@ -30,11 +30,11 @@
         </div>
 
         <div id="treatmentLineContainer" class="hidden">
-            <label for="patientTreatmentLine" class="form-label">Linea di trattamento del paziente</label>
-            <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="form-input" min="1" placeholder="Es. 1">
+            <label for="patientTreatmentLine" class="block text-gray-700 font-semibold mb-2">Linea di trattamento del paziente</label>
+            <input type="number" id="patientTreatmentLine" name="patient_treatment_line" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" min="1" placeholder="Es. 1">
         </div>
 
-        <button type="submit" class="btn btn-primary w-full">Cerca</button>
+        <button type="submit" class="w-full bg-green-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-800 transition-colors duration-200 shadow-md">Cerca</button>
     </form>
 </div>
 
@@ -42,26 +42,27 @@
     <!-- I risultati della ricerca verranno inseriti qui -->
 </div>
 
-<div id="studyDetailModal" class="modal hidden">
-    <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2 id="modalTitle" class="text-xl font-bold mb-2"></h2>
-        <p id="modalSubtitle" class="text-gray-600 mb-4"></p>
-        <div id="criteriaContainer"></div>
-        <button id="checkEligibilityBtn" class="btn btn-primary mt-4 w-full">Controlla eleggibilità</button>
+<!-- Modal per i dettagli dello studio -->
+<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full p-8 relative">
+        <span class="absolute top-4 right-6 text-gray-400 text-3xl font-bold cursor-pointer hover:text-gray-600" onclick="closeModal('studyDetailModal')">&times;</span>
+        <h2 id="modalTitle" class="text-2xl font-bold mb-2 text-green-800"></h2>
+        <p id="modalSubtitle" class="text-gray-600 mb-6"></p>
+        <div id="criteriaContainer" class="space-y-4"></div>
+        <button id="checkEligibilityBtn" class="mt-6 w-full bg-green-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-800 transition-colors duration-200 shadow-md">Controlla eleggibilità</button>
         <div id="eligibilityResult" class="mt-4 font-bold text-center"></div>
     </div>
 </div>
 
 <!-- Modal di conferma/allerta generico -->
-<div id="genericModal" class="modal hidden">
-    <div class="modal-content">
-        <span class="close-button" id="genericCloseBtn">&times;</span>
-        <div id="genericModalContent"></div>
-        <div class="flex justify-end gap-2 mt-4">
-            <button id="confirmBtn" class="btn btn-primary hidden">Conferma</button>
-            <button id="cancelBtn" class="btn btn-secondary hidden">Annulla</button>
-            <button id="okBtn" class="btn btn-primary hidden">OK</button>
+<div id="genericModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
+        <span class="absolute top-4 right-6 text-gray-400 text-3xl font-bold cursor-pointer hover:text-gray-600" onclick="closeModal('genericModal')">&times;</span>
+        <div id="genericModalContent" class="text-gray-800"></div>
+        <div class="flex justify-end gap-3 mt-6">
+            <button id="confirmBtn" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors duration-200 hidden">Conferma</button>
+            <button id="cancelBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors duration-200 hidden">Annulla</button>
+            <button id="okBtn" class="bg-green-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors duration-200 hidden">OK</button>
         </div>
     </div>
 </div>
