@@ -346,6 +346,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Helper per creare una card di studio
     function createStudyCardElement(study, page) {
+        console.log(
+            `[createStudyCardElement] Creazione card per lo studio: ${study.title}`,
+        );
         const card = document.createElement("div");
         card.className =
             "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
@@ -376,15 +379,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Aggiungo il listener per aprire il modale
         card.addEventListener("click", (event) => {
+            console.log(
+                `[Card Clicked] Evento di click rilevato sulla card per lo studio: ${study.title}`,
+            );
             // Evita di aprire il modale se il click è sul pulsante di rimozione
             if (page === "trial" && event.target.closest(".remove-study-btn")) {
                 console.log(
-                    `[Pagina Trial] Click sul pulsante di rimozione per lo studio: ${study.title}. L'evento della card non sarà chiamato.`,
+                    `[Pagina Trial] Click sul pulsante di rimozione. L'evento della card non sarà chiamato.`,
                 );
                 return;
             }
             console.log(
-                `Card cliccata per lo studio: ${study.title}. Apro il modale.`,
+                `Chiamata a showStudyDetails per lo studio: ${study.title}`,
             );
             showStudyDetails(study, page);
         });
@@ -525,6 +531,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mostra i dettagli di uno studio in un modale
     function showStudyDetails(study, page) {
+        console.log(
+            `[showStudyDetails] Inizio a mostrare i dettagli per lo studio: ${study.title}`,
+        );
         if (!studyDetailModal || !study) {
             console.error(
                 "Errore: Elemento modale o oggetto 'study' mancante.",
@@ -534,30 +543,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
-        eligibilityResultDiv.classList.add("hidden");
-        eligibilityResultDiv.textContent = "";
+
+        // Aggiunto controllo per evitare l'errore se l'elemento non esiste
+        if (eligibilityResultDiv) {
+            eligibilityResultDiv.classList.add("hidden");
+            eligibilityResultDiv.textContent = "";
+        }
 
         const isPatientPage = page === "patient";
-        checkEligibilityBtn.style.display = isPatientPage ? "block" : "none";
+        if (checkEligibilityBtn) {
+            checkEligibilityBtn.style.display = isPatientPage
+                ? "block"
+                : "none";
+        }
 
-        // Popola i dettagli dello studio solo sulla pagina "trials"
-        if (page === "trial") {
-            if (modalClinicalAreas)
-                modalClinicalAreas.textContent =
-                    study.clinical_areas.join(", ");
-            if (modalSpecificClinicalAreas)
-                modalSpecificClinicalAreas.textContent =
-                    study.specific_clinical_areas.join(", ");
-            if (modalTreatmentSetting)
-                modalTreatmentSetting.textContent = study.treatment_setting;
-            if (modalTreatmentLineContainer) {
-                if (study.treatment_setting === "Metastatico") {
-                    modalTreatmentLineContainer.classList.remove("hidden");
-                    if (modalTreatmentLine)
-                        modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
-                } else {
-                    modalTreatmentLineContainer.classList.add("hidden");
-                }
+        // Popola i dettagli dello studio per entrambe le pagine
+        if (modalClinicalAreas)
+            modalClinicalAreas.textContent = study.clinical_areas.join(", ");
+        if (modalSpecificClinicalAreas)
+            modalSpecificClinicalAreas.textContent =
+                study.specific_clinical_areas.join(", ");
+        if (modalTreatmentSetting)
+            modalTreatmentSetting.textContent = study.treatment_setting;
+        if (modalTreatmentLineContainer) {
+            if (study.treatment_setting === "Metastatico") {
+                modalTreatmentLineContainer.classList.remove("hidden");
+                if (modalTreatmentLine)
+                    modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
+            } else {
+                modalTreatmentLineContainer.classList.add("hidden");
             }
         }
 
@@ -565,7 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderCriteriaInModal(study, isPatientPage);
 
         // Gestione del pulsante di eleggibilità per la pagina Paziente
-        if (isPatientPage) {
+        if (isPatientPage && checkEligibilityBtn) {
             checkEligibilityBtn.onclick = () => {
                 let isEligible = true;
                 const toggles =
@@ -581,15 +595,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
-                eligibilityResultDiv.classList.remove("hidden");
-                if (isEligible) {
-                    eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio: ${study.title}`;
-                    eligibilityResultDiv.className =
-                        "font-bold text-center mt-4 text-dark-gray bg-sage p-3 rounded-lg";
-                } else {
-                    eligibilityResultDiv.textContent = `Paziente non eleggibile per lo studio: ${study.title}`;
-                    eligibilityResultDiv.className =
-                        "font-bold text-center mt-4 text-dark-gray bg-red-300 p-3 rounded-lg";
+                if (eligibilityResultDiv) {
+                    eligibilityResultDiv.classList.remove("hidden");
+                    if (isEligible) {
+                        eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio: ${study.title}`;
+                        eligibilityResultDiv.className =
+                            "font-bold text-center mt-4 text-dark-gray bg-sage p-3 rounded-lg";
+                    } else {
+                        eligibilityResultDiv.textContent = `Paziente non eleggibile per lo studio: ${study.title}`;
+                        eligibilityResultDiv.className =
+                            "font-bold text-center mt-4 text-dark-gray bg-red-300 p-3 rounded-lg";
+                    }
                 }
             };
         }
