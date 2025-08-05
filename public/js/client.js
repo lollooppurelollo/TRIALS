@@ -104,6 +104,54 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     const modalTreatmentLine = document.getElementById("modalTreatmentLine");
 
+    // ----- Selettori per il Modale Password -----
+    const passwordModal = document.createElement("div");
+    passwordModal.id = "passwordModal";
+    passwordModal.className =
+        "fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-50";
+    passwordModal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl w-80">
+            <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>
+            <input type="password" id="passwordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Password" />
+            <p id="passwordError" class="text-red-500 text-sm mt-2 hidden">Password errata.</p>
+            <div class="flex justify-end mt-4 space-x-2">
+                <button id="cancelPasswordBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">Annulla</button>
+                <button id="confirmPasswordBtn" class="bg-light-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-sage transition-colors">Conferma</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(passwordModal);
+
+    const passwordInput = document.getElementById("passwordInput");
+    const passwordError = document.getElementById("passwordError");
+    const cancelPasswordBtn = document.getElementById("cancelPasswordBtn");
+    const confirmPasswordBtn = document.getElementById("confirmPasswordBtn");
+
+    let passwordCallback = null;
+
+    // Funzione per mostrare il modale della password
+    function showPasswordModal(callback) {
+        passwordCallback = callback;
+        passwordInput.value = "";
+        passwordError.classList.add("hidden");
+        passwordModal.classList.remove("hidden");
+    }
+
+    // Listener per i bottoni del modale password
+    cancelPasswordBtn.addEventListener("click", () =>
+        passwordModal.classList.add("hidden"),
+    );
+    confirmPasswordBtn.addEventListener("click", () => {
+        if (passwordInput.value === "TRIAL") {
+            passwordModal.classList.add("hidden");
+            if (passwordCallback) {
+                passwordCallback();
+            }
+        } else {
+            passwordError.classList.remove("hidden");
+        }
+    });
+
     // Funzione per aggiornare il dropdown delle aree specifiche
     function updateSpecificAreasDropdown(
         selectedAreas,
@@ -219,13 +267,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!criteriaListDiv) return;
         const row = document.createElement("div");
         row.className = "criteria-item flex items-center space-x-2";
+
+        // Determina le classi CSS per il colore del toggle in base al tipo
+        const isExclusion = type === "exclusion";
+        const toggleClasses = `w-9 h-5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all`;
+        const toggleColorClasses = isExclusion
+            ? `bg-red-300 peer-checked:bg-red-500`
+            : `bg-green-300 peer-checked:bg-green-500`;
+
         row.innerHTML = `
             <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Descrizione del criterio" required>
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-semibold text-gray-500 w-16 text-right">Inclusione</span>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer criteria-toggle" data-preferred-type="inclusion" ${type === "exclusion" ? "checked" : ""}>
-                    <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sage"></div>
+                    <input type="checkbox" class="sr-only peer criteria-toggle" data-preferred-type="inclusion" ${isExclusion ? "checked" : ""}>
+                    <div class="${toggleClasses} ${isExclusion ? "bg-red-500" : "bg-sage"} peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage peer-checked:bg-red-500"></div>
                 </label>
                 <span class="text-xs font-semibold text-gray-500 w-16">Esclusione</span>
             </div>
@@ -233,6 +289,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 <i class="fas fa-trash-alt"></i>
             </button>
         `;
+
+        // Modificato per utilizzare le classi Tailwind corrette
+        const toggleDiv =
+            row.querySelector(".criteria-toggle").nextElementSibling;
+        if (isExclusion) {
+            toggleDiv.classList.add("bg-red-500");
+        } else {
+            toggleDiv.classList.add("bg-sage");
+        }
+
+        row.querySelector(".criteria-toggle").addEventListener(
+            "change",
+            (e) => {
+                const isChecked = e.target.checked;
+                const toggleDiv = e.target.nextElementSibling;
+                if (isChecked) {
+                    toggleDiv.classList.remove("bg-sage");
+                    toggleDiv.classList.add("bg-red-500");
+                } else {
+                    toggleDiv.classList.remove("bg-red-500");
+                    toggleDiv.classList.add("bg-sage");
+                }
+            },
+        );
+
         criteriaListDiv.appendChild(row);
         row.querySelector(".remove-criteria-btn").addEventListener(
             "click",
@@ -249,49 +330,52 @@ document.addEventListener("DOMContentLoaded", () => {
     if (studyForm) {
         studyForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const criteriaItems = document.querySelectorAll(".criteria-item");
-            const criteria = Array.from(criteriaItems).map((item) => ({
-                text: item.querySelector(".criteria-input").value,
-                type: item.querySelector(".criteria-toggle").checked
-                    ? "exclusion"
-                    : "inclusion",
-            }));
-            const selectedClinicalAreas = Array.from(
-                studyClinicalAreasSelect.selectedOptions,
-            ).map((option) => option.value);
-            const selectedSpecificClinicalAreas = Array.from(
-                studySpecificClinicalAreasSelect.selectedOptions,
-            ).map((option) => option.value);
+            showPasswordModal(async () => {
+                const criteriaItems =
+                    document.querySelectorAll(".criteria-item");
+                const criteria = Array.from(criteriaItems).map((item) => ({
+                    text: item.querySelector(".criteria-input").value,
+                    type: item.querySelector(".criteria-toggle").checked
+                        ? "exclusion"
+                        : "inclusion",
+                }));
+                const selectedClinicalAreas = Array.from(
+                    studyClinicalAreasSelect.selectedOptions,
+                ).map((option) => option.value);
+                const selectedSpecificClinicalAreas = Array.from(
+                    studySpecificClinicalAreasSelect.selectedOptions,
+                ).map((option) => option.value);
 
-            const newStudy = {
-                title: studyTitleInput.value,
-                subtitle: studySubtitleInput.value,
-                clinical_areas: selectedClinicalAreas,
-                specific_clinical_areas: selectedSpecificClinicalAreas,
-                treatment_setting: studyTreatmentSettingSelect.value,
-                min_treatment_line:
-                    studyTreatmentSettingSelect.value === "Metastatico"
-                        ? parseInt(minTreatmentLineInput.value)
-                        : null,
-                max_treatment_line:
-                    studyTreatmentSettingSelect.value === "Metastatico"
-                        ? parseInt(maxTreatmentLineInput.value)
-                        : null,
-                criteria,
-            };
+                const newStudy = {
+                    title: studyTitleInput.value,
+                    subtitle: studySubtitleInput.value,
+                    clinical_areas: selectedClinicalAreas,
+                    specific_clinical_areas: selectedSpecificClinicalAreas,
+                    treatment_setting: studyTreatmentSettingSelect.value,
+                    min_treatment_line:
+                        studyTreatmentSettingSelect.value === "Metastatico"
+                            ? parseInt(minTreatmentLineInput.value)
+                            : null,
+                    max_treatment_line:
+                        studyTreatmentSettingSelect.value === "Metastatico"
+                            ? parseInt(maxTreatmentLineInput.value)
+                            : null,
+                    criteria,
+                };
 
-            await fetch("/api/studies", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newStudy),
+                await fetch("/api/studies", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newStudy),
+                });
+
+                studyForm.reset();
+                studySpecificClinicalAreaContainer.classList.add("hidden");
+                studyTreatmentLineContainer.classList.add("hidden");
+                criteriaListDiv.innerHTML = "";
+                addCriteriaRow();
+                fetchAndRenderTrials();
             });
-
-            studyForm.reset();
-            studySpecificClinicalAreaContainer.classList.add("hidden");
-            studyTreatmentLineContainer.classList.add("hidden");
-            criteriaListDiv.innerHTML = "";
-            addCriteriaRow();
-            fetchAndRenderTrials();
         });
     }
 
@@ -401,13 +485,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (removeBtn) {
                 removeBtn.addEventListener("click", async (e) => {
                     e.stopPropagation(); // Previene che l'evento raggiunga la card
-                    console.log(
-                        `Pulsante rimozione cliccato per l'ID: ${study.id}`,
-                    );
-                    await fetch(`/api/studies/${study.id}`, {
-                        method: "DELETE",
+                    const studyId =
+                        e.target.closest(".remove-study-btn").dataset.id;
+                    showPasswordModal(async () => {
+                        console.log(
+                            `Pulsante rimozione cliccato per l'ID: ${studyId}`,
+                        );
+                        await fetch(`/api/studies/${studyId}`, {
+                            method: "DELETE",
+                        });
+                        fetchAndRenderTrials();
                     });
-                    fetchAndRenderTrials();
                 });
             }
         }
@@ -500,27 +588,78 @@ document.addEventListener("DOMContentLoaded", () => {
     // Renderizza i criteri nel modale
     function renderCriteriaInModal(study, isPatientPage) {
         criteriaContainer.innerHTML = "";
-        study.criteria.forEach((criterion, index) => {
+
+        // Ordina i criteri per inclusione ed esclusione
+        const inclusionCriteria = study.criteria.filter(
+            (c) => c.type === "inclusion",
+        );
+        const exclusionCriteria = study.criteria.filter(
+            (c) => c.type === "exclusion",
+        );
+
+        // Aggiungi un'intestazione per i criteri di inclusione se ce ne sono
+        if (inclusionCriteria.length > 0) {
+            const heading = document.createElement("h5");
+            heading.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
+            heading.textContent = "Criteri di Inclusione";
+            criteriaContainer.appendChild(heading);
+        }
+
+        // Renderizza i criteri di inclusione
+        inclusionCriteria.forEach((criterion, index) => {
             const row = document.createElement("div");
             row.className = "flex items-center justify-between p-2 rounded-lg";
-            const isPreselectedYes = criterion.type === "inclusion";
-
             let labelText;
             if (isPatientPage) {
                 labelText = `
                     <div class="flex items-center space-x-2">
                         <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}" ${isPreselectedYes ? "checked" : ""}>
-                            <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sage"></div>
+                            <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}" checked>
+                            <div class="w-9 h-5 bg-green-500 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                         </label>
                         <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
                     </div>
                 `;
             } else {
                 labelText = `
-                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${isPreselectedYes ? "bg-sage" : "bg-red-500"}">
-                        ${isPreselectedYes ? "Inclusione" : "Esclusione"}
+                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full bg-sage">
+                        Inclusione
+                    </span>
+                `;
+            }
+            row.innerHTML = `<span class="text-sm text-dark-gray">${criterion.text}</span>${labelText}`;
+            criteriaContainer.appendChild(row);
+        });
+
+        // Aggiungi un'intestazione per i criteri di esclusione se ce ne sono
+        if (exclusionCriteria.length > 0) {
+            const heading = document.createElement("h5");
+            heading.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
+            heading.textContent = "Criteri di Esclusione";
+            criteriaContainer.appendChild(heading);
+        }
+
+        // Renderizza i criteri di esclusione
+        exclusionCriteria.forEach((criterion, index) => {
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between p-2 rounded-lg";
+            let labelText;
+            if (isPatientPage) {
+                labelText = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}">
+                            <div class="w-9 h-5 bg-red-500 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                        </label>
+                        <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
+                    </div>
+                `;
+            } else {
+                labelText = `
+                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full bg-red-500">
+                        Esclusione
                     </span>
                 `;
             }
