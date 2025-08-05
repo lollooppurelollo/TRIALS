@@ -112,11 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
     passwordModal.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-xl w-80">
             <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>
-            <input type="password" id="passwordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Password" />
-            <p id="passwordError" class="text-red-500 text-sm mt-2 hidden">Password errata.</p>
+            <input type="password" id="passwordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage" placeholder="Password" />
+            <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Password errata.</p>
             <div class="flex justify-end mt-4 space-x-2">
                 <button id="cancelPasswordBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">Annulla</button>
-                <button id="confirmPasswordBtn" class="bg-light-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-sage transition-colors">Conferma</button>
+                <button id="confirmPasswordBtn" class="bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Conferma</button>
             </div>
         </div>
     `;
@@ -266,53 +266,37 @@ document.addEventListener("DOMContentLoaded", () => {
     function addCriteriaRow(text = "", type = "inclusion") {
         if (!criteriaListDiv) return;
         const row = document.createElement("div");
-        row.className = "criteria-item flex items-center space-x-2";
+        row.className =
+            "criteria-item flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4";
 
-        // Determina le classi CSS per il colore del toggle in base al tipo
         const isExclusion = type === "exclusion";
-        const toggleClasses = `w-9 h-5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all`;
-        const toggleColorClasses = isExclusion
-            ? `bg-red-300 peer-checked:bg-red-500`
-            : `bg-green-300 peer-checked:bg-green-500`;
 
         row.innerHTML = `
-            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Descrizione del criterio" required>
+            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage" placeholder="Descrizione del criterio" required>
             <div class="flex items-center space-x-2">
-                <span class="text-xs font-semibold text-gray-500 w-16 text-right">Inclusione</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer criteria-toggle" data-preferred-type="inclusion" ${isExclusion ? "checked" : ""}>
-                    <div class="${toggleClasses} ${isExclusion ? "bg-red-500" : "bg-sage"} peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage peer-checked:bg-red-500"></div>
-                </label>
-                <span class="text-xs font-semibold text-gray-500 w-16">Esclusione</span>
+                <button type="button" class="type-toggle-btn px-4 py-2 rounded-full font-semibold text-xs transition-colors whitespace-nowrap ${isExclusion ? "bg-red-400 text-white" : "bg-sage text-white"}">
+                    ${isExclusion ? "Esclusione" : "Inclusione"}
+                </button>
+                <button type="button" class="remove-criteria-btn text-red-400 hover:text-red-600 transition-colors">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
-            <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700 transition-colors">
-                <i class="fas fa-trash-alt"></i>
-            </button>
         `;
 
-        // Modificato per utilizzare le classi Tailwind corrette
-        const toggleDiv =
-            row.querySelector(".criteria-toggle").nextElementSibling;
-        if (isExclusion) {
-            toggleDiv.classList.add("bg-red-500");
-        } else {
-            toggleDiv.classList.add("bg-sage");
-        }
-
-        row.querySelector(".criteria-toggle").addEventListener(
-            "change",
-            (e) => {
-                const isChecked = e.target.checked;
-                const toggleDiv = e.target.nextElementSibling;
-                if (isChecked) {
-                    toggleDiv.classList.remove("bg-sage");
-                    toggleDiv.classList.add("bg-red-500");
-                } else {
-                    toggleDiv.classList.remove("bg-red-500");
-                    toggleDiv.classList.add("bg-sage");
-                }
-            },
-        );
+        const typeToggleButton = row.querySelector(".type-toggle-btn");
+        typeToggleButton.addEventListener("click", () => {
+            const isExclusion =
+                typeToggleButton.textContent.trim() === "Esclusione";
+            if (isExclusion) {
+                typeToggleButton.textContent = "Inclusione";
+                typeToggleButton.classList.remove("bg-red-400");
+                typeToggleButton.classList.add("bg-sage");
+            } else {
+                typeToggleButton.textContent = "Esclusione";
+                typeToggleButton.classList.remove("bg-sage");
+                typeToggleButton.classList.add("bg-red-400");
+            }
+        });
 
         criteriaListDiv.appendChild(row);
         row.querySelector(".remove-criteria-btn").addEventListener(
@@ -335,9 +319,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.querySelectorAll(".criteria-item");
                 const criteria = Array.from(criteriaItems).map((item) => ({
                     text: item.querySelector(".criteria-input").value,
-                    type: item.querySelector(".criteria-toggle").checked
-                        ? "exclusion"
-                        : "inclusion",
+                    type:
+                        item
+                            .querySelector(".type-toggle-btn")
+                            .textContent.trim() === "Esclusione"
+                            ? "exclusion"
+                            : "inclusion",
                 }));
                 const selectedClinicalAreas = Array.from(
                     studyClinicalAreasSelect.selectedOptions,
@@ -430,9 +417,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Helper per creare una card di studio
     function createStudyCardElement(study, page) {
-        console.log(
-            `[createStudyCardElement] Creazione card per lo studio: ${study.title}`,
-        );
         const card = document.createElement("div");
         card.className =
             "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
@@ -452,7 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <h4 class="font-bold text-dark-gray">${study.title}</h4>
                         <p class="text-sm text-gray-600">${study.subtitle}</p>
                     </div>
-                    <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
+                    <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors" data-id="${study.id}">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -463,19 +447,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Aggiungo il listener per aprire il modale
         card.addEventListener("click", (event) => {
-            console.log(
-                `[Card Clicked] Evento di click rilevato sulla card per lo studio: ${study.title}`,
-            );
             // Evita di aprire il modale se il click è sul pulsante di rimozione
             if (page === "trial" && event.target.closest(".remove-study-btn")) {
-                console.log(
-                    `[Pagina Trial] Click sul pulsante di rimozione. L'evento della card non sarà chiamato.`,
-                );
                 return;
             }
-            console.log(
-                `Chiamata a showStudyDetails per lo studio: ${study.title}`,
-            );
             showStudyDetails(study, page);
         });
 
@@ -488,9 +463,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     const studyId =
                         e.target.closest(".remove-study-btn").dataset.id;
                     showPasswordModal(async () => {
-                        console.log(
-                            `Pulsante rimozione cliccato per l'ID: ${studyId}`,
-                        );
                         await fetch(`/api/studies/${studyId}`, {
                             method: "DELETE",
                         });
@@ -616,7 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}" checked>
-                            <div class="w-9 h-5 bg-green-500 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            <div class="w-9 h-5 bg-sage peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                         </label>
                         <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
                     </div>
@@ -651,14 +623,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}">
-                            <div class="w-9 h-5 bg-red-500 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            <div class="w-9 h-5 bg-red-400 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                         </label>
                         <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
                     </div>
                 `;
             } else {
                 labelText = `
-                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full bg-red-500">
+                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full bg-red-400">
                         Esclusione
                     </span>
                 `;
@@ -670,13 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mostra i dettagli di uno studio in un modale
     function showStudyDetails(study, page) {
-        console.log(
-            `[showStudyDetails] Inizio a mostrare i dettagli per lo studio: ${study.title}`,
-        );
         if (!studyDetailModal || !study) {
-            console.error(
-                "Errore: Elemento modale o oggetto 'study' mancante.",
-            );
             return;
         }
 
@@ -724,7 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const toggles =
                     criteriaContainer.querySelectorAll(".criteria-toggle");
                 toggles.forEach((toggle) => {
-                    const preferredType = toggle.dataset.preferredType;
+                    const preferredType = toggle.dataset.preferred - type;
                     const isChecked = toggle.checked;
                     if (
                         (preferredType === "inclusion" && !isChecked) ||
@@ -743,7 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else {
                         eligibilityResultDiv.textContent = `Paziente non eleggibile per lo studio: ${study.title}`;
                         eligibilityResultDiv.className =
-                            "font-bold text-center mt-4 text-dark-gray bg-red-300 p-3 rounded-lg";
+                            "font-bold text-center mt-4 text-dark-gray bg-red-400 p-3 rounded-lg";
                     }
                 }
             };
@@ -752,7 +718,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // Rende il modale visibile
         studyDetailModal.classList.remove("hidden");
         studyDetailModal.style.display = "flex";
-        console.log("Modale reso visibile per lo studio:", study.title);
     }
 
     if (closeModalBtn) {
