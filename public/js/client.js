@@ -442,40 +442,44 @@ document.addEventListener("DOMContentLoaded", () => {
                         "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
                     card.dataset.studyId = study.id;
 
-                    const cardContent = document.createElement("div");
-                    cardContent.className = "flex justify-between items-center";
-                    cardContent.innerHTML = `
-                        <div>
-                            <h4 class="font-bold text-dark-gray">${study.title}</h4>
-                            <p class="text-sm text-gray-600">${study.subtitle}</p>
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-dark-gray">${study.title}</h4>
+                                <p class="text-sm text-gray-600">${study.subtitle}</p>
+                            </div>
+                            <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </div>
-                        <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
                     `;
-                    card.appendChild(cardContent);
-
-                    // Attacca il listener per mostrare il modale a ogni card, tranne se il click proviene dal pulsante di rimozione
-                    card.addEventListener("click", (e) => {
-                        // Verifica se il click non è stato originato dal pulsante di rimozione
-                        if (!e.target.closest(".remove-study-btn")) {
-                            showStudyDetails(study, "trial");
-                        }
-                    });
-
-                    // Attacca il listener al bottone di rimozione
-                    const removeBtn = card.querySelector(".remove-study-btn");
-                    if (removeBtn) {
-                        removeBtn.addEventListener("click", async (e) => {
-                            e.stopPropagation(); // Ferma la propagazione dell'evento al genitore (la card)
-                            await fetch(`/api/studies/${study.id}`, {
-                                method: "DELETE",
-                            });
-                            fetchAndRenderTrials();
-                        });
-                    }
 
                     cardsContainer.appendChild(card);
+                });
+
+                // Aggiungiamo un unico listener di click al contenitore di tutte le card
+                cardsContainer.addEventListener("click", async (e) => {
+                    // Controlla se il click è avvenuto sul pulsante di rimozione
+                    const removeBtn = e.target.closest(".remove-study-btn");
+                    if (removeBtn) {
+                        e.stopPropagation(); // Ferma la propagazione per non aprire il modale
+                        const studyId = removeBtn.dataset.id;
+                        await fetch(`/api/studies/${studyId}`, {
+                            method: "DELETE",
+                        });
+                        fetchAndRenderTrials();
+                        return; // Esci dalla funzione per non attivare il listener della card
+                    }
+
+                    // Controlla se il click è avvenuto sulla card stessa
+                    const card = e.target.closest("[data-study-id]");
+                    if (card) {
+                        const studyId = card.dataset.studyId;
+                        const study = studies.find((s) => s.id === studyId);
+                        if (study) {
+                            showStudyDetails(study, "trial");
+                        }
+                    }
                 });
 
                 settingSection.appendChild(cardsContainer);
