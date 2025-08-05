@@ -480,7 +480,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mostra i dettagli di uno studio in un modale
     function showStudyDetails(study, page) {
-        if (!study) return;
+        console.log("showStudyDetails chiamata per lo studio:", study);
+
+        if (!study) {
+            console.error("Errore: L'oggetto 'study' è mancante o nullo.");
+            return;
+        }
+
+        if (!studyDetailModal) {
+            console.error("Errore: Elemento modale non trovato.");
+            return;
+        }
 
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
@@ -578,6 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         studyDetailModal.classList.remove("hidden");
+        console.log("Modale reso visibile per lo studio:", study.title);
     }
 
     if (closeModalBtn) {
