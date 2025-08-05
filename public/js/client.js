@@ -488,9 +488,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!studyDetailModal) {
-            console.error("Errore: Elemento modale non trovato.");
+            console.error(
+                "Errore: Elemento modale non trovato. Controlla che l'ID 'studyDetailModal' sia corretto nell'HTML.",
+            );
             return;
         }
+
+        console.log("Elemento modale trovato:", studyDetailModal);
 
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
@@ -587,13 +591,18 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         }
 
+        // Rimuove la classe 'hidden' e rende il modale visibile
         studyDetailModal.classList.remove("hidden");
+        // Aggiunge un ulteriore controllo per assicurarsi che il display sia impostato su 'block'
+        studyDetailModal.style.display = "block";
+
         console.log("Modale reso visibile per lo studio:", study.title);
     }
 
     if (closeModalBtn) {
         closeModalBtn.addEventListener("click", () => {
             studyDetailModal.classList.add("hidden");
+            studyDetailModal.style.display = "none";
         });
     }
 
