@@ -441,33 +441,39 @@ document.addEventListener("DOMContentLoaded", () => {
                     card.className =
                         "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
                     card.dataset.studyId = study.id;
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h4 class="font-bold text-dark-gray">${study.title}</h4>
-                                <p class="text-sm text-gray-600">${study.subtitle}</p>
-                            </div>
-                            <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    `;
-                    // Attacca il listener per mostrare il modale a ogni card
-                    card.addEventListener("click", () =>
-                        showStudyDetails(study, "trial"),
-                    );
 
-                    // Assicurati che il bottone di rimozione non attivi il click sulla card
-                    card.querySelector(".remove-study-btn").addEventListener(
-                        "click",
-                        async (e) => {
-                            e.stopPropagation();
+                    const cardContent = document.createElement("div");
+                    cardContent.className = "flex justify-between items-center";
+                    cardContent.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-dark-gray">${study.title}</h4>
+                            <p class="text-sm text-gray-600">${study.subtitle}</p>
+                        </div>
+                        <button class="remove-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    card.appendChild(cardContent);
+
+                    // Attacca il listener per mostrare il modale a ogni card, tranne se il click proviene dal pulsante di rimozione
+                    card.addEventListener("click", (e) => {
+                        // Verifica se il click non è stato originato dal pulsante di rimozione
+                        if (!e.target.closest(".remove-study-btn")) {
+                            showStudyDetails(study, "trial");
+                        }
+                    });
+
+                    // Attacca il listener al bottone di rimozione
+                    const removeBtn = card.querySelector(".remove-study-btn");
+                    if (removeBtn) {
+                        removeBtn.addEventListener("click", async (e) => {
+                            e.stopPropagation(); // Ferma la propagazione dell'evento al genitore (la card)
                             await fetch(`/api/studies/${study.id}`, {
                                 method: "DELETE",
                             });
                             fetchAndRenderTrials();
-                        },
-                    );
+                        });
+                    }
 
                     cardsContainer.appendChild(card);
                 });
