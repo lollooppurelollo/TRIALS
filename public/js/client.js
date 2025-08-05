@@ -454,32 +454,32 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     `;
 
-                    cardsContainer.appendChild(card);
-                });
+                    // Listener per l'apertura del modale
+                    card.addEventListener("click", () => {
+                        console.log(
+                            "Card cliccata, chiamo showStudyDetails per lo studio:",
+                            study,
+                        );
+                        showStudyDetails(study, "trial");
+                    });
 
-                // Aggiungiamo un unico listener di click al contenitore di tutte le card
-                cardsContainer.addEventListener("click", async (e) => {
-                    // Controlla se il click è avvenuto sul pulsante di rimozione
-                    const removeBtn = e.target.closest(".remove-study-btn");
+                    // Listener separato per il bottone di rimozione
+                    const removeBtn = card.querySelector(".remove-study-btn");
                     if (removeBtn) {
-                        e.stopPropagation(); // Ferma la propagazione per non aprire il modale
-                        const studyId = removeBtn.dataset.id;
-                        await fetch(`/api/studies/${studyId}`, {
-                            method: "DELETE",
+                        removeBtn.addEventListener("click", async (e) => {
+                            e.stopPropagation(); // Ferma la propagazione dell'evento al genitore (la card)
+                            console.log(
+                                "Pulsante rimozione cliccato per l'ID:",
+                                study.id,
+                            );
+                            await fetch(`/api/studies/${study.id}`, {
+                                method: "DELETE",
+                            });
+                            fetchAndRenderTrials();
                         });
-                        fetchAndRenderTrials();
-                        return; // Esci dalla funzione per non attivare il listener della card
                     }
 
-                    // Controlla se il click è avvenuto sulla card stessa
-                    const card = e.target.closest("[data-study-id]");
-                    if (card) {
-                        const studyId = card.dataset.studyId;
-                        const study = studies.find((s) => s.id === studyId);
-                        if (study) {
-                            showStudyDetails(study, "trial");
-                        }
-                    }
+                    cardsContainer.appendChild(card);
                 });
 
                 settingSection.appendChild(cardsContainer);
@@ -499,12 +499,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        console.log("Elemento modale trovato:", studyDetailModal);
+
         if (!study) {
             console.error("Errore: L'oggetto 'study' è mancante o nullo.");
             return;
         }
-
-        console.log("Elemento modale trovato:", studyDetailModal);
 
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
