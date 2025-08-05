@@ -482,15 +482,15 @@ document.addEventListener("DOMContentLoaded", () => {
     function showStudyDetails(study, page) {
         console.log("showStudyDetails chiamata per lo studio:", study);
 
-        if (!study) {
-            console.error("Errore: L'oggetto 'study' è mancante o nullo.");
-            return;
-        }
-
         if (!studyDetailModal) {
             console.error(
                 "Errore: Elemento modale non trovato. Controlla che l'ID 'studyDetailModal' sia corretto nell'HTML.",
             );
+            return;
+        }
+
+        if (!study) {
+            console.error("Errore: L'oggetto 'study' è mancante o nullo.");
             return;
         }
 
@@ -542,8 +542,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sage"></div>
                         </label>
                         <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
-                    </div>
-                `;
+                            </div>
+                        `;
             } else {
                 labelText = `
                     <span class="text-xs font-semibold text-white px-2 py-1 rounded-full ${isPreselectedYes ? "bg-sage" : "bg-red-500"}">
@@ -593,15 +593,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Rimuove la classe 'hidden' e rende il modale visibile
         studyDetailModal.classList.remove("hidden");
-        // Aggiunge un ulteriore controllo per assicurarsi che il display sia impostato su 'block'
-        studyDetailModal.style.display = "block";
-
+        // Imposta esplicitamente lo stile per assicurarsi che il modale venga visualizzato
+        studyDetailModal.style.display = "flex";
         console.log("Modale reso visibile per lo studio:", study.title);
     }
 
     if (closeModalBtn) {
         closeModalBtn.addEventListener("click", () => {
             studyDetailModal.classList.add("hidden");
+            // Imposta esplicitamente lo stile per assicurarsi che il modale venga nascosto
             studyDetailModal.style.display = "none";
         });
     }
