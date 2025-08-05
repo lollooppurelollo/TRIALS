@@ -374,9 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
                  </div>
              `;
             targetDiv.appendChild(card);
-            card.addEventListener("click", () =>
-                showStudyDetails(card.dataset.studyId, studies, page),
-            );
+            card.addEventListener("click", () => showStudyDetails(study, page));
         });
     }
 
@@ -456,7 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     `;
                     // Attacca il listener per mostrare il modale a ogni card
                     card.addEventListener("click", () =>
-                        showStudyDetails(study.id, studies, "trial"),
+                        showStudyDetails(study, "trial"),
                     );
 
                     // Assicurati che il bottone di rimozione non attivi il click sulla card
@@ -481,8 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Mostra i dettagli di uno studio in un modale
-    function showStudyDetails(studyId, studies, page) {
-        const study = studies.find((s) => s.id === studyId);
+    function showStudyDetails(study, page) {
         if (!study) return;
 
         modalTitle.textContent = study.title;
