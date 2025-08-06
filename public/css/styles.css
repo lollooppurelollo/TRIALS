@@ -3,11 +3,16 @@
 /* Stili personalizzati che non sono facilmente gestibili con Tailwind */
 
 body {
-    font-family: 'Inter', sans-serif;
+font-family: 'Inter', sans-serif;
 }
 
 /* Stile per i multi-select */
 select[multiple] {
-    min-height: 120px;
+min-height: 120px;
 }
 
+/* Aggiungi questo stile per rendere il modale scrollabile */
+#studyDetailModal .relative {
+max-height: 90vh; /* Imposta un'altezza massima per il modale, puoi modificarla se necessario */
+overflow-y: auto; /* Abilita lo scroll verticale */
+}
