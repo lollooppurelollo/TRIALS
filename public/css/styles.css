@@ -80,5 +80,3 @@ select[multiple] {
 .criteria-toggle:not(:checked) + div.peer-checked\:after\:translate-x-full:after {
     transform: translateX(0);
 }
-
-
