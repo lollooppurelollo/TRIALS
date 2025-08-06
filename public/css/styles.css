@@ -13,19 +13,18 @@ select[multiple] {
 
 /* Stili per il modale dei dettagli dello studio */
 #studyDetailModal {
-    /* Assicurati che il modale copra l'intera viewport e sia un flex container */
     position: fixed;
     inset: 0;
     background-color: rgba(107, 114, 128, 0.5); /* bg-gray-600 bg-opacity-50 */
-    overflow-y: auto; /* Permetti lo scroll dell'intero modale se necessario */
     display: flex;
-    align-items: center; /* Centra verticalmente il contenuto */
-    justify-content: center; /* Centra orizzontalmente il contenuto */
-    padding: 1rem; /* Aggiungi un po' di padding per non far toccare i bordi dello schermo */
-    z-index: 50; /* Assicurati che sia sopra altri elementi */
+    align-items: center; /* Centra verticalmente */
+    justify-content: center; /* Centra orizzontalmente */
+    padding: 1rem; /* Padding per evitare che il modale tocchi i bordi dello schermo */
+    z-index: 50;
+    /* Rimuovi overflow-y: auto da qui, lo gestiremo sul contenuto interno */
 }
 
-#studyDetailModal > div { /* Seleziona il div figlio diretto del modale (il riquadro bianco) */
+#studyDetailModal > div { /* Il riquadro bianco del modale */
     background-color: white;
     padding: 1.25rem; /* p-5 */
     border-radius: 0.75rem; /* rounded-xl */
@@ -34,14 +33,8 @@ select[multiple] {
     /* Imposta la larghezza massima per schermi medi e grandi */
     max-width: 75%; /* md:w-3/4 */
 
-    /* Rendi il contenuto interno scrollabile */
-    max-height: 90vh; /* Imposta un'altezza massima per il riquadro bianco */
-    overflow-y: auto; /* Abilita lo scroll verticale se il contenuto supera la max-height */
-    -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su iOS */
-
-    /* Rimuovi la posizione relativa e il top-20 se presenti, il flexbox del genitore lo centra */
-    position: static; /* Annulla 'relative' se non necessario */
-    top: auto; /* Annulla 'top-20' */
+    /* Rimuovi position: static e top: auto, non dovrebbero essere necessari */
+    /* Rimuovi max-height e overflow-y da qui, lo applicheremo al contenitore dei criteri */
 }
 
 /* Override specifico per schermi grandi per il modale */
@@ -51,6 +44,13 @@ select[multiple] {
     }
 }
 
+/* Nuovo stile per il contenitore dei criteri all'interno del modale */
+#studyDetailModal #criteriaContainer {
+    max-height: 300px; /* Imposta un'altezza massima fissa per il contenitore dei criteri */
+    overflow-y: auto; /* Abilita lo scroll verticale solo per i criteri */
+    -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su iOS */
+    padding-right: 10px; /* Aggiungi un po' di padding per la barra di scorrimento */
+}
 
 /* Stili per i pulsanti di toggle dei criteri */
 .criteria-item .type-toggle-btn {
