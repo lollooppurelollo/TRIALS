@@ -13,28 +13,34 @@ select[multiple] {
 
 /* Stili per il modale dei dettagli dello studio */
 #studyDetailModal {
+    /* L'intero modale deve essere scrollabile */
     position: fixed;
     inset: 0;
     background-color: rgba(107, 114, 128, 0.5); /* bg-gray-600 bg-opacity-50 */
+    overflow-y: auto; /* Permetti lo scroll dell'intero modale */
     display: flex;
-    align-items: center; /* Centra verticalmente */
-    justify-content: center; /* Centra orizzontalmente */
-    padding: 1rem; /* Padding per evitare che il modale tocchi i bordi dello schermo */
-    z-index: 50;
-    /* Rimuovi overflow-y: auto da qui, lo gestiremo sul contenuto interno */
+    align-items: center; /* Centra verticalmente il contenuto */
+    justify-content: center; /* Centra orizzontalmente il contenuto */
+    padding: 1rem; /* Aggiungi un po' di padding per non far toccare i bordi dello schermo */
+    z-index: 50; /* Assicurati che sia sopra altri elementi */
 }
 
 #studyDetailModal > div { /* Il riquadro bianco del modale */
+    /* Il riquadro interno deve adattarsi al contenuto, ma non deve superare l'altezza della viewport */
+    position: relative; /* Mantieni una posizione relativa per un corretto posizionamento interno */
     background-color: white;
     padding: 1.25rem; /* p-5 */
     border-radius: 0.75rem; /* rounded-xl */
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
     width: 91.666667%; /* w-11/12 */
+
     /* Imposta la larghezza massima per schermi medi e grandi */
     max-width: 75%; /* md:w-3/4 */
 
-    /* Rimuovi position: static e top: auto, non dovrebbero essere necessari */
-    /* Rimuovi max-height e overflow-y da qui, lo applicheremo al contenitore dei criteri */
+    /* Rimuovi l'altezza massima e lo scorrimento da qui, lo gestisce il genitore */
+
+    /* Aggiungi un po' di margine verticale per distanziare il contenuto del modale dai bordi */
+    margin: 2rem auto;
 }
 
 /* Override specifico per schermi grandi per il modale */
@@ -42,14 +48,6 @@ select[multiple] {
     #studyDetailModal > div {
         max-width: 50%; /* lg:w-1/2 */
     }
-}
-
-/* Nuovo stile per il contenitore dei criteri all'interno del modale */
-#studyDetailModal #criteriaContainer {
-    max-height: 300px; /* Imposta un'altezza massima fissa per il contenitore dei criteri */
-    overflow-y: auto; /* Abilita lo scroll verticale solo per i criteri */
-    -webkit-overflow-scrolling: touch; /* Migliora lo scrolling su iOS */
-    padding-right: 10px; /* Aggiungi un po' di padding per la barra di scorrimento */
 }
 
 /* Stili per i pulsanti di toggle dei criteri */
@@ -72,3 +70,4 @@ select[multiple] {
 .criteria-toggle:not(:checked) + div.peer-checked\:after\:translate-x-full:after {
     transform: translateX(0);
 }
+
