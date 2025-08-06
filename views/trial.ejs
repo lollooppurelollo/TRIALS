@@ -106,38 +106,38 @@
 </div>
 
 <!-- Modal Dettagli Studio -->
-<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full hidden flex items-center justify-center p-4">
+<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
     <!-- Il riquadro bianco del modale ha ora un'altezza massima e diventa un contenitore flessibile -->
     <div class="relative w-11/12 md:w-3/4 lg:w-1/2 bg-white rounded-xl shadow-lg flex flex-col max-h-[90vh]">
-        <div class="mt-3 flex flex-col h-full">
+        <div class="p-6">
             <h3 class="text-lg leading-6 font-bold text-dark-gray" id="modalTitle"></h3>
             <p class="text-sm text-gray-500 mb-4" id="modalSubtitle"></p>
-            <!-- Il contenuto che deve scorrere -->
-            <div class="modal-content flex-grow overflow-y-auto">
-                <div class="px-7 py-3">
-                    <h4 class="font-bold text-dark-gray mb-2">Dettagli dello Studio</h4>
-                    <div class="space-y-2 text-sm text-dark-gray">
-                        <div><span class="font-bold">Area Clinica:</span> <span id="modalClinicalAreas"></span></div>
-                        <div><span class="font-bold">Specifica Area:</span> <span id="modalSpecificClinicalAreas"></span></div>
-                        <div><span class="font-bold">Setting:</span> <span id="modalTreatmentSetting"></span></div>
-                        <div id="modalTreatmentLineContainer" class="hidden">
-                            <span class="font-bold">Linea di Trattamento:</span> <span id="modalTreatmentLine"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4 px-7 py-3">
-                    <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
-                    <div class="flex flex-col space-y-2" id="criteriaContainer">
-                        <!-- I criteri verranno iniettati qui -->
+        </div>
+        <!-- Il contenuto che deve scorrere -->
+        <div class="modal-content flex-grow overflow-y-auto px-6">
+            <div>
+                <h4 class="font-bold text-dark-gray mb-2">Dettagli dello Studio</h4>
+                <div class="space-y-2 text-sm text-dark-gray">
+                    <div><span class="font-bold">Area Clinica:</span> <span id="modalClinicalAreas"></span></div>
+                    <div><span class="font-bold">Specifica Area:</span> <span id="modalSpecificClinicalAreas"></span></div>
+                    <div><span class="font-bold">Setting:</span> <span id="modalTreatmentSetting"></span></div>
+                    <div id="modalTreatmentLineContainer" class="hidden">
+                        <span class="font-bold">Linea di Trattamento:</span> <span id="modalTreatmentLine"></span>
                     </div>
                 </div>
             </div>
-            <!-- Il pulsante di chiusura non scorre più con il contenuto -->
-            <div class="items-center px-4 py-3">
-                <button id="closeModalBtn" class="mt-4 px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
-                    Chiudi
-                </button>
+            <div class="mt-4">
+                <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
+                <div class="flex flex-col space-y-2" id="criteriaContainer">
+                    <!-- I criteri verranno iniettati qui -->
+                </div>
             </div>
+        </div>
+        <!-- Il pulsante di chiusura non scorre più con il contenuto -->
+        <div class="p-6 border-t border-gray-200">
+            <button id="closeModalBtn" class="px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                Chiudi
+            </button>
         </div>
     </div>
 </div>
