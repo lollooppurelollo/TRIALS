@@ -37,10 +37,20 @@ select[multiple] {
     /* Imposta la larghezza massima per schermi medi e grandi */
     max-width: 75%; /* md:w-3/4 */
 
-    /* Rimuovi l'altezza massima e lo scorrimento da qui, lo gestisce il genitore */
-
     /* Aggiungi un po' di margine verticale per distanziare il contenuto del modale dai bordi */
     margin: 2rem auto;
+
+    /* Aggiunto: Limita l'altezza del modale e rendi l'interno scrollabile */
+    max-height: 90vh; /* Limita l'altezza massima del modale al 90% dell'altezza della viewport */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Aggiunto: Stile per il contenuto scrollabile del modale */
+#studyDetailModal .modal-content {
+    overflow-y: auto;
+    padding: 0 1.75rem; /* px-7 */
+    flex-grow: 1; /* Permette al contenuto di espandersi */
 }
 
 /* Override specifico per schermi grandi per il modale */
@@ -70,4 +80,5 @@ select[multiple] {
 .criteria-toggle:not(:checked) + div.peer-checked\:after\:translate-x-full:after {
     transform: translateX(0);
 }
+
 
