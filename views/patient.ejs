@@ -52,23 +52,22 @@
 </div>
 
 <!-- Modal Dettagli Studio -->
-<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white my-8">
-        <div class="mt-3 text-center flex flex-col h-full">
+<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white">
+        <div class="mt-3 text-center">
             <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>
             <p class="text-sm text-gray-500" id="modalSubtitle"></p>
-            <!-- Aggiunta altezza massima e overflow per scorrimento -->
-            <div class="mt-4 px-7 py-3 overflow-y-auto max-h-72">
+            <div class="mt-4 px-7 py-3">
                 <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
                 <div class="flex flex-col space-y-2" id="criteriaContainer">
                     <!-- I criteri verranno iniettati qui -->
                 </div>
             </div>
-            <div class="items-center px-4 py-3 flex-shrink-0">
-                <button id="checkEligibilityBtnInModal" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
+            <div class="items-center px-4 py-3">
+                <button id="checkEligibilityBtn" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
                     Controlla eleggibilità
                 </button>
-                <div id="eligibilityResultDiv" class="font-bold text-center mt-4 hidden p-3 rounded-lg"></div>
+                <div id="eligibilityResultDiv" class="font-bold text-center mt-4 hidden"></div>
                 <button id="closeModalBtn" class="mt-4 px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
                     Chiudi
                 </button>
@@ -76,233 +75,3 @@
         </div>
     </div>
 </div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Impostazioni e inizializzazione Firebase
-    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    let userId = null;
-    let isAuthReady = false;
-
-    // Elementi del DOM
-    const searchForm = document.getElementById('searchForm');
-    const trialListEl = document.getElementById('trialList');
-    const studyDetailModal = document.getElementById('studyDetailModal');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const checkEligibilityBtnInModal = document.getElementById('checkEligibilityBtnInModal');
-    const eligibilityResultDiv = document.getElementById('eligibilityResultDiv');
-    const criteriaContainer = document.getElementById('criteriaContainer');
-
-    // Variabili per i dati
-    let allStudies = [];
-    let patientCriteriaMap = new Map();
-
-    async function initFirebase() {
-        try {
-            if (initialAuthToken) {
-                await signInWithCustomToken(auth, initialAuthToken);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (error) {
-            console.error("Firebase Auth Error:", error);
-        }
-    }
-
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            userId = user.uid;
-            isAuthReady = true;
-            console.log("Utente autenticato. ID:", userId);
-            fetchPatientCriteria();
-        } else {
-            userId = null;
-            isAuthReady = true;
-            console.log("Utente non autenticato. Utilizzo ID anonimo.");
-        }
-    });
-
-    // Funzione per recuperare i criteri del paziente
-    function fetchPatientCriteria() {
-        if (!isAuthReady) return;
-
-        const criteriaCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/criteria`);
-
-        // onSnapshot aggiorna i dati in tempo reale
-        onSnapshot(criteriaCollectionRef, (querySnapshot) => {
-            patientCriteriaMap.clear();
-            querySnapshot.forEach(doc => {
-                const criteria = doc.data();
-                patientCriteriaMap.set(doc.id, criteria.text); // Usa l'ID del documento come chiave
-            });
-            console.log("Criteri paziente caricati:", patientCriteriaMap);
-        }, (error) => {
-            console.error("Errore nel recupero dei criteri del paziente:", error);
-        });
-    }
-
-    // Funzione per la ricerca degli studi
-    searchForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!isAuthReady) return;
-
-        const clinicalArea = document.getElementById('clinicalArea').value;
-        const treatmentSetting = document.getElementById('treatmentSetting').value;
-
-        trialListEl.innerHTML = '<p class="text-center text-gray-500">Ricerca in corso...</p>';
-
-        try {
-            const studiesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/studies`);
-            const studiesQuery = query(studiesCollectionRef,
-                where("clinicalArea", "==", clinicalArea),
-                where("treatmentSetting", "==", treatmentSetting)
-            );
-
-            const querySnapshot = await getDocs(studiesQuery);
-            allStudies = [];
-
-            if (querySnapshot.empty) {
-                trialListEl.innerHTML = '<p class="text-center text-gray-500">Nessuno studio compatibile trovato.</p>';
-                return;
-            }
-
-            querySnapshot.forEach(doc => {
-                const study = { id: doc.id, ...doc.data() };
-                allStudies.push(study);
-            });
-
-            renderStudies(allStudies);
-
-        } catch (error) {
-            console.error("Errore durante la ricerca degli studi:", error);
-            trialListEl.innerHTML = `<p class="text-center text-red-500">Si è verificato un errore durante la ricerca.</p>`;
-        }
-    });
-
-    // Renderizza la lista degli studi compatibili
-    function renderStudies(studies) {
-        trialListEl.innerHTML = '';
-        studies.forEach(study => {
-            const card = document.createElement('div');
-            card.className = 'bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow';
-            card.dataset.studyId = study.id;
-            card.innerHTML = `
-                <h3 class="text-lg font-bold text-dark-sage">${study.title}</h3>
-                <p class="text-sm text-gray-600">${study.subtitle}</p>
-            `;
-            card.addEventListener('click', () => openStudyDetailModal(study.id));
-            trialListEl.appendChild(card);
-        });
-    }
-
-    // Apre il modal con i dettagli dello studio
-    function openStudyDetailModal(studyId) {
-        const study = allStudies.find(s => s.id === studyId);
-        if (!study) return;
-
-        document.getElementById('modalTitle').textContent = study.title;
-        document.getElementById('modalSubtitle').textContent = study.subtitle;
-        criteriaContainer.innerHTML = '';
-        eligibilityResultDiv.textContent = '';
-        eligibilityResultDiv.classList.add('hidden');
-
-        // Renderizza i criteri nel modale con gli switch
-        const allCriteriaForModal = new Map();
-        (study.inclusionCriteria || []).forEach(c => allCriteriaForModal.set(c, 'inclusion'));
-        (study.exclusionCriteria || []).forEach(c => allCriteriaForModal.set(c, 'exclusion'));
-
-        const inclusionTitle = document.createElement('h4');
-        inclusionTitle.className = 'font-bold text-dark-gray mb-2';
-        inclusionTitle.textContent = 'Criteri di Inclusione';
-        criteriaContainer.appendChild(inclusionTitle);
-
-        (study.inclusionCriteria || []).forEach(criteriaText => {
-            const criteriaDiv = document.createElement('div');
-            criteriaDiv.className = 'flex items-center justify-between p-3 bg-gray-100 rounded-lg shadow-sm';
-            criteriaDiv.innerHTML = `
-                <span class="font-medium text-dark-gray">${criteriaText}</span>
-                <label class="inline-flex relative items-center cursor-pointer">
-                    <input type="checkbox" data-criteria-type="inclusion" data-criteria-name="${criteriaText}" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sage"></div>
-                </label>
-            `;
-            criteriaContainer.appendChild(criteriaDiv);
-        });
-
-        const exclusionTitle = document.createElement('h4');
-        exclusionTitle.className = 'font-bold text-dark-gray mt-4 mb-2';
-        exclusionTitle.textContent = 'Criteri di Esclusione';
-        criteriaContainer.appendChild(exclusionTitle);
-
-        (study.exclusionCriteria || []).forEach(criteriaText => {
-            const criteriaDiv = document.createElement('div');
-            criteriaDiv.className = 'flex items-center justify-between p-3 bg-gray-100 rounded-lg shadow-sm';
-            criteriaDiv.innerHTML = `
-                <span class="font-medium text-dark-gray">${criteriaText}</span>
-                <label class="inline-flex relative items-center cursor-pointer">
-                    <input type="checkbox" data-criteria-type="exclusion" data-criteria-name="${criteriaText}" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-light-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sage"></div>
-                </label>
-            `;
-            criteriaContainer.appendChild(criteriaDiv);
-        });
-
-        checkEligibilityBtnInModal.dataset.studyId = studyId;
-        studyDetailModal.classList.remove('hidden');
-    }
-
-    closeModalBtn.addEventListener('click', () => {
-        studyDetailModal.classList.add('hidden');
-    });
-
-    // Logica di eleggibilità nel modal
-    checkEligibilityBtnInModal.addEventListener('click', () => {
-        const studyId = checkEligibilityBtnInModal.dataset.studyId;
-        const study = allStudies.find(s => s.id === studyId);
-        if (!study) {
-            eligibilityResultDiv.textContent = 'Errore: studio non trovato.';
-            eligibilityResultDiv.className = 'font-bold text-center mt-4 p-3 rounded-lg bg-red-200 text-red-800';
-            eligibilityResultDiv.classList.remove('hidden');
-            return;
-        }
-
-        let isEligible = true;
-
-        // Verifica criteri di inclusione
-        (study.inclusionCriteria || []).forEach(criteriaText => {
-            const criteriaInput = criteriaContainer.querySelector(`input[data-criteria-name="${criteriaText}"]`);
-            if (!criteriaInput || !criteriaInput.checked) {
-                isEligible = false;
-            }
-        });
-
-        // Verifica criteri di esclusione
-        (study.exclusionCriteria || []).forEach(criteriaText => {
-            const criteriaInput = criteriaContainer.querySelector(`input[data-criteria-name="${criteriaText}"]`);
-            if (criteriaInput && criteriaInput.checked) {
-                isEligible = false;
-            }
-        });
-
-        if (isEligible) {
-            eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio: ${study.title}`;
-            eligibilityResultDiv.className = 'font-bold text-center mt-4 p-3 rounded-lg bg-sage text-white';
-        } else {
-            eligibilityResultDiv.textContent = `Paziente NON eleggibile per lo studio: ${study.title}`;
-            eligibilityResultDiv.className = 'font-bold text-center mt-4 p-3 rounded-lg bg-light-red text-dark-red';
-        }
-
-        eligibilityResultDiv.classList.remove('hidden');
-    });
-
-    initFirebase();
-</script>
