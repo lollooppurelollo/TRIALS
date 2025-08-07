@@ -1,703 +1,735 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Definizione delle aree cliniche per la logica di dipendenza
-    const clinicalAreaMappings = {
-        Mammella: ["ER+", "HER2+", "Triplo Negativo"],
-        Polmone: ["SCLC", "NSCLC"],
+    // Mappa delle aree cliniche specifiche
+    const specificClinicalAreasMap = {
+        Mammella: ["HER2 positive", "Luminali", "TNBC"],
+        Polmone: ["NSCLC", "SCLC", "Mesotelioma"],
         "Gastro-Intestinale": [
-            "Colon-Retto",
-            "Esofago-Stomaco",
+            "Esofago",
+            "Stomaco",
+            "Colon",
+            "Retto",
+            "Ano",
+            "Vie biliari",
             "Pancreas",
             "Fegato",
         ],
-        Ginecologico: ["Ovaio", "Endometrio", "Cervice"],
-        "Prostata e Vie Urinarie": ["Prostata", "Vescica", "Rene"],
-        "Melanoma e Cute": ["Melanoma"],
-        "Testa-Collo": ["Testa-Collo"],
-        "Fase 1": ["Generico"],
-        Altro: ["Generico"],
+        Ginecologico: ["Endometrio", "Ovaio", "Cervice", "Vulva", "Altri"],
+        "Prostata e Vie Urinarie": [
+            "Prostata",
+            "Rene",
+            "Vescica",
+            "Altre vie Urinarie",
+        ],
+        "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
     };
 
-    // Funzioni helper
-    const showElement = (element) => element.classList.remove("hidden");
-    const hideElement = (element) => element.classList.add("hidden");
-    const getSelectedOptions = (selectElement) =>
-        Array.from(selectElement.selectedOptions).map((option) => option.value);
+    // ----- Selettori per la Pagina Paziente -----
+    const searchForm = document.getElementById("searchForm");
+    const clinicalAreaSelect = document.getElementById("clinicalArea");
+    const specificClinicalAreasSelect = document.getElementById(
+        "specificClinicalAreas",
+    );
+    const specificClinicalAreaContainer = document.getElementById(
+        "specificClinicalAreaContainer",
+    );
+    const treatmentSettingSelect = document.getElementById("treatmentSetting");
+    const treatmentLineContainer = document.getElementById(
+        "treatmentLineContainer",
+    );
+    const patientTreatmentLineInput = document.getElementById(
+        "patientTreatmentLine",
+    );
+    const patientTrialListDiv = document.querySelector(
+        "#searchResults #trialList",
+    );
 
-    // Gestione degli studi (per la pagina del medico)
-    const setupStudyForm = () => {
-        const studyForm = document.getElementById("studyForm");
-        const studyClinicalAreasSelect =
-            document.getElementById("studyClinicalAreas");
-        const studySpecificAreaContainer = document.getElementById(
-            "studySpecificClinicalAreaContainer",
-        );
-        const studySpecificAreaSelect = document.getElementById(
-            "studySpecificClinicalAreas",
-        );
-        const studyTreatmentSettingSelect = document.getElementById(
-            "studyTreatmentSetting",
-        );
-        const studyTreatmentLineContainer = document.getElementById(
-            "studyTreatmentLineContainer",
-        );
-        const addCriteriaBtn = document.getElementById("addCriteriaBtn");
-        const criteriaList = document.getElementById("criteriaList");
+    // ----- Selettori per la Pagina Trial -----
+    const studyForm = document.getElementById("studyForm");
+    const criteriaListDiv = document.getElementById("criteriaList");
+    const addCriteriaBtn = document.getElementById("addCriteriaBtn");
+    const studyTitleInput = document.getElementById("studyTitle");
+    const studySubtitleInput = document.getElementById("studySubtitle");
+    const studyTreatmentSettingSelect = document.getElementById(
+        "studyTreatmentSetting",
+    );
+    const studyTreatmentLineContainer = document.getElementById(
+        "studyTreatmentLineContainer",
+    );
+    const minTreatmentLineInput = document.getElementById("minTreatmentLine");
+    const maxTreatmentLineInput = document.getElementById("maxTreatmentLine");
+    const studyClinicalAreasSelect =
+        document.getElementById("studyClinicalAreas");
+    const studySpecificClinicalAreasSelect = document.getElementById(
+        "studySpecificClinicalAreas",
+    );
+    const studySpecificClinicalAreaContainer = document.getElementById(
+        "studySpecificClinicalAreaContainer",
+    );
+    const doctorTrialListDiv = document.querySelector(
+        "#trialListSection #trialList",
+    );
 
-        let criteriaCounter = 0;
+    // Filtri per la pagina Trial
+    const filterClinicalAreaSelect =
+        document.getElementById("filterClinicalArea");
+    const filterSpecificClinicalAreasSelect = document.getElementById(
+        "filterSpecificClinicalAreas",
+    );
+    const filterSpecificClinicalAreaContainer = document.getElementById(
+        "filterSpecificClinicalAreaContainer",
+    );
+    const filterTreatmentSettingSelect = document.getElementById(
+        "filterTreatmentSetting",
+    );
 
-        const populateSpecificAreas = (selectedAreas) => {
-            studySpecificAreaSelect.innerHTML = "";
-            let hasSpecificAreas = false;
-            selectedAreas.forEach((area) => {
-                if (
-                    clinicalAreaMappings[area] &&
-                    clinicalAreaMappings[area].length > 0
-                ) {
-                    hasSpecificAreas = true;
-                    clinicalAreaMappings[area].forEach((specificArea) => {
-                        const option = document.createElement("option");
-                        option.value = specificArea;
-                        option.textContent = specificArea;
-                        studySpecificAreaSelect.appendChild(option);
-                    });
-                }
-            });
-
-            if (hasSpecificAreas) {
-                showElement(studySpecificAreaContainer);
-            } else {
-                hideElement(studySpecificAreaContainer);
-            }
-        };
-
-        const toggleTreatmentLine = (setting) => {
-            if (setting === "Metastatico") {
-                showElement(studyTreatmentLineContainer);
-            } else {
-                hideElement(studyTreatmentLineContainer);
-            }
-        };
-
-        const addCriteriaItem = () => {
-            criteriaCounter++;
-            const newCriteria = document.createElement("div");
-            newCriteria.classList.add(
-                "criteria-item",
-                "flex",
-                "items-center",
-                "space-x-2",
-            );
-            newCriteria.innerHTML = `
-                <input type="text" name="criteriaText-${criteriaCounter}" placeholder="Descrizione del criterio" class="flex-grow p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                <div class="relative inline-block w-16 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="criteriaType-${criteriaCounter}" id="criteriaType-${criteriaCounter}" class="criteria-type-toggle criteria-toggle absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer peer transition-transform duration-200 ease-in-out">
-                    <label for="criteriaType-${criteriaCounter}" class="block overflow-hidden h-8 rounded-full bg-red-500 peer-checked:bg-sage cursor-pointer"></label>
-                </div>
-                <div class="text-xs font-bold text-gray-500">
-                    <span class="type-text-label type-label-red">Esclusione</span>
-                    <span class="type-text-label type-label-green hidden">Inclusione</span>
-                </div>
-                <button type="button" class="remove-criteria-btn text-red-500 hover:text-red-700">
-                    <i class="fas fa-trash"></i>
-                </button>
-            `;
-            criteriaList.appendChild(newCriteria);
-
-            // Aggiungi un event listener per il toggle
-            const toggle = newCriteria.querySelector(
-                `#criteriaType-${criteriaCounter}`,
-            );
-            toggle.addEventListener("change", (e) => {
-                const labelRed = newCriteria.querySelector(".type-label-red");
-                const labelGreen =
-                    newCriteria.querySelector(".type-label-green");
-                if (e.target.checked) {
-                    showElement(labelGreen);
-                    hideElement(labelRed);
-                } else {
-                    showElement(labelRed);
-                    hideElement(labelGreen);
-                }
-            });
-
-            // Aggiungi un event listener per la rimozione
-            newCriteria
-                .querySelector(".remove-criteria-btn")
-                .addEventListener("click", () => {
-                    newCriteria.remove();
-                });
-        };
-
-        if (studyForm) {
-            studyClinicalAreasSelect.addEventListener("change", () => {
-                const selected = getSelectedOptions(studyClinicalAreasSelect);
-                populateSpecificAreas(selected);
-            });
-
-            studyTreatmentSettingSelect.addEventListener("change", (e) => {
-                toggleTreatmentLine(e.target.value);
-            });
-
-            addCriteriaBtn.addEventListener("click", addCriteriaItem);
-
-            studyForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const title = document.getElementById("studyTitle").value;
-                const subtitle = document.getElementById("studySubtitle").value;
-                const clinical_areas = getSelectedOptions(
-                    studyClinicalAreasSelect,
-                );
-                const specific_clinical_areas = getSelectedOptions(
-                    studySpecificAreaSelect,
-                );
-                const treatment_setting = studyTreatmentSettingSelect.value;
-                const min_treatment_line =
-                    document.getElementById("minTreatmentLine").value || null;
-                const max_treatment_line =
-                    document.getElementById("maxTreatmentLine").value || null;
-                const criteria = [];
-                document.querySelectorAll(".criteria-item").forEach((item) => {
-                    const text = item.querySelector('input[type="text"]').value;
-                    const type = item.querySelector('input[type="checkbox"]')
-                        .checked
-                        ? "inclusion"
-                        : "exclusion";
-                    if (text) {
-                        criteria.push({ text, type });
-                    }
-                });
-
-                try {
-                    const response = await fetch("/api/studies", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            title,
-                            subtitle,
-                            clinical_areas,
-                            specific_clinical_areas,
-                            treatment_setting,
-                            min_treatment_line,
-                            max_treatment_line,
-                            criteria,
-                        }),
-                    });
-                    if (response.ok) {
-                        alert("Studio salvato con successo!");
-                        studyForm.reset();
-                        populateSpecificAreas([]); // Resetta l'area specifica
-                        hideElement(studySpecificAreaContainer);
-                        hideElement(studyTreatmentLineContainer);
-                        criteriaList.innerHTML = "";
-                        loadStudies(); // Ricarica la lista degli studi
-                    } else {
-                        const errorData = await response.json();
-                        console.error(
-                            "Errore durante il salvataggio:",
-                            errorData,
-                        );
-                        alert("Errore durante il salvataggio dello studio.");
-                    }
-                } catch (error) {
-                    console.error("Errore di rete:", error);
-                    alert(
-                        "Errore di rete durante il salvataggio dello studio.",
-                    );
-                }
-            });
-
-            // Logica di caricamento e visualizzazione
-            const trialListSection =
-                document.getElementById("trialListSection");
-            const trialFilterForm = document.getElementById("trialFilterForm");
-            const filterClinicalArea =
-                document.getElementById("filterClinicalArea");
-            const filterSpecificClinicalAreaContainer = document.getElementById(
-                "filterSpecificClinicalAreaContainer",
-            );
-            const filterSpecificClinicalAreas = document.getElementById(
-                "filterSpecificClinicalAreas",
-            );
-            const filterTreatmentSetting = document.getElementById(
-                "filterTreatmentSetting",
-            );
-            const trialListDiv = trialListSection
-                ? trialListSection.querySelector("#trialList")
-                : null;
-            let allStudies = [];
-
-            const renderStudies = (studies) => {
-                if (!trialListDiv) return;
-                trialListDiv.innerHTML = "";
-                if (studies.length === 0) {
-                    trialListDiv.innerHTML =
-                        '<p class="text-gray-500">Nessuno studio trovato.</p>';
-                    return;
-                }
-                studies.forEach((study) => {
-                    const studyCard = document.createElement("div");
-                    studyCard.classList.add(
-                        "bg-white",
-                        "p-6",
-                        "rounded-xl",
-                        "shadow-md",
-                        "border",
-                        "border-gray-200",
-                    );
-                    studyCard.innerHTML = `
-                        <h3 class="text-lg font-bold text-dark-sage">${study.title}</h3>
-                        <p class="text-sm text-gray-500">${study.subtitle}</p>
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            ${study.clinical_areas.map((area) => `<span class="bg-light-sage text-dark-sage text-xs font-medium px-2.5 py-0.5 rounded-full">${area}</span>`).join("")}
-                        </div>
-                        <div class="mt-4 flex justify-between items-center">
-                            <button class="view-details-btn bg-gray-200 text-dark-gray text-sm px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors" data-id="${study.id}">
-                                Dettagli
-                            </button>
-                            <button class="delete-study-btn text-red-500 hover:text-red-700 transition-colors" data-id="${study.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                    trialListDiv.appendChild(studyCard);
-                });
-            };
-
-            const loadStudies = async () => {
-                try {
-                    const response = await fetch("/api/studies");
-                    if (response.ok) {
-                        allStudies = await response.json();
-                        renderStudies(allStudies);
-                    } else {
-                        throw new Error("Errore nel caricamento degli studi");
-                    }
-                } catch (error) {
-                    console.error(error);
-                    if (trialListDiv) {
-                        trialListDiv.innerHTML = `<p class="text-red-500">Errore: ${error.message}</p>`;
-                    }
-                }
-            };
-
-            const filterAndRenderStudies = () => {
-                const selectedClinicalArea = filterClinicalArea.value;
-                const selectedSpecificArea = filterSpecificClinicalAreas.value;
-                const selectedTreatmentSetting = filterTreatmentSetting.value;
-
-                const filteredStudies = allStudies.filter((study) => {
-                    const clinicalAreaMatch =
-                        !selectedClinicalArea ||
-                        study.clinical_areas.includes(selectedClinicalArea);
-                    const specificAreaMatch =
-                        !selectedSpecificArea ||
-                        (study.specific_clinical_areas &&
-                            study.specific_clinical_areas.includes(
-                                selectedSpecificArea,
-                            ));
-                    const treatmentSettingMatch =
-                        !selectedTreatmentSetting ||
-                        study.treatment_setting === selectedTreatmentSetting;
-                    return (
-                        clinicalAreaMatch &&
-                        specificAreaMatch &&
-                        treatmentSettingMatch
-                    );
-                });
-                renderStudies(filteredStudies);
-            };
-
-            if (trialFilterForm) {
-                filterClinicalArea.addEventListener("change", (e) => {
-                    const selectedArea = e.target.value;
-                    const specificAreas = clinicalAreaMappings[selectedArea];
-                    filterSpecificClinicalAreas.innerHTML =
-                        '<option value="">Tutte le Specifiche</option>';
-                    if (specificAreas && specificAreas.length > 0) {
-                        showElement(filterSpecificClinicalAreaContainer);
-                        specificAreas.forEach((area) => {
-                            const option = document.createElement("option");
-                            option.value = area;
-                            option.textContent = area;
-                            filterSpecificClinicalAreas.appendChild(option);
-                        });
-                    } else {
-                        hideElement(filterSpecificClinicalAreaContainer);
-                    }
-                    filterAndRenderStudies();
-                });
-
-                filterSpecificClinicalAreas.addEventListener(
-                    "change",
-                    filterAndRenderStudies,
-                );
-                filterTreatmentSetting.addEventListener(
-                    "change",
-                    filterAndRenderStudies,
-                );
-            }
-
-            if (trialListDiv) {
-                trialListDiv.addEventListener("click", async (e) => {
-                    if (e.target.closest(".delete-study-btn")) {
-                        const btn = e.target.closest(".delete-study-btn");
-                        const id = btn.dataset.id;
-                        if (
-                            confirm(
-                                "Sei sicuro di voler eliminare questo studio?",
-                            )
-                        ) {
-                            try {
-                                const response = await fetch(
-                                    `/api/studies/${id}`,
-                                    { method: "DELETE" },
-                                );
-                                if (response.ok) {
-                                    alert("Studio eliminato con successo!");
-                                    loadStudies();
-                                } else {
-                                    throw new Error(
-                                        "Errore durante l'eliminazione",
-                                    );
-                                }
-                            } catch (error) {
-                                console.error(error);
-                                alert(
-                                    "Errore durante l'eliminazione dello studio.",
-                                );
-                            }
-                        }
-                    } else if (e.target.closest(".view-details-btn")) {
-                        const btn = e.target.closest(".view-details-btn");
-                        const id = btn.dataset.id;
-                        const study = allStudies.find((s) => s.id == id);
-                        if (study) {
-                            showStudyDetails(study, false); // Passa false per non mostrare il check eleggibilità
-                        }
-                    }
-                });
-            }
-
-            if (trialListDiv) {
-                loadStudies();
-            }
-        }
-    };
-
-    // Logica per la pagina del paziente
-    const setupPatientForm = () => {
-        const searchForm = document.getElementById("searchForm");
-        const clinicalAreaSelect = document.getElementById("clinicalArea");
-        const specificClinicalAreaContainer = document.getElementById(
-            "specificClinicalAreaContainer",
-        );
-        const specificClinicalAreasSelect = document.getElementById(
-            "specificClinicalAreas",
-        );
-        const treatmentSettingSelect =
-            document.getElementById("treatmentSetting");
-        const treatmentLineContainer = document.getElementById(
-            "treatmentLineContainer",
-        );
-        const patientTreatmentLineInput = document.getElementById(
-            "patientTreatmentLine",
-        );
-        const trialListDiv = document.getElementById("trialList");
-        let allStudies = [];
-
-        const populateSpecificAreas = (selectedArea) => {
-            specificClinicalAreasSelect.innerHTML =
-                '<option value="" disabled selected>Seleziona un\'area specifica (opzionale)</option>';
-            const specificAreas = clinicalAreaMappings[selectedArea];
-            if (specificAreas && specificAreas.length > 0) {
-                showElement(specificClinicalAreaContainer);
-                specificAreas.forEach((area) => {
-                    const option = document.createElement("option");
-                    option.value = area;
-                    option.textContent = area;
-                    specificClinicalAreasSelect.appendChild(option);
-                });
-            } else {
-                hideElement(specificClinicalAreaContainer);
-            }
-        };
-
-        const toggleTreatmentLine = (setting) => {
-            if (setting === "Metastatico") {
-                showElement(treatmentLineContainer);
-            } else {
-                hideElement(treatmentLineContainer);
-            }
-        };
-
-        const renderStudies = (studies) => {
-            if (!trialListDiv) return;
-            trialListDiv.innerHTML = "";
-            if (studies.length === 0) {
-                trialListDiv.innerHTML =
-                    '<p class="text-gray-500">Nessuno studio compatibile trovato.</p>';
-                return;
-            }
-            studies.forEach((study) => {
-                const studyCard = document.createElement("div");
-                studyCard.classList.add(
-                    "bg-white",
-                    "p-6",
-                    "rounded-xl",
-                    "shadow-md",
-                    "border",
-                    "border-gray-200",
-                );
-                studyCard.innerHTML = `
-                    <h3 class="text-lg font-bold text-dark-sage">${study.title}</h3>
-                    <p class="text-sm text-gray-500">${study.subtitle}</p>
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        ${study.clinical_areas.map((area) => `<span class="bg-light-sage text-dark-sage text-xs font-medium px-2.5 py-0.5 rounded-full">${area}</span>`).join("")}
-                    </div>
-                    <div class="mt-4">
-                        <button class="view-details-btn bg-sage text-white text-sm px-3 py-1 rounded-lg hover:bg-dark-sage transition-colors" data-id="${study.id}">
-                            Controlla eleggibilità
-                        </button>
-                    </div>
-                `;
-                trialListDiv.appendChild(studyCard);
-            });
-        };
-
-        const loadStudies = async () => {
-            try {
-                const response = await fetch("/api/studies");
-                if (response.ok) {
-                    allStudies = await response.json();
-                } else {
-                    throw new Error("Errore nel caricamento degli studi");
-                }
-            } catch (error) {
-                console.error(error);
-                if (trialListDiv) {
-                    trialListDiv.innerHTML = `<p class="text-red-500">Errore: ${error.message}</p>`;
-                }
-            }
-        };
-
-        if (searchForm) {
-            clinicalAreaSelect.addEventListener("change", (e) =>
-                populateSpecificAreas(e.target.value),
-            );
-            treatmentSettingSelect.addEventListener("change", (e) =>
-                toggleTreatmentLine(e.target.value),
-            );
-
-            searchForm.addEventListener("submit", (e) => {
-                e.preventDefault();
-                const selectedClinicalArea = clinicalAreaSelect.value;
-                const selectedSpecificArea = specificClinicalAreasSelect.value;
-                const selectedTreatmentSetting = treatmentSettingSelect.value;
-                const patientTreatmentLine = parseInt(
-                    patientTreatmentLineInput.value,
-                    10,
-                );
-
-                const filteredStudies = allStudies.filter((study) => {
-                    const clinicalAreaMatch =
-                        study.clinical_areas.includes(selectedClinicalArea);
-                    const specificAreaMatch =
-                        !selectedSpecificArea ||
-                        (study.specific_clinical_areas &&
-                            study.specific_clinical_areas.includes(
-                                selectedSpecificArea,
-                            ));
-                    const treatmentSettingMatch =
-                        study.treatment_setting === selectedTreatmentSetting;
-                    const treatmentLineMatch =
-                        !study.min_treatment_line ||
-                        (patientTreatmentLine >= study.min_treatment_line &&
-                            patientTreatmentLine <= study.max_treatment_line);
-
-                    return (
-                        clinicalAreaMatch &&
-                        specificAreaMatch &&
-                        treatmentSettingMatch &&
-                        treatmentLineMatch
-                    );
-                });
-                renderStudies(filteredStudies);
-            });
-
-            trialListDiv.addEventListener("click", (e) => {
-                if (e.target.closest(".view-details-btn")) {
-                    const btn = e.target.closest(".view-details-btn");
-                    const id = btn.dataset.id;
-                    const study = allStudies.find((s) => s.id == id);
-                    if (study) {
-                        showStudyDetails(study, true); // Passa true per mostrare il check eleggibilità
-                    }
-                }
-            });
-            loadStudies();
-        }
-    };
-
-    // Gestione del modale condiviso
+    // ----- Selettori per il Modale -----
     const studyDetailModal = document.getElementById("studyDetailModal");
     const modalTitle = document.getElementById("modalTitle");
     const modalSubtitle = document.getElementById("modalSubtitle");
     const criteriaContainer = document.getElementById("criteriaContainer");
-    const closeModalBtn = document.getElementById("closeModalBtn");
+    const checkEligibilityBtn = document.getElementById("checkEligibilityBtn");
     const eligibilityResultDiv = document.getElementById(
         "eligibilityResultDiv",
     );
-    const patientEligibilityCheckContainer = document.getElementById(
-        "patientEligibilityCheckContainer",
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const modalClinicalAreas = document.getElementById("modalClinicalAreas");
+    const modalSpecificClinicalAreas = document.getElementById(
+        "modalSpecificClinicalAreas",
     );
-    const patientEligibilityToggles = document.getElementById(
-        "patientEligibilityToggles",
+    const modalTreatmentSetting = document.getElementById(
+        "modalTreatmentSetting",
     );
-    const checkEligibilityBtn = document.getElementById("checkEligibilityBtn");
+    const modalTreatmentLineContainer = document.getElementById(
+        "modalTreatmentLineContainer",
+    );
+    const modalTreatmentLine = document.getElementById("modalTreatmentLine");
 
-    const showStudyDetails = (study, isPatientView) => {
-        if (!studyDetailModal) return;
-        modalTitle.textContent = study.title;
-        modalSubtitle.textContent = study.subtitle;
-        criteriaContainer.innerHTML = "";
-        eligibilityResultDiv.innerHTML = "";
-        hideElement(eligibilityResultDiv);
+    // ----- Selettori per il Modale Password -----
+    const passwordModal = document.createElement("div");
+    passwordModal.id = "passwordModal";
+    passwordModal.className =
+        "fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-50";
+    passwordModal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl w-80">
+            <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>
+            <input type="password" id="passwordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage" placeholder="Password" />
+            <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Password errata.</p>
+            <div class="flex justify-end mt-4 space-x-2">
+                <button id="cancelPasswordBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">Annulla</button>
+                <button id="confirmPasswordBtn" class="bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Conferma</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(passwordModal);
 
-        if (isPatientView) {
-            showElement(patientEligibilityCheckContainer);
-            showElement(checkEligibilityBtn);
-            patientEligibilityToggles.innerHTML = "";
-            study.criteria.forEach((criteriaItem, index) => {
-                const criteriaDiv = document.createElement("div");
-                criteriaDiv.classList.add(
-                    "flex",
-                    "items-center",
-                    "space-x-4",
-                    "p-2",
-                    "bg-gray-100",
-                    "rounded-lg",
-                    "text-sm",
-                );
-                criteriaDiv.innerHTML = `
-                    <span class="flex-grow">${criteriaItem.text}</span>
-                    <div class="flex items-center space-x-2">
-                        <label for="patient-criteria-toggle-${index}" class="text-xs font-bold text-gray-500">NO</label>
-                        <input type="checkbox" id="patient-criteria-toggle-${index}" data-type="${criteriaItem.type}" class="criteria-toggle relative block w-10 h-6 rounded-full bg-red-500 peer appearance-none cursor-pointer">
-                        <label for="patient-criteria-toggle-${index}" class="text-xs font-bold text-gray-500">SÌ</label>
-                    </div>
-                `;
-                patientEligibilityToggles.appendChild(criteriaDiv);
-                // Aggiungi listener per il cambio di colore
-                const toggle = criteriaDiv.querySelector(
-                    `#patient-criteria-toggle-${index}`,
-                );
-                toggle.addEventListener("change", (e) => {
-                    const labelDiv = e.target.closest("div");
-                    if (e.target.checked) {
-                        labelDiv.classList.remove("bg-red-500");
-                        labelDiv.classList.add("bg-sage");
-                    } else {
-                        labelDiv.classList.remove("bg-sage");
-                        labelDiv.classList.add("bg-red-500");
-                    }
-                });
-            });
+    const passwordInput = document.getElementById("passwordInput");
+    const passwordError = document.getElementById("passwordError");
+    const cancelPasswordBtn = document.getElementById("cancelPasswordBtn");
+    const confirmPasswordBtn = document.getElementById("confirmPasswordBtn");
+
+    let passwordCallback = null;
+
+    // Funzione per mostrare il modale della password
+    function showPasswordModal(callback) {
+        passwordCallback = callback;
+        passwordInput.value = "";
+        passwordError.classList.add("hidden");
+        passwordModal.classList.remove("hidden");
+    }
+
+    // Listener per i bottoni del modale password
+    cancelPasswordBtn.addEventListener("click", () =>
+        passwordModal.classList.add("hidden"),
+    );
+    confirmPasswordBtn.addEventListener("click", () => {
+        if (passwordInput.value === "TRIAL") {
+            passwordModal.classList.add("hidden");
+            if (passwordCallback) {
+                passwordCallback();
+            }
         } else {
-            hideElement(patientEligibilityCheckContainer);
-            hideElement(checkEligibilityBtn);
-            study.criteria.forEach((criteriaItem) => {
-                const criteriaDiv = document.createElement("div");
-                criteriaDiv.classList.add(
-                    "flex",
-                    "items-center",
-                    "space-x-2",
-                    "text-sm",
-                );
-                const iconClass =
-                    criteriaItem.type === "inclusion"
-                        ? "fa-check-circle text-sage"
-                        : "fa-times-circle text-red-500";
-                criteriaDiv.innerHTML = `<i class="fas ${iconClass}"></i><span>${criteriaItem.text} (${criteriaItem.type === "inclusion" ? "Inclusione" : "Esclusione"})</span>`;
-                criteriaContainer.appendChild(criteriaDiv);
-            });
-        }
-        showElement(studyDetailModal);
-
-        // Aggiungi listener al bottone "Controlla eleggibilità" solo se siamo nella vista paziente
-        if (isPatientView) {
-            checkEligibilityBtn.onclick = () => checkEligibility(study);
-        }
-    };
-
-    closeModalBtn.addEventListener("click", () => {
-        hideElement(studyDetailModal);
-    });
-    studyDetailModal.addEventListener("click", (e) => {
-        if (e.target === studyDetailModal) {
-            hideElement(studyDetailModal);
+            passwordError.classList.remove("hidden");
         }
     });
 
-    const checkEligibility = (study) => {
-        const patientCriteriaToggles = document.querySelectorAll(
-            '#patientEligibilityToggles input[type="checkbox"]',
-        );
-        let isEligible = true;
-
-        patientCriteriaToggles.forEach((toggle) => {
-            const isToggledOn = toggle.checked;
-            const requiredType = toggle.dataset.type;
-
-            if (requiredType === "inclusion" && !isToggledOn) {
-                isEligible = false;
-            } else if (requiredType === "exclusion" && isToggledOn) {
-                isEligible = false;
+    // Funzione per aggiornare il dropdown delle aree specifiche
+    function updateSpecificAreasDropdown(
+        selectedAreas,
+        selectElement,
+        container,
+    ) {
+        const allSpecificAreas = new Set();
+        (Array.isArray(selectedAreas)
+            ? selectedAreas
+            : [selectedAreas]
+        ).forEach((area) => {
+            const specificAreas = specificClinicalAreasMap[area];
+            if (specificAreas) {
+                specificAreas.forEach((sa) => allSpecificAreas.add(sa));
             }
         });
 
-        // Controlla la linea di trattamento del paziente
-        const patientTreatmentLine = parseInt(
-            document.getElementById("patientTreatmentLine").value,
-            10,
+        selectElement.innerHTML = "";
+        if (allSpecificAreas.size > 0) {
+            Array.from(allSpecificAreas).forEach((area) => {
+                const option = document.createElement("option");
+                option.value = area;
+                option.textContent = area;
+                selectElement.appendChild(option);
+            });
+            container.classList.remove("hidden");
+        } else {
+            container.classList.add("hidden");
+        }
+    }
+
+    // Gestione dei dropdown per la pagina Paziente
+    if (clinicalAreaSelect) {
+        clinicalAreaSelect.addEventListener("change", (e) => {
+            updateSpecificAreasDropdown(
+                e.target.value,
+                specificClinicalAreasSelect,
+                specificClinicalAreaContainer,
+            );
+        });
+    }
+
+    // Gestione dei dropdown per la pagina Trial
+    if (studyClinicalAreasSelect) {
+        studyClinicalAreasSelect.addEventListener("change", (e) => {
+            const selectedOptions = Array.from(e.target.selectedOptions).map(
+                (option) => option.value,
+            );
+            updateSpecificAreasDropdown(
+                selectedOptions,
+                studySpecificClinicalAreasSelect,
+                studySpecificClinicalAreaContainer,
+            );
+        });
+    }
+
+    // Gestione dei filtri per la pagina Trial
+    const handleTrialFilterChange = () => {
+        if (window.location.pathname === "/trials") {
+            fetchAndRenderTrials();
+        }
+    };
+    if (filterClinicalAreaSelect) {
+        filterClinicalAreaSelect.addEventListener("change", () => {
+            updateSpecificAreasDropdown(
+                filterClinicalAreaSelect.value,
+                filterSpecificClinicalAreasSelect,
+                filterSpecificClinicalAreaContainer,
+            );
+            handleTrialFilterChange();
+        });
+    }
+    if (filterSpecificClinicalAreasSelect) {
+        filterSpecificClinicalAreasSelect.addEventListener(
+            "change",
+            handleTrialFilterChange,
         );
-        if (study.treatment_setting === "Metastatico") {
-            const minLine = parseInt(study.min_treatment_line, 10);
-            const maxLine = parseInt(study.max_treatment_line, 10);
-            if (!isNaN(patientTreatmentLine)) {
-                if (
-                    patientTreatmentLine < minLine ||
-                    patientTreatmentLine > maxLine
-                ) {
-                    isEligible = false;
-                }
+    }
+    if (filterTreatmentSettingSelect) {
+        filterTreatmentSettingSelect.addEventListener(
+            "change",
+            handleTrialFilterChange,
+        );
+    }
+
+    // Gestione del setting di trattamento per la pagina Paziente
+    if (treatmentSettingSelect) {
+        treatmentSettingSelect.addEventListener("change", (e) => {
+            if (e.target.value === "Metastatico") {
+                treatmentLineContainer.classList.remove("hidden");
             } else {
-                isEligible = false;
+                treatmentLineContainer.classList.add("hidden");
+                patientTreatmentLineInput.value = "";
+            }
+        });
+    }
+
+    // Gestione del setting di trattamento per la pagina Trial
+    if (studyTreatmentSettingSelect) {
+        studyTreatmentSettingSelect.addEventListener("change", (e) => {
+            if (e.target.value === "Metastatico") {
+                studyTreatmentLineContainer.classList.remove("hidden");
+            } else {
+                studyTreatmentLineContainer.classList.add("hidden");
+                minTreatmentLineInput.value = "";
+                maxTreatmentLineInput.value = "";
+            }
+        });
+    }
+
+    // Aggiungi un nuovo criterio al modulo (pagina Trial)
+    function addCriteriaRow(text = "", type = "inclusion") {
+        if (!criteriaListDiv) return;
+        const row = document.createElement("div");
+        row.className =
+            "criteria-item flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4";
+
+        const isExclusion = type === "exclusion";
+
+        row.innerHTML = `
+            <input type="text" value="${text}" class="criteria-input w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage" placeholder="Descrizione del criterio" required>
+            <div class="flex items-center space-x-2">
+                <button type="button" class="type-toggle-btn px-4 py-2 rounded-full font-semibold text-xs transition-colors whitespace-nowrap ${isExclusion ? "bg-red-400 text-white" : "bg-sage text-white"}">
+                    ${isExclusion ? "Esclusione" : "Inclusione"}
+                </button>
+                <button type="button" class="remove-criteria-btn text-red-400 hover:text-red-600 transition-colors">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+
+        const typeToggleButton = row.querySelector(".type-toggle-btn");
+        typeToggleButton.addEventListener("click", () => {
+            const isExclusion =
+                typeToggleButton.textContent.trim() === "Esclusione";
+            if (isExclusion) {
+                typeToggleButton.textContent = "Inclusione";
+                typeToggleButton.classList.remove("bg-red-400");
+                typeToggleButton.classList.add("bg-sage");
+            } else {
+                typeToggleButton.textContent = "Esclusione";
+                typeToggleButton.classList.remove("bg-sage");
+                typeToggleButton.classList.add("bg-red-400");
+            }
+        });
+
+        criteriaListDiv.appendChild(row);
+        row.querySelector(".remove-criteria-btn").addEventListener(
+            "click",
+            (e) => e.target.closest(".criteria-item").remove(),
+        );
+    }
+
+    // Aggiungi un listener solo se il pulsante esiste (pagina Trial)
+    if (addCriteriaBtn) {
+        addCriteriaBtn.addEventListener("click", () => addCriteriaRow());
+    }
+
+    // Gestione del form per l'aggiunta di un nuovo studio (pagina Trial)
+    if (studyForm) {
+        studyForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            showPasswordModal(async () => {
+                const criteriaItems =
+                    document.querySelectorAll(".criteria-item");
+                const criteria = Array.from(criteriaItems).map((item) => ({
+                    text: item.querySelector(".criteria-input").value,
+                    type:
+                        item
+                            .querySelector(".type-toggle-btn")
+                            .textContent.trim() === "Esclusione"
+                            ? "exclusion"
+                            : "inclusion",
+                }));
+                const selectedClinicalAreas = Array.from(
+                    studyClinicalAreasSelect.selectedOptions,
+                ).map((option) => option.value);
+                const selectedSpecificClinicalAreas = Array.from(
+                    studySpecificClinicalAreasSelect.selectedOptions,
+                ).map((option) => option.value);
+
+                const newStudy = {
+                    title: studyTitleInput.value,
+                    subtitle: studySubtitleInput.value,
+                    clinical_areas: selectedClinicalAreas,
+                    specific_clinical_areas: selectedSpecificClinicalAreas,
+                    treatment_setting: studyTreatmentSettingSelect.value,
+                    min_treatment_line:
+                        studyTreatmentSettingSelect.value === "Metastatico"
+                            ? parseInt(minTreatmentLineInput.value)
+                            : null,
+                    max_treatment_line:
+                        studyTreatmentSettingSelect.value === "Metastatico"
+                            ? parseInt(maxTreatmentLineInput.value)
+                            : null,
+                    criteria,
+                };
+
+                await fetch("/api/studies", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newStudy),
+                });
+
+                studyForm.reset();
+                studySpecificClinicalAreaContainer.classList.add("hidden");
+                studyTreatmentLineContainer.classList.add("hidden");
+                criteriaListDiv.innerHTML = "";
+                addCriteriaRow();
+                fetchAndRenderTrials();
+            });
+        });
+    }
+
+    // Gestione del form di ricerca per il paziente (pagina Paziente)
+    if (searchForm) {
+        searchForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const patientData = {
+                clinicalAreas: clinicalAreaSelect.value,
+                specificClinicalAreas: specificClinicalAreasSelect.value,
+                treatmentSetting: treatmentSettingSelect.value,
+                treatmentLine: patientTreatmentLineInput.value
+                    ? parseInt(patientTreatmentLineInput.value)
+                    : null,
+            };
+            const response = await fetch("/api/studies");
+            const studies = await response.json();
+            const filteredStudies = studies.filter((study) => {
+                const clinicalAreaMatch = study.clinical_areas.includes(
+                    patientData.clinicalAreas,
+                );
+                const specificClinicalAreaMatch =
+                    patientData.specificClinicalAreas === "" ||
+                    !patientData.specificClinicalAreas ||
+                    study.specific_clinical_areas.includes(
+                        patientData.specificClinicalAreas,
+                    );
+                const treatmentSettingMatch =
+                    study.treatment_setting === patientData.treatmentSetting;
+
+                let treatmentLineMatch = true;
+                if (
+                    patientData.treatmentSetting === "Metastatico" &&
+                    patientData.treatmentLine !== null
+                ) {
+                    const minLine = study.min_treatment_line || 0;
+                    const maxLine = study.max_treatment_line || 999;
+                    treatmentLineMatch =
+                        patientData.treatmentLine >= minLine &&
+                        patientData.treatmentLine <= maxLine;
+                }
+                return (
+                    clinicalAreaMatch &&
+                    specificClinicalAreaMatch &&
+                    treatmentSettingMatch &&
+                    treatmentLineMatch
+                );
+            });
+            renderSearchResults(filteredStudies, "patient");
+        });
+    }
+
+    // Helper per creare una card di studio
+    function createStudyCardElement(study, page) {
+        const card = document.createElement("div");
+        card.className =
+            "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
+        card.dataset.studyId = study.id;
+
+        let cardContent = `
+            <div>
+                <h4 class="font-bold text-dark-gray">${study.title}</h4>
+                <p class="text-sm text-gray-600">${study.subtitle}</p>
+            </div>
+        `;
+
+        if (page === "trial") {
+            cardContent = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-dark-gray">${study.title}</h4>
+                        <p class="text-sm text-gray-600">${study.subtitle}</p>
+                    </div>
+                    <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors" data-id="${study.id}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        card.innerHTML = cardContent;
+
+        // Aggiungo il listener per aprire il modale
+        card.addEventListener("click", (event) => {
+            // Evita di aprire il modale se il click è sul pulsante di rimozione
+            if (page === "trial" && event.target.closest(".remove-study-btn")) {
+                return;
+            }
+            showStudyDetails(study, page);
+        });
+
+        // Aggiungo il listener per il pulsante di rimozione, solo se esiste
+        if (page === "trial") {
+            const removeBtn = card.querySelector(".remove-study-btn");
+            if (removeBtn) {
+                removeBtn.addEventListener("click", async (e) => {
+                    e.stopPropagation(); // Previene che l'evento raggiunga la card
+                    const studyId =
+                        e.target.closest(".remove-study-btn").dataset.id;
+                    showPasswordModal(async () => {
+                        await fetch(`/api/studies/${studyId}`, {
+                            method: "DELETE",
+                        });
+                        fetchAndRenderTrials();
+                    });
+                });
+            }
+        }
+        return card;
+    }
+
+    // Renderizza i risultati della ricerca (per la pagina Paziente)
+    function renderSearchResults(studies, page) {
+        const targetDiv =
+            page === "patient" ? patientTrialListDiv : doctorTrialListDiv;
+        if (!targetDiv) return;
+        targetDiv.innerHTML = "";
+        if (studies.length === 0) {
+            targetDiv.innerHTML =
+                '<div class="p-6 text-center text-gray-500 bg-white rounded-xl shadow-md">Nessuno studio compatibile trovato.</div>';
+            return;
+        }
+
+        studies.forEach((study) => {
+            const card = createStudyCardElement(study, page);
+            targetDiv.appendChild(card);
+        });
+    }
+
+    // Fetch e renderizza i trial (per la pagina Trial)
+    async function fetchAndRenderTrials() {
+        const response = await fetch("/api/studies");
+        let studies = await response.json();
+
+        // Applicazione dei filtri
+        const filterClinicalArea = filterClinicalAreaSelect?.value || "";
+        const filterSpecificClinicalArea =
+            filterSpecificClinicalAreasSelect?.value || "";
+        const filterTreatmentSetting =
+            filterTreatmentSettingSelect?.value || "";
+
+        if (filterClinicalArea !== "") {
+            studies = studies.filter((study) =>
+                study.clinical_areas.includes(filterClinicalArea),
+            );
+        }
+        if (filterSpecificClinicalArea !== "") {
+            studies = studies.filter((study) =>
+                study.specific_clinical_areas.includes(
+                    filterSpecificClinicalArea,
+                ),
+            );
+        }
+        if (filterTreatmentSetting !== "") {
+            studies = studies.filter(
+                (study) => study.treatment_setting === filterTreatmentSetting,
+            );
+        }
+
+        if (!doctorTrialListDiv) return;
+        doctorTrialListDiv.innerHTML = "";
+        if (studies.length === 0) {
+            doctorTrialListDiv.innerHTML =
+                '<div class="p-6 text-center text-gray-500 bg-white rounded-xl shadow-md">Nessuno studio attivo trovato.</div>';
+            return;
+        }
+
+        // Raggruppa gli studi per setting di trattamento
+        const studiesBySetting = studies.reduce((acc, study) => {
+            const setting = study.treatment_setting;
+            acc[setting] = acc[setting] || [];
+            acc[setting].push(study);
+            return acc;
+        }, {});
+
+        // Renderizza gli studi raggruppati
+        for (const setting in studiesBySetting) {
+            const settingSection = document.createElement("div");
+            settingSection.className = "mb-6";
+            settingSection.innerHTML = `<h3 class="text-xl font-bold text-dark-gray mb-4">${setting}</h3>`;
+
+            const cardsContainer = document.createElement("div");
+            cardsContainer.className = "space-y-4";
+
+            studiesBySetting[setting].forEach((study) => {
+                const card = createStudyCardElement(study, "trial");
+                cardsContainer.appendChild(card);
+            });
+
+            settingSection.appendChild(cardsContainer);
+            doctorTrialListDiv.appendChild(settingSection);
+        }
+    }
+
+    // Renderizza i criteri nel modale
+    function renderCriteriaInModal(study, isPatientPage) {
+        criteriaContainer.innerHTML = "";
+
+        // Ordina i criteri per inclusione ed esclusione
+        const inclusionCriteria = study.criteria.filter(
+            (c) => c.type === "inclusion",
+        );
+        const exclusionCriteria = study.criteria.filter(
+            (c) => c.type === "exclusion",
+        );
+
+        // Aggiungi un'intestazione per i criteri di inclusione se ce ne sono
+        if (inclusionCriteria.length > 0) {
+            const heading = document.createElement("h5");
+            heading.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
+            heading.textContent = "Criteri di Inclusione";
+            criteriaContainer.appendChild(heading);
+        }
+
+        // Renderizza i criteri di inclusione
+        inclusionCriteria.forEach((criterion, index) => {
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between p-2 rounded-lg";
+            let labelText;
+            if (isPatientPage) {
+                labelText = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}" checked>
+                            <div class="w-9 h-5 bg-sage peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                        </label>
+                        <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
+                    </div>
+                `;
+            } else {
+                labelText = `
+                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full bg-sage">
+                        Inclusione
+                    </span>
+                `;
+            }
+            row.innerHTML = `<span class="text-sm text-dark-gray">${criterion.text}</span>${labelText}`;
+            criteriaContainer.appendChild(row);
+        });
+
+        // Aggiungi un'intestazione per i criteri di esclusione se ce ne sono
+        if (exclusionCriteria.length > 0) {
+            const heading = document.createElement("h5");
+            heading.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
+            heading.textContent = "Criteri di Esclusione";
+            criteriaContainer.appendChild(heading);
+        }
+
+        // Renderizza i criteri di esclusione
+        exclusionCriteria.forEach((criterion, index) => {
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between p-2 rounded-lg";
+            let labelText;
+            if (isPatientPage) {
+                labelText = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold text-gray-500 w-8 text-right">No</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer criteria-toggle" data-index="${index}" data-preferred-type="${criterion.type}">
+                            <div class="w-9 h-5 bg-red-400 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sage rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                        </label>
+                        <span class="text-xs font-semibold text-gray-500 w-8">Sì</span>
+                    </div>
+                `;
+            } else {
+                labelText = `
+                    <span class="text-xs font-semibold text-white px-2 py-1 rounded-full bg-red-400">
+                        Esclusione
+                    </span>
+                `;
+            }
+            row.innerHTML = `<span class="text-sm text-dark-gray">${criterion.text}</span>${labelText}`;
+            criteriaContainer.appendChild(row);
+        });
+    }
+
+    // Mostra i dettagli di uno studio in un modale
+    function showStudyDetails(study, page) {
+        if (!studyDetailModal || !study) {
+            return;
+        }
+
+        modalTitle.textContent = study.title;
+        modalSubtitle.textContent = study.subtitle;
+
+        // Aggiunto controllo per evitare l'errore se l'elemento non esiste
+        if (eligibilityResultDiv) {
+            eligibilityResultDiv.classList.add("hidden");
+            eligibilityResultDiv.textContent = "";
+        }
+
+        const isPatientPage = page === "patient";
+        if (checkEligibilityBtn) {
+            checkEligibilityBtn.style.display = isPatientPage
+                ? "block"
+                : "none";
+        }
+
+        // Popola i dettagli dello studio per entrambe le pagine
+        if (modalClinicalAreas)
+            modalClinicalAreas.textContent = study.clinical_areas.join(", ");
+        if (modalSpecificClinicalAreas)
+            modalSpecificClinicalAreas.textContent =
+                study.specific_clinical_areas.join(", ");
+        if (modalTreatmentSetting)
+            modalTreatmentSetting.textContent = study.treatment_setting;
+        if (modalTreatmentLineContainer) {
+            if (study.treatment_setting === "Metastatico") {
+                modalTreatmentLineContainer.classList.remove("hidden");
+                if (modalTreatmentLine)
+                    modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
+            } else {
+                modalTreatmentLineContainer.classList.add("hidden");
             }
         }
 
-        eligibilityResultDiv.innerHTML = "";
-        if (isEligible) {
-            eligibilityResultDiv.innerHTML = `
-                <div class="eligibility-result-box eligible">
-                    <p>Paziente eleggibile per lo studio:</p>
-                    <p class="font-normal text-sm">${study.title}</p>
-                </div>
-            `;
-        } else {
-            eligibilityResultDiv.innerHTML = `
-                <div class="eligibility-result-box not-eligible">
-                    <p>Paziente NON eleggibile per lo studio:</p>
-                    <p class="font-normal text-sm">${study.title}</p>
-                </div>
-            `;
-        }
-        showElement(eligibilityResultDiv);
-    };
+        // Renderizza i criteri nel modale
+        renderCriteriaInModal(study, isPatientPage);
 
-    // Chiamate per l'inizializzazione basata sulla pagina
-    if (window.location.pathname === "/") {
-        setupPatientForm();
-    } else if (window.location.pathname === "/trials") {
-        setupStudyForm();
+        // Gestione del pulsante di eleggibilità per la pagina Paziente
+        if (isPatientPage && checkEligibilityBtn) {
+            checkEligibilityBtn.onclick = () => {
+                let isEligible = true;
+                const toggles =
+                    criteriaContainer.querySelectorAll(".criteria-toggle");
+                toggles.forEach((toggle) => {
+                    const preferredType = toggle.dataset.preferred - type;
+                    const isChecked = toggle.checked;
+                    if (
+                        (preferredType === "inclusion" && !isChecked) ||
+                        (preferredType === "exclusion" && isChecked)
+                    ) {
+                        isEligible = false;
+                    }
+                });
+
+                if (eligibilityResultDiv) {
+                    eligibilityResultDiv.classList.remove("hidden");
+                    if (isEligible) {
+                        eligibilityResultDiv.textContent = `Paziente eleggibile per lo studio: ${study.title}`;
+                        eligibilityResultDiv.className =
+                            "font-bold text-center mt-4 text-dark-gray bg-sage p-3 rounded-lg";
+                    } else {
+                        eligibilityResultDiv.textContent = `Paziente non eleggibile per lo studio: ${study.title}`;
+                        eligibilityResultDiv.className =
+                            "font-bold text-center mt-4 text-dark-gray bg-red-400 p-3 rounded-lg";
+                    }
+                }
+            };
+        }
+
+        // Rende il modale visibile
+        studyDetailModal.classList.remove("hidden");
+        studyDetailModal.style.display = "flex";
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener("click", () => {
+            studyDetailModal.classList.add("hidden");
+            studyDetailModal.style.display = "none";
+        });
+    }
+
+    // Inizializzazione: se siamo sulla pagina dei trial, carichiamo gli studi
+    if (window.location.pathname === "/trials") {
+        fetchAndRenderTrials();
+        addCriteriaRow();
     }
 });
