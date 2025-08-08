@@ -750,9 +750,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         eligibilityResultDiv.innerHTML = `
                             <div class="p-3 rounded-lg bg-red-400">
                                 <p class="font-bold text-center text-white">Paziente NON eleggibile per lo studio: ${study.title}</p>
-                                <div class="flex justify-center mt-2">
-                                    <button id="closeEligibilityBtn" class="bg-white text-dark-gray font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">Chiudi</button>
-                                </div>
                             </div>
                         `;
                     }
