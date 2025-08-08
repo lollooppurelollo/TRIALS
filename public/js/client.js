@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "Prostata",
             "Rene",
             "Vescica",
-            "Altre vie Urinarie",
+            "Alte vie Urinarie",
         ],
         "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
     };
@@ -241,8 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Gestione del setting di trattamento per la pagina Paziente
     if (treatmentSettingSelect) {
         treatmentSettingSelect.addEventListener("change", (e) => {
-            // Ho corretto qui l'errore: il valore corretto è "Avanzato/Metastatico"
-            if (e.target.value === "Avanzato/Metastatico") {
+            if (e.target.value === "Metastatico") {
                 treatmentLineContainer.classList.remove("hidden");
             } else {
                 treatmentLineContainer.classList.add("hidden");
@@ -397,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let treatmentLineMatch = true;
                 if (
-                    patientData.treatmentSetting === "Avanzato/Metastatico" &&
+                    patientData.treatmentSetting === "Metastatico" &&
                     patientData.treatmentLine !== null
                 ) {
                     const minLine = study.min_treatment_line || 0;
