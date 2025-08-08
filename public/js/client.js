@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "Prostata",
             "Rene",
             "Vescica",
-            "Alte vie Urinarie",
+            "Altre vie Urinarie",
         ],
         "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
     };
@@ -653,12 +653,42 @@ document.addEventListener("DOMContentLoaded", () => {
         // Aggiunto controllo per evitare l'errore se l'elemento non esiste
         if (eligibilityResultDiv) {
             eligibilityResultDiv.classList.add("hidden");
-            eligibilityResultDiv.innerHTML = "";
+            eligibilityResultDiv.innerHTML = ""; // Uso innerHTML per svuotare il contenuto
+        }
+
+        // Rende visibile il container dei bottoni e aggiunge un pulsante "Chiudi"
+        if (modalButtonsDiv) {
+            modalButtonsDiv.classList.remove("hidden");
+            if (isPatientPage) {
+                // Rimuove i bottoni esistenti per evitare duplicati
+                modalButtonsDiv.innerHTML = "";
+
+                // Aggiunge il pulsante di controllo eleggibilità
+                const checkBtn = document.createElement("button");
+                checkBtn.id = "checkEligibilityBtn";
+                checkBtn.className =
+                    "bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors";
+                checkBtn.textContent = "Controlla eleggibilità";
+                modalButtonsDiv.appendChild(checkBtn);
+
+                // Aggiunge un pulsante "Annulla" per chiudere il modale in ogni momento
+                const cancelBtn = document.createElement("button");
+                cancelBtn.id = "cancelModalBtn";
+                cancelBtn.className =
+                    "bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors ml-2";
+                cancelBtn.textContent = "Annulla";
+                modalButtonsDiv.appendChild(cancelBtn);
+
+                cancelBtn.addEventListener("click", () => {
+                    studyDetailModal.classList.add("hidden");
+                    studyDetailModal.style.display = "none";
+                });
+            } else {
+                modalButtonsDiv.innerHTML = "";
+            }
         }
 
         const isPatientPage = page === "patient";
-
-        // Gestisce la visibilità dei pulsanti nel modale
         if (checkEligibilityBtn) {
             checkEligibilityBtn.style.display = isPatientPage
                 ? "block"
@@ -693,6 +723,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const toggles =
                     criteriaContainer.querySelectorAll(".criteria-toggle");
                 toggles.forEach((toggle) => {
+                    // Correzione: `toggle.dataset.preferredType` è il modo corretto per leggere l'attributo `data-preferred-type`
                     const preferredType = toggle.dataset.preferredType;
                     const isChecked = toggle.checked;
 
@@ -710,15 +741,28 @@ document.addEventListener("DOMContentLoaded", () => {
                         eligibilityResultDiv.innerHTML = `
                             <div class="p-3 rounded-lg bg-sage">
                                 <p class="font-bold text-center text-white">Paziente eleggibile per lo studio: ${study.title}</p>
+                                <div class="flex justify-center mt-2">
+                                    <button id="closeEligibilityBtn" class="bg-white text-dark-gray font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">Chiudi</button>
+                                </div>
                             </div>
                         `;
                     } else {
                         eligibilityResultDiv.innerHTML = `
                             <div class="p-3 rounded-lg bg-red-400">
                                 <p class="font-bold text-center text-white">Paziente NON eleggibile per lo studio: ${study.title}</p>
+                                <div class="flex justify-center mt-2">
+                                    <button id="closeEligibilityBtn" class="bg-white text-dark-gray font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">Chiudi</button>
+                                </div>
                             </div>
                         `;
                     }
+                    // Aggiungo il listener al nuovo pulsante "Chiudi"
+                    document
+                        .getElementById("closeEligibilityBtn")
+                        .addEventListener("click", () => {
+                            studyDetailModal.classList.add("hidden");
+                            studyDetailModal.style.display = "none";
+                        });
                 }
             };
         }
@@ -728,7 +772,6 @@ document.addEventListener("DOMContentLoaded", () => {
         studyDetailModal.style.display = "flex";
     }
 
-    // Aggiungo il listener per il pulsante "Chiudi" del modale, che ora è sempre presente
     if (closeModalBtn) {
         closeModalBtn.addEventListener("click", () => {
             studyDetailModal.classList.add("hidden");
