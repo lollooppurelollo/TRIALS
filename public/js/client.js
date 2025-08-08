@@ -764,6 +764,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Rende il modale visibile
         studyDetailModal.classList.remove("hidden");
         studyDetailModal.style.display = "flex";
+        studyDetailModal.style.justifyContent = "center";
+        studyDetailModal.style.alignItems = "center";
     }
 
     if (closeModalBtn) {
