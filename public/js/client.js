@@ -241,7 +241,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Gestione del setting di trattamento per la pagina Paziente
     if (treatmentSettingSelect) {
         treatmentSettingSelect.addEventListener("change", (e) => {
-            if (e.target.value === "Metastatico") {
+            // Ho corretto qui l'errore: il valore corretto è "Avanzato/Metastatico"
+            if (e.target.value === "Avanzato/Metastatico") {
                 treatmentLineContainer.classList.remove("hidden");
             } else {
                 treatmentLineContainer.classList.add("hidden");
@@ -396,7 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let treatmentLineMatch = true;
                 if (
-                    patientData.treatmentSetting === "Metastatico" &&
+                    patientData.treatmentSetting === "Avanzato/Metastatico" &&
                     patientData.treatmentLine !== null
                 ) {
                     const minLine = study.min_treatment_line || 0;
