@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const criteriaContainer = document.getElementById("criteriaContainer");
     const checkEligibilityBtn = document.getElementById("checkEligibilityBtn");
     const eligibilityResultDiv = document.getElementById(
-        "eligibilityResultDiv",
+        "eligibilityResult",
     );
     const closeModalBtn = document.getElementById("closeModalBtn");
     const modalClinicalAreas = document.getElementById("modalClinicalAreas");
@@ -720,10 +720,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isPatientPage && checkEligibilityBtn) {
             checkEligibilityBtn.onclick = () => {
                 let isEligible = true;
-                const toggles =
-                    criteriaContainer.querySelectorAll(".criteria-toggle");
+                const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
+
                 toggles.forEach((toggle) => {
-                    // Correzione: `toggle.dataset.preferredType` è il modo corretto per leggere l'attributo `data-preferred-type`
                     const preferredType = toggle.dataset.preferredType;
                     const isChecked = toggle.checked;
 
@@ -737,26 +736,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (eligibilityResultDiv) {
                     eligibilityResultDiv.classList.remove("hidden");
-                    if (isEligible) {
-                        eligibilityResultDiv.innerHTML = `
-                            <div class="p-3 rounded-lg bg-sage">
-                                <p class="font-bold text-center text-white">Paziente eleggibile per lo studio: ${study.title}</p>
+
+                    eligibilityResultDiv.innerHTML = `
+                        <div class="p-3 rounded-lg ${isEligible ? "bg-sage" : "bg-red-400"} text-white">
+                            <p class="font-bold text-center">
+                                Paziente ${isEligible ? "eleggibile" : "NON eleggibile"} per lo studio: ${study.title}
+                            </p>
+                            <div class="flex justify-center mt-4">
+                                <button id="closeEligibilityBtn" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                                    Chiudi
+                                </button>
                             </div>
-                        `;
-                    } else {
-                        eligibilityResultDiv.innerHTML = `
-                            <div class="p-3 rounded-lg bg-red-400">
-                                <p class="font-bold text-center text-white">Paziente NON eleggibile per lo studio: ${study.title}</p>
-                            </div>
-                        `;
-                    }
-                    // Aggiungo il listener al nuovo pulsante "Chiudi"
-                    document
-                        .getElementById("closeEligibilityBtn")
-                        .addEventListener("click", () => {
-                            studyDetailModal.classList.add("hidden");
-                            studyDetailModal.style.display = "none";
-                        });
+                        </div>
+                    `;
+
+                    // Listener per pulsante "Chiudi"
+                    document.getElementById("closeEligibilityBtn").addEventListener("click", () => {
+                        studyDetailModal.classList.add("hidden");
+                        studyDetailModal.style.display = "none";
+                        eligibilityResultDiv.classList.add("hidden");
+                        eligibilityResultDiv.innerHTML = ""; // pulisce il contenuto
+                    });
                 }
             };
         }
