@@ -660,8 +660,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modalButtonsDiv) {
             modalButtonsDiv.classList.remove("hidden");
             if (isPatientPage) {
-                // Rimuove i bottoni esistenti per evitare duplicati
-                modalButtonsDiv.innerHTML = "";
 
                 // Aggiunge il pulsante di controllo eleggibilità
                 const checkBtn = document.createElement("button");
@@ -670,30 +668,40 @@ document.addEventListener("DOMContentLoaded", () => {
                     "bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors";
                 checkBtn.textContent = "Controlla eleggibilità";
                 modalButtonsDiv.appendChild(checkBtn);
+                // Gestione del pulsante di eleggibilità per la pagina Paziente
+                if (isPatientPage && checkEligibilityBtn) {
+                    checkBtn.addEventListener("click", () => {
+                        let isEligible = true;
+                        const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
 
-                // Aggiunge un pulsante "Annulla" per chiudere il modale in ogni momento
-                const cancelBtn = document.createElement("button");
-                cancelBtn.id = "cancelModalBtn";
-                cancelBtn.className =
-                    "bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors ml-2";
-                cancelBtn.textContent = "Annulla";
-                modalButtonsDiv.appendChild(cancelBtn);
+                        toggles.forEach((toggle) => {
+                            const preferredType = toggle.dataset.preferredType;
+                            const isChecked = toggle.checked;
 
-                cancelBtn.addEventListener("click", () => {
-                    studyDetailModal.classList.add("hidden");
-                    studyDetailModal.style.display = "none";
-                });
-            } else {
-                modalButtonsDiv.innerHTML = "";
-            }
-        }
+                            if (
+                                (preferredType === "inclusion" && !isChecked) ||
+                                (preferredType === "exclusion" && isChecked)
+                            ) {
+                                isEligible = false;
+                            }
+                        });
 
-        const isPatientPage = page === "patient";
-        if (checkEligibilityBtn) {
-            checkEligibilityBtn.style.display = isPatientPage
-                ? "block"
-                : "none";
-        }
+                        if (eligibilityResultDiv) {
+                            eligibilityResultDiv.classList.remove("hidden");
+
+                            eligibilityResultDiv.innerHTML = `
+                                <div class="p-3 rounded-lg ${isEligible ? "bg-sage" : "bg-red-400"} text-white">
+                                    <p class="font-bold text-center">
+                                        Paziente ${isEligible ? "eleggibile" : "NON eleggibile"} per lo studio: ${study.title}
+                                    </p>
+                                    <div class="flex justify-center mt-4">
+                                        <button id="closeEligibilityBtn" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                                            Chiudi
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+
 
         // Popola i dettagli dello studio per entrambe le pagine
         if (modalClinicalAreas)
@@ -715,40 +723,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Renderizza i criteri nel modale
         renderCriteriaInModal(study, isPatientPage);
-
-        // Gestione del pulsante di eleggibilità per la pagina Paziente
-        if (isPatientPage && checkEligibilityBtn) {
-            checkEligibilityBtn.onclick = () => {
-                let isEligible = true;
-                const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
-
-                toggles.forEach((toggle) => {
-                    const preferredType = toggle.dataset.preferredType;
-                    const isChecked = toggle.checked;
-
-                    if (
-                        (preferredType === "inclusion" && !isChecked) ||
-                        (preferredType === "exclusion" && isChecked)
-                    ) {
-                        isEligible = false;
-                    }
-                });
-
-                if (eligibilityResultDiv) {
-                    eligibilityResultDiv.classList.remove("hidden");
-
-                    eligibilityResultDiv.innerHTML = `
-                        <div class="p-3 rounded-lg ${isEligible ? "bg-sage" : "bg-red-400"} text-white">
-                            <p class="font-bold text-center">
-                                Paziente ${isEligible ? "eleggibile" : "NON eleggibile"} per lo studio: ${study.title}
-                            </p>
-                            <div class="flex justify-center mt-4">
-                                <button id="closeEligibilityBtn" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
-                                    Chiudi
-                                </button>
-                            </div>
-                        </div>
-                    `;
 
                     // Listener per pulsante "Chiudi"
                     document.getElementById("closeEligibilityBtn").addEventListener("click", () => {
