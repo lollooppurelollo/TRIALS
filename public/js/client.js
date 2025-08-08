@@ -1,11 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Definizione delle aree cliniche e delle sottoaree
     const clinicalAreas = {
-        Mammella: [
-            "Carcinoma mammario triplo negativo",
-            "Carcinoma mammario HER2+",
-            "Carcinoma mammario ER/PR+",
-        ],
+        Mammella: ["Luminali", "TNBC", "HER2 Positivi"],
         Polmone: [
             "Carcinoma a piccole cellule",
             "Carcinoma non a piccole cellule - Adenocarcinoma",
