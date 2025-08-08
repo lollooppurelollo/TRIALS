@@ -19,51 +19,60 @@
             </select>
         </div>
         <div id="specificClinicalAreaContainer" class="hidden">
-            <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica</label>
+            <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
             <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-                </select>
+                <option value="" disabled selected>Seleziona un'area specifica (opzionale)</option>
+            </select>
         </div>
         <div>
-            <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting di trattamento</label>
+            <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
             <select id="treatmentSetting" name="treatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
                 <option value="" disabled selected>Seleziona un setting</option>
-                <option value="Adiuvante">Adiuvante</option>
-                <option value="Neoadiuvante">Neoadiuvante</option>
                 <option value="Metastatico">Metastatico</option>
+                <option value="Adiuvante">Adiuvante</option>
+                <option value="Neo-adiuvante">Neo-adiuvante</option>
             </select>
         </div>
         <div id="treatmentLineContainer" class="hidden">
-            <label for="patientTreatmentLine" class="block text-sm font-medium text-dark-gray">Linea di Trattamento</label>
-            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage min-w-[50px]">
+            <label for="patientTreatmentLine" class="block text-sm font-medium text-dark-gray">Linea di trattamento del paziente</label>
+            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Esempio: 2">
         </div>
-        <button type="submit" class="w-full bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors">Cerca Studi</button>
+
+        <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+            Cerca
+        </button>
     </form>
 </div>
 
-<div id="patientTrialListDiv" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div id="searchResults" class="mt-8">
+    <h2 class="text-xl font-bold text-dark-sage mb-4">Studi compatibili</h2>
+    <div id="trialList" class="space-y-4">
+        <!-- I risultati verranno iniettati qui -->
     </div>
+</div>
 
+<!-- Modal Dettagli Studio -->
 <div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-    <div class="relative mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white flex flex-col max-h-[90vh]">
-        <div class="modal-content overflow-y-auto px-7 py-3 flex-grow">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>
-                <p class="text-sm text-gray-500" id="modalSubtitle"></p>
-            </div>
+    <!-- Rimosso 'top-20' da qui per permettere il centraggio tramite flexbox nel CSS -->
+    <div class="relative mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>
+            <p class="text-sm text-gray-500" id="modalSubtitle"></p>
             <div class="mt-4 px-7 py-3">
                 <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
                 <div class="flex flex-col space-y-2" id="criteriaContainer">
-                    </div>
+                    <!-- I criteri verranno iniettati qui -->
+                </div>
             </div>
-        </div>
-        <div class="items-center px-4 py-3 flex-shrink-0">
-            <button id="checkEligibilityBtn" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
-                Controlla eleggibilità
-            </button>
-            <div id="eligibilityResultDiv" class="font-bold text-center mt-4 hidden"></div>
-            <button id="closeModalBtn" class="mt-4 px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
-                Chiudi
-            </button>
+            <div class="items-center px-4 py-3">
+                <button id="checkEligibilityBtn" class="px-4 py-2 bg-sage text-white text-base font-medium rounded-lg w-full shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
+                    Controlla eleggibilità
+                </button>
+                <div id="eligibilityResultDiv" class="font-bold text-center mt-4 hidden"></div>
+                <button id="closeModalBtn" class="mt-4 px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                    Chiudi
+                </button>
+            </div>
         </div>
     </div>
 </div>
