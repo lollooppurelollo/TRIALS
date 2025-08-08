@@ -707,7 +707,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         eligibilityResultDiv.className =
                             "font-bold text-center mt-4 text-dark-gray bg-sage p-3 rounded-lg";
                     } else {
-                        eligibilityResultDiv.textContent = `Paziente non eleggibile per lo studio: ${study.title}`;
+                        eligibilityResultDiv.textContent = `Paziente NON eleggibile per lo studio: ${study.title}`;
                         eligibilityResultDiv.className =
                             "font-bold text-center mt-4 text-dark-gray bg-red-400 p-3 rounded-lg";
                     }
