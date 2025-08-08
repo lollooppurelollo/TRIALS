@@ -766,6 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
         studyDetailModal.style.display = "flex";
         studyDetailModal.style.justifyContent = "center";
         studyDetailModal.style.alignItems = "center";
+        studyDetailModal.style.paddingBottom = "100px";
     }
 
     if (closeModalBtn) {
