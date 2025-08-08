@@ -1,83 +1,79 @@
-<!DOCTYPE html>
-<html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TRIALS APP - Paziente</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  </head>
+<div class="bg-white p-8 rounded-xl shadow-md mb-8">
+    <h1 class="text-2xl font-bold text-dark-sage mb-4">Ricerca Studi Clinici</h1>
+    <p class="text-gray-600 mb-6">Inserisci i criteri per trovare gli studi clinici disponibili.</p>
 
-  <body class="bg-gray-50 text-dark-gray min-h-screen">
-    <div class="container mx-auto p-6">
-      <h1 class="text-2xl font-bold mb-4 text-center">Scheda Paziente</h1>
-
-      <form id="patientForm" class="bg-white p-6 rounded-lg shadow-md space-y-4">
+    <form id="searchForm" class="space-y-4">
         <div>
-          <label for="title" class="block font-semibold">Titolo studio</label>
-          <input type="text" id="title" name="title" class="w-full p-2 border border-gray-300 rounded" />
+            <label for="clinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
+            <select id="clinicalArea" name="clinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                <option value="" disabled selected>Seleziona un'area</option>
+                <option value="Mammella">Mammella</option>
+                <option value="Polmone">Polmone</option>
+                <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+                <option value="Ginecologico">Ginecologico</option>
+                <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+                <option value="Melanoma e Cute">Melanoma e Cute</option>
+                <option value="Testa-Collo">Testa-Collo</option>
+                <option value="Fase 1">Fase 1</option>
+                <option value="Altro">Altro</option>
+            </select>
+        </div>
+        <div id="specificClinicalAreaContainer" class="hidden">
+            <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
+            <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+                <option value="" disabled selected>Seleziona un'area specifica (opzionale)</option>
+            </select>
+        </div>
+        <div>
+            <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
+            <select id="treatmentSetting" name="treatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+                <option value="" disabled selected>Seleziona un setting</option>
+                <option value="Metastatico">Metastatico</option>
+                <option value="Adiuvante">Adiuvante</option>
+                <option value="Neo-adiuvante">Neo-adiuvante</option>
+            </select>
+        </div>
+        <div id="treatmentLineContainer" class="hidden">
+            <label for="patientTreatmentLine" class="block text-sm font-medium text-dark-gray">Linea di trattamento del paziente</label>
+            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Esempio: 2">
         </div>
 
-        <div>
-          <label for="subtitle" class="block font-semibold">Sottotitolo</label>
-          <input type="text" id="subtitle" name="subtitle" class="w-full p-2 border border-gray-300 rounded" />
-        </div>
-
-        <div>
-          <label for="setting" class="block font-semibold">Setting</label>
-          <input type="text" id="setting" name="setting" class="w-full p-2 border border-gray-300 rounded" />
-        </div>
-
-        <div>
-          <label for="questionnaire" class="block font-semibold">Domande (Sì/No)</label>
-          <div id="questionnaire" class="space-y-2"></div>
-        </div>
-
-        <button
-          type="submit"
-          class="bg-sage text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
-        >
-          Verifica eleggibilità
+        <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+            Cerca
         </button>
-      </form>
-    </div>
+    </form>
+</div>
 
-    <!-- MODALE CENTRATO -->
-    <div id="eligibilityResult" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-50">
-      <div class="bg-sage p-6 rounded-lg shadow-lg max-w-md w-full">
-        <p id="eligibilityText" class="font-bold text-center text-white mb-4">
-          Paziente eleggibile per lo studio
-        </p>
-        <div class="flex justify-center">
-          <button
-            id="closeEligibilityBtn"
-            class="bg-white text-dark-gray font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Chiudi
-          </button>
+<div id="searchResults" class="mt-8">
+    <h2 class="text-xl font-bold text-dark-sage mb-4">Studi compatibili</h2>
+    <div id="trialList" class="space-y-4">
+        <!-- I risultati verranno iniettati qui -->
+    </div>
+</div>
+
+<!-- Modal Dettagli Studio -->
+<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="relative w-11/12 md:w-3/4 lg:w-1/2 max-h-[90vh] bg-white rounded-xl shadow-lg flex flex-col overflow-hidden">
+        <div class="modal-content overflow-y-auto p-5">
+            <div class="text-center">
+                <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>
+                <p class="text-sm text-gray-500" id="modalSubtitle"></p>
+                <div class="mt-4">
+                    <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
+                    <div class="flex flex-col space-y-2" id="criteriaContainer">
+                        <!-- Criteri iniettati -->
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="px-5 py-4 bg-white border-t border-gray-200">
+            <button id="checkEligibilityBtn" class="mb-3 w-full bg-sage text-white text-base font-medium rounded-lg px-4 py-2 shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
+                Controlla eleggibilità
+            </button>
+            <div id="eligibilityResultDiv" class="font-bold text-center mb-3 hidden"></div>
+            <button id="closeModalBtn" class="w-full bg-gray-300 text-dark-gray text-base font-medium rounded-lg px-4 py-2 shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+                Chiudi
+            </button>
+        </div>
     </div>
-
-    <script>
-      const eligibilityResultDiv = document.getElementById("eligibilityResult");
-      const eligibilityText = document.getElementById("eligibilityText");
-      const closeEligibilityBtn = document.getElementById("closeEligibilityBtn");
-
-      // Esempio JS: mostra modale con messaggio
-      function showEligibilityResult(isEligible, studyTitle) {
-        eligibilityText.innerText = isEligible
-          ? `Paziente eleggibile per lo studio: ${studyTitle}`
-          : "Paziente non eleggibile per lo studio";
-        eligibilityResultDiv.classList.remove("hidden");
-      }
-
-      closeEligibilityBtn.addEventListener("click", () => {
-        eligibilityResultDiv.classList.add("hidden");
-      });
-
-      // Aggiungi qui il tuo JS per il submit del form e la logica dell'eleggibilità
-    </script>
-  </body>
-</html>
+</div>
