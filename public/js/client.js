@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const criteriaContainer = document.getElementById("criteriaContainer");
     const checkEligibilityBtn = document.getElementById("checkEligibilityBtn");
     const eligibilityResultDiv = document.getElementById(
-        "eligibilityResult",
+        "eligibilityResultDiv",
     );
     const closeModalBtn = document.getElementById("closeModalBtn");
     const modalClinicalAreas = document.getElementById("modalClinicalAreas");
@@ -660,6 +660,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modalButtonsDiv) {
             modalButtonsDiv.classList.remove("hidden");
             if (isPatientPage) {
+                // Rimuove i bottoni esistenti per evitare duplicati
+                modalButtonsDiv.innerHTML = "";
 
                 // Aggiunge il pulsante di controllo eleggibilità
                 const checkBtn = document.createElement("button");
@@ -668,40 +670,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     "bg-sage text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-sage transition-colors";
                 checkBtn.textContent = "Controlla eleggibilità";
                 modalButtonsDiv.appendChild(checkBtn);
-                // Gestione del pulsante di eleggibilità per la pagina Paziente
-                if (isPatientPage && checkEligibilityBtn) {
-                    checkBtn.addEventListener("click", () => {
-                        let isEligible = true;
-                        const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
 
-                        toggles.forEach((toggle) => {
-                            const preferredType = toggle.dataset.preferredType;
-                            const isChecked = toggle.checked;
+                // Aggiunge un pulsante "Annulla" per chiudere il modale in ogni momento
+                const cancelBtn = document.createElement("button");
+                cancelBtn.id = "cancelModalBtn";
+                cancelBtn.className =
+                    "bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors ml-2";
+                cancelBtn.textContent = "Annulla";
+                modalButtonsDiv.appendChild(cancelBtn);
 
-                            if (
-                                (preferredType === "inclusion" && !isChecked) ||
-                                (preferredType === "exclusion" && isChecked)
-                            ) {
-                                isEligible = false;
-                            }
-                        });
+                cancelBtn.addEventListener("click", () => {
+                    studyDetailModal.classList.add("hidden");
+                    studyDetailModal.style.display = "none";
+                });
+            } else {
+                modalButtonsDiv.innerHTML = "";
+            }
+        }
 
-                        if (eligibilityResultDiv) {
-                            eligibilityResultDiv.classList.remove("hidden");
-
-                            eligibilityResultDiv.innerHTML = `
-                                <div class="p-3 rounded-lg ${isEligible ? "bg-sage" : "bg-red-400"} text-white">
-                                    <p class="font-bold text-center">
-                                        Paziente ${isEligible ? "eleggibile" : "NON eleggibile"} per lo studio: ${study.title}
-                                    </p>
-                                    <div class="flex justify-center mt-4">
-                                        <button id="closeEligibilityBtn" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
-                                            Chiudi
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-
+        const isPatientPage = page === "patient";
+        if (checkEligibilityBtn) {
+            checkEligibilityBtn.style.display = isPatientPage
+                ? "block"
+                : "none";
+        }
 
         // Popola i dettagli dello studio per entrambe le pagine
         if (modalClinicalAreas)
@@ -724,13 +716,53 @@ document.addEventListener("DOMContentLoaded", () => {
         // Renderizza i criteri nel modale
         renderCriteriaInModal(study, isPatientPage);
 
-                    // Listener per pulsante "Chiudi"
-                    document.getElementById("closeEligibilityBtn").addEventListener("click", () => {
-                        studyDetailModal.classList.add("hidden");
-                        studyDetailModal.style.display = "none";
-                        eligibilityResultDiv.classList.add("hidden");
-                        eligibilityResultDiv.innerHTML = ""; // pulisce il contenuto
-                    });
+        // Gestione del pulsante di eleggibilità per la pagina Paziente
+        if (isPatientPage && checkEligibilityBtn) {
+            checkEligibilityBtn.onclick = () => {
+                let isEligible = true;
+                const toggles =
+                    criteriaContainer.querySelectorAll(".criteria-toggle");
+                toggles.forEach((toggle) => {
+                    // Correzione: `toggle.dataset.preferredType` è il modo corretto per leggere l'attributo `data-preferred-type`
+                    const preferredType = toggle.dataset.preferredType;
+                    const isChecked = toggle.checked;
+
+                    if (
+                        (preferredType === "inclusion" && !isChecked) ||
+                        (preferredType === "exclusion" && isChecked)
+                    ) {
+                        isEligible = false;
+                    }
+                });
+
+                if (eligibilityResultDiv) {
+                    eligibilityResultDiv.classList.remove("hidden");
+                    if (isEligible) {
+                        eligibilityResultDiv.innerHTML = `
+                            <div class="p-3 rounded-lg bg-sage">
+                                <p class="font-bold text-center text-white">Paziente eleggibile per lo studio: ${study.title}</p>
+                                <div class="flex justify-center mt-2">
+                                    <button id="closeEligibilityBtn" class="bg-white text-dark-gray font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">Chiudi</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        eligibilityResultDiv.innerHTML = `
+                            <div class="p-3 rounded-lg bg-red-400">
+                                <p class="font-bold text-center text-white">Paziente NON eleggibile per lo studio: ${study.title}</p>
+                                <div class="flex justify-center mt-2">
+                                    <button id="closeEligibilityBtn" class="bg-white text-dark-gray font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">Chiudi</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    // Aggiungo il listener al nuovo pulsante "Chiudi"
+                    document
+                        .getElementById("closeEligibilityBtn")
+                        .addEventListener("click", () => {
+                            studyDetailModal.classList.add("hidden");
+                            studyDetailModal.style.display = "none";
+                        });
                 }
             };
         }
@@ -738,9 +770,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // Rende il modale visibile
         studyDetailModal.classList.remove("hidden");
         studyDetailModal.style.display = "flex";
-        studyDetailModal.style.justifyContent = "center";
-        studyDetailModal.style.alignItems = "center";
-        studyDetailModal.style.paddingBottom = "100px";
     }
 
     if (closeModalBtn) {
