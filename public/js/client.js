@@ -718,27 +718,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Gestione del pulsante di eleggibilità per la pagina Paziente
         if (isPatientPage && checkEligibilityBtn) {
-            let isEligible = true;
-            let hasInclusionYes = false;
+            checkEligibilityBtn.onclick = () => {
+                let isEligible = true;
+                const toggles =
+                    criteriaContainer.querySelectorAll(".criteria-toggle");
+                toggles.forEach((toggle) => {
+                    // Correzione: `toggle.dataset.preferredType` è il modo corretto per leggere l'attributo `data-preferred-type`
+                    const preferredType = toggle.dataset.preferredType;
+                    const isChecked = toggle.checked;
 
-            const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
-
-            toggles.forEach((toggle) => {
-                const preferredType = toggle.dataset.preferredType;
-                const isChecked = toggle.checked;
-
-                if (preferredType === "inclusion" && isChecked) {
-                    hasInclusionYes = true; // almeno un inclusione checked
-                }
-                if (preferredType === "exclusion" && isChecked) {
-                    isEligible = false; // esclusione selezionata = non eleggibile
-                }
-            });
-
-            // se nessun inclusione è selezionato, paziente NON eleggibile
-            if (!hasInclusionYes) {
-                isEligible = false;
-            }
+                    if (
+                        (preferredType === "inclusion" && !isChecked) ||
+                        (preferredType === "exclusion" && isChecked)
+                    ) {
+                        isEligible = false;
+                    }
+                });
 
                 if (eligibilityResultDiv) {
                     eligibilityResultDiv.classList.remove("hidden");
