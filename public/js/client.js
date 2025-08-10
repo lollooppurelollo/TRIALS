@@ -719,21 +719,21 @@ document.addEventListener("DOMContentLoaded", () => {
         // Gestione del pulsante di eleggibilità per la pagina Paziente
         if (isPatientPage && checkEligibilityBtn) {
             checkEligibilityBtn.onclick = () => {
-                let isEligible = true;
+                let isEligible = false;
                 const toggles =
                     criteriaContainer.querySelectorAll(".criteria-toggle");
-                toggles.forEach((toggle) => {
-                    // Correzione: `toggle.dataset.preferredType` è il modo corretto per leggere l'attributo `data-preferred-type`
+                for (const toggle of toggles) {
                     const preferredType = toggle.dataset.preferredType;
                     const isChecked = toggle.checked;
 
-                    if (
-                        (preferredType === "inclusion" && !isChecked) ||
-                        (preferredType === "exclusion" && isChecked)
-                    ) {
-                        isEligible = false;
+                    if (preferredType === "inclusion" && isChecked) {
+                        isEligible = true; // almeno uno sì inclusione
                     }
-                });
+                    if (preferredType === "exclusion" && isChecked) {
+                        isEligible = false; // esclusione prevale
+                        break; // esci subito
+                    }
+                }
 
                 if (eligibilityResultDiv) {
                     eligibilityResultDiv.classList.remove("hidden");
@@ -741,7 +741,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         eligibilityResultDiv.innerHTML = `
                             <div class="p-3 rounded-lg bg-sage">
                                 <p class="font-bold text-center text-white">Paziente eleggibile per lo studio: ${study.title}</p>
-                                </div>
                             </div>
                         `;
                     } else {
