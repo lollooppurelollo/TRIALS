@@ -1,102 +1,140 @@
+// index.js
 import express from "express";
-import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
 import expressLayouts from "express-ejs-layouts";
 
-// Carica le variabili d'ambiente dal file .env
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-// Configurazione di Supabase
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Connessione Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY,
+);
 
-// Configura EJS come motore di template
+// Middleware
 app.set("view engine", "ejs");
-app.set("views", "./views");
-
-// Abilita il layout per le pagine EJS
 app.use(expressLayouts);
-
-// Middleware per servire i file statici e per il parsing del body JSON
 app.use(express.static("public"));
 app.use(express.json());
 
-// Rotta principale per la pagina del paziente
-app.get("/", async (req, res) => {
-  res.render("patient", { layout: "layout" });
+// Rotte pagine
+app.get("/", (req, res) => res.render("patient"));
+app.get("/trial", (req, res) => res.render("trial"));
+app.get("/trials", (req, res) => res.render("trial"));
+app.get("/timeline", (req, res) => {
+  const studyId = req.query.study_id;
+  res.render("timeline", { studyId });
 });
 
-// Rotta per la pagina di gestione dei trial (per il medico)
-app.get("/trials", (req, res) => {
-  res.render("trial", { layout: "layout" });
-});
+// Helpers
+function toIntOrNull(v) {
+  if (v === undefined || v === null || v === "") return null;
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) ? null : n;
+}
+function toBool(v) {
+  return v === true || v === "true" || v === 1 || v === "1";
+}
+function sanitizeEvent(body, studyId) {
+  const one_shot = toBool(body.one_shot);
 
-// API per ottenere tutti gli studi
-app.get("/api/studies", async (req, res) => {
-  try {
-    const { data, error } = await supabase.from("studies").select("*");
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error("Errore nel recupero degli studi:", error.message);
-    res.status(500).json({ error: "Errore nel recupero degli studi" });
+  return {
+    study_id: studyId,
+    event_type: body.event_type || "custom",
+    title: (body.title ?? "").trim() || null,
+    notes: (body.notes ?? "").trim() || null,
+    indications: (body.indications ?? "").trim() || null,
+    one_shot,
+    at_week: one_shot ? toIntOrNull(body.at_week) : null,
+    repeat_every_days: !one_shot ? toIntOrNull(body.repeat_every_days) : null,
+    start_week: !one_shot ? toIntOrNull(body.start_week) : null,
+    stop_week: !one_shot ? toIntOrNull(body.stop_week) : null,
+    window_days: toIntOrNull(body.window_days),
+  };
+}
+
+// API Studies
+app.get("/api/studies", async (_req, res) => {
+  const { data, error } = await supabase
+    .from("studies")
+    .select("*")
+    .order("id");
+  if (error) {
+    console.error("Errore GET /api/studies:", error);
+    return res.status(500).send("Errore recupero studi");
   }
+  res.json(data);
 });
 
-// API per creare un nuovo studio
 app.post("/api/studies", async (req, res) => {
-  try {
-    const {
-      title,
-      subtitle,
-      treatment_setting,
-      min_treatment_line,
-      max_treatment_line,
-      clinical_areas,
-      specific_clinical_areas,
-      criteria,
-    } = req.body;
-    const { data, error } = await supabase
-      .from("studies")
-      .insert([
-        {
-          title,
-          subtitle,
-          treatment_setting,
-          min_treatment_line,
-          max_treatment_line,
-          clinical_areas,
-          specific_clinical_areas,
-          criteria,
-        },
-      ])
-      .select();
-
-    if (error) throw error;
-    res.status(201).json(data[0]);
-  } catch (error) {
-    console.error("Errore nella creazione dello studio:", error.message);
-    res.status(500).json({ error: "Errore nella creazione dello studio" });
+  const { data, error } = await supabase
+    .from("studies")
+    .insert([req.body])
+    .select();
+  if (error) {
+    console.error("Errore POST /api/studies:", error);
+    return res.status(500).send("Errore creazione studio");
   }
+  res.json(data[0]);
 });
 
-// API per eliminare uno studio
 app.delete("/api/studies/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { error } = await supabase.from("studies").delete().eq("id", id);
-    if (error) throw error;
-    res.status(200).json({ message: "Studio eliminato con successo" });
-  } catch (error) {
-    console.error("Errore nell'eliminazione dello studio:", error.message);
-    res.status(500).json({ error: "Errore nell'eliminazione dello studio" });
+  const { error } = await supabase
+    .from("studies")
+    .delete()
+    .eq("id", req.params.id);
+  if (error) {
+    console.error("Errore DELETE /api/studies:", error);
+    return res.status(500).send("Errore eliminazione studio");
   }
+  res.sendStatus(204);
 });
 
-app.listen(port, () => {
-  console.log(`Server in ascolto su http://localhost:${port}`);
+// API Timeline
+app.get("/api/timeline/:studyId", async (req, res) => {
+  const { data, error } = await supabase
+    .from("study_events")
+    .select("*")
+    .eq("study_id", req.params.studyId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Errore GET /api/timeline:", error);
+    return res.status(500).send("Errore recupero eventi");
+  }
+  res.json(data);
+});
+
+app.post("/api/timeline/:studyId", async (req, res) => {
+  const event = sanitizeEvent(req.body, req.params.studyId);
+  const { data, error } = await supabase
+    .from("study_events")
+    .insert([event])
+    .select();
+  if (error) {
+    console.error("Errore POST /api/timeline:", error);
+    return res.status(500).send("Errore creazione evento");
+  }
+  res.json(data[0]);
+});
+
+app.delete("/api/timeline/:eventId", async (req, res) => {
+  const { error } = await supabase
+    .from("study_events")
+    .delete()
+    .eq("id", req.params.eventId);
+  if (error) {
+    console.error("Errore DELETE /api/timeline:", error);
+    return res.status(500).send("Errore eliminazione evento");
+  }
+  res.sendStatus(204);
+});
+
+// Avvio server
+app.listen(PORT, () => {
+  console.log(`✅ Server avviato su http://localhost:${PORT}`);
 });

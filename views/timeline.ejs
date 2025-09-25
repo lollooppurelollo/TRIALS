@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Timeline Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+<div class="bg-white p-6 rounded-xl shadow-md mb-6">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-2xl font-bold text-dark-sage">Timeline Studio</h1>
+      <p class="text-gray-600 text-sm">Gestione degli eventi di calendario per lo studio selezionato.</p>
+    </div>
+    <div class="text-sm">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-dark-sage text-white">
+          <span class="w-2.5 h-2.5 rounded-full bg-white/80"></span> Visita oncologica
+        </span>
+        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-light-sage text-dark-gray">
+          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Esami ematici
+        </span>
+        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-blue-200 text-dark-gray">
+          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Radiologia
+        </span>
+        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-orange-300 text-dark-gray">
+          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Terapia
+        </span>
+        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-gray-300 text-dark-gray">
+          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Custom
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Controlli timeline -->
+<div class="bg-white p-4 rounded-xl shadow-md mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-dark-gray">Settimane totali (orizzonte)</label>
+      <input id="tlTotalWeeks" type="number" min="4" max="104" value="24"
+             class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-dark-gray">Settimane per blocco</label>
+      <input id="tlBlockSize" type="number" min="1" max="12" value="4"
+             class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+    </div>
+    <div class="flex items-end">
+      <button id="tlRefreshBtn"
+              class="w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+        Aggiorna visualizzazione
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Layout 2 colonne -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Timeline -->
+  <section class="bg-white p-4 rounded-xl shadow-md">
+    <h2 class="text-lg font-bold text-dark-gray mb-3">Timeline</h2>
+    <div id="tlTimeline" class="space-y-4"></div>
+  </section>
+
+  <!-- Piano Eventi + Form -->
+  <section class="space-y-6">
+    <!-- Piano eventi -->
+    <div class="bg-white p-4 rounded-xl shadow-md">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold text-dark-gray">Piano eventi</h2>
+        <span id="tlNoEventsMsg" class="text-sm text-gray-500 hidden">Nessun evento salvato.</span>
+      </div>
+      <div id="tlEventsList" class="space-y-3"></div>
+    </div>
+
+    <!-- Form nuovo evento -->
+    <div class="bg-white p-4 rounded-xl shadow-md">
+      <h2 class="text-lg font-bold text-dark-gray mb-3">Aggiungi evento</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-dark-gray">Tipo di evento</label>
+          <select id="evType" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+            <option value="oncological_visit">Visita oncologica</option>
+            <option value="blood_test">Esami ematici</option>
+            <option value="radiology">Esami radiologici</option>
+            <option value="therapy">Terapia</option>
+            <option value="custom">Evento personalizzato</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-dark-gray">Titolo (opzionale)</label>
+          <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-dark-gray">Note</label>
+          <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></textarea>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-dark-gray">Indicazioni</label>
+          <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></textarea>
+        </div>
+
+        <div class="md:col-span-2 flex items-center gap-2">
+          <input id="evOneShot" type="checkbox" class="rounded">
+          <label for="evOneShot" class="text-sm text-dark-gray">Evento singolo</label>
+        </div>
+
+        <div id="evSingleWrap" class="md:col-span-2">
+          <label class="block text-sm font-medium text-dark-gray">Settimana (se evento singolo)</label>
+          <input id="evAtWeek" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+        </div>
+
+        <div id="evRecurringWrap" class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 hidden">
+          <div>
+            <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
+            <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-dark-gray">Da settimana</label>
+            <input id="evStartWeek" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-dark-gray">A settimana (facoltativo)</label>
+            <input id="evStopWeek" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          </div>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-dark-gray">Finestra di esecuzione (± giorni) — facoltativa</label>
+          <input id="evWindowDays" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+        </div>
+      </div>
+
+      <button id="evSaveBtn"
+              class="mt-4 w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+        Salva evento
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- Modale password -->
+<div id="tlPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-80">
+    <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>
+    <input type="password" id="tlPasswordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage" />
+    <p id="tlPasswordError" class="text-red-400 text-sm mt-2 hidden">Password errata.</p>
+    <div class="flex justify-end mt-4 space-x-2">
+      <button id="tlCancelPwdBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Annulla</button>
+      <button id="tlConfirmPwdBtn" class="bg-sage text-white font-bold py-2 px-4 rounded-lg">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STUDY_ID = "<%= typeof studyId !== 'undefined' ? studyId : '' %>";
+
+  // ---- colori ----
+  const colorMap = {
+    oncological_visit: "bg-dark-sage text-white",
+    blood_test: "bg-light-sage text-dark-gray",
+    radiology: "bg-blue-200 text-dark-gray",
+    therapy: "bg-orange-300 text-dark-gray",
+    custom: "bg-gray-300 text-dark-gray",
+  };
+
+  // ---- selettori ----
+  const tlTimeline = document.getElementById("tlTimeline");
+  const tlTotalWeeks = document.getElementById("tlTotalWeeks");
+  const tlBlockSize = document.getElementById("tlBlockSize");
+  const tlRefreshBtn = document.getElementById("tlRefreshBtn");
+  const tlEventsList = document.getElementById("tlEventsList");
+  const tlNoEventsMsg = document.getElementById("tlNoEventsMsg");
+
+  const evType = document.getElementById("evType");
+  const evTitle = document.getElementById("evTitle");
+  const evNotes = document.getElementById("evNotes");
+  const evIndications = document.getElementById("evIndications");
+  const evOneShot = document.getElementById("evOneShot");
+  const evAtWeek = document.getElementById("evAtWeek");
+  const evRepeatEveryDays = document.getElementById("evRepeatEveryDays");
+  const evStartWeek = document.getElementById("evStartWeek");
+  const evStopWeek = document.getElementById("evStopWeek");
+  const evWindowDays = document.getElementById("evWindowDays");
+  const evSaveBtn = document.getElementById("evSaveBtn");
+
+  const tlPwdModal = document.getElementById("tlPasswordModal");
+  const tlPwdInput = document.getElementById("tlPasswordInput");
+  const tlPwdError = document.getElementById("tlPasswordError");
+  const tlCancelPwdBtn = document.getElementById("tlCancelPwdBtn");
+  const tlConfirmPwdBtn = document.getElementById("tlConfirmPwdBtn");
+
+  const evSingleWrap = document.getElementById("evSingleWrap");
+  const evRecurringWrap = document.getElementById("evRecurringWrap");
+
+  let _events = [];
+  let _pendingAction = null;
+
+  // ---- modale password ----
+  function showPwdModal(action) {
+    _pendingAction = action;
+    tlPwdInput.value = "";
+    tlPwdError.classList.add("hidden");
+    tlPwdModal.classList.remove("hidden");
+    tlPwdModal.classList.add("flex");
+  }
+  function hidePwdModal() {
+    tlPwdModal.classList.add("hidden");
+    tlPwdModal.classList.remove("flex");
+    _pendingAction = null;
+  }
+  tlCancelPwdBtn.addEventListener("click", hidePwdModal);
+  tlConfirmPwdBtn.addEventListener("click", () => {
+    if (tlPwdInput.value === "TRIAL") {
+      hidePwdModal();
+      if (_pendingAction) runPendingAction(_pendingAction);
+    } else {
+      tlPwdError.classList.remove("hidden");
+    }
+  });
+
+  // ---- utilità ----
+  function formatEventLine(ev) {
+    if (ev.one_shot) {
+      return `Settimana ${ev.at_week}`;
+    } else {
+      const stop = ev.stop_week != null ? ev.stop_week : "fine";
+      return `Ogni ${ev.repeat_every_days} giorni, da settimana ${ev.start_week} a ${stop}`;
+    }
+  }
+  function eventTitle(ev) {
+    const map = {
+      oncological_visit: "Visita oncologica",
+      blood_test: "Esami ematici",
+      radiology: "Esami radiologici",
+      therapy: "Terapia",
+      custom: "Evento",
+    };
+    return ev.title && ev.title.trim() !== "" ? ev.title : map[ev.event_type] || "Evento";
+  }
+
+  // ---- render lista eventi ----
+  function renderEventsList() {
+    tlEventsList.innerHTML = "";
+    if (!_events.length) {
+      tlNoEventsMsg.classList.remove("hidden");
+      return;
+    }
+    tlNoEventsMsg.classList.add("hidden");
+    _events.forEach(ev => {
+      const card = document.createElement("div");
+      card.className = `p-4 rounded-lg shadow flex justify-between items-start ${colorMap[ev.event_type] || "bg-gray-200"}`;
+      card.innerHTML = `
+        <div class="pr-3">
+          <div class="font-bold">${eventTitle(ev)}</div>
+          <div class="text-sm opacity-90">${formatEventLine(ev)}</div>
+        </div>
+        <div>
+          <button data-id="${ev.id}" class="tlDeleteBtn bg-white/20 text-sm px-3 py-1 rounded">🗑️</button>
+        </div>
+      `;
+      tlEventsList.appendChild(card);
+    });
+  }
+
+  // ---- computeOccurrences ----
+  function computeOccurrences(events, totalWeeks) {
+    const weeks = Array.from({ length: totalWeeks }, () => []);
+    events.forEach(ev => {
+      if (ev.one_shot && Number.isInteger(ev.at_week)) {
+        weeks[ev.at_week]?.push(ev);
+      } else if (!ev.one_shot && Number.isInteger(ev.start_week)) {
+        const stop = Number.isInteger(ev.stop_week) ? ev.stop_week : (totalWeeks - 1);
+        const stepDays = Math.max(1, parseInt(ev.repeat_every_days || 1, 10));
+        for (let w = ev.start_week; w <= Math.min(stop, totalWeeks - 1); w++) {
+          const daysFromStart = (w - ev.start_week) * 7;
+          if (daysFromStart % stepDays === 0) {
+            weeks[w]?.push(ev);
+          }
+        }
+      }
+    });
+    return weeks;
+  }
+
+  // ---- renderTimeline ----
+  function renderTimeline() {
+    const total = Math.max(4, parseInt(tlTotalWeeks.value || "24", 10));
+    const blockSize = Math.max(1, parseInt(tlBlockSize.value || "4", 10));
+    const weeks = computeOccurrences(_events, total);
+    tlTimeline.innerHTML = "";
+    for (let start = 0; start < total; start += blockSize) {
+      const end = Math.min(total - 1, start + blockSize - 1);
+      const block = document.createElement("div");
+      block.className = "rounded-lg border border-gray-200 mb-2";
+      const header = document.createElement("div");
+      header.className = "px-4 py-2 bg-gray-50 rounded-t-lg flex justify-between";
+      header.innerHTML = `<div class="font-semibold">Settimane ${start}-${end}</div>`;
+      block.appendChild(header);
+      const body = document.createElement("div");
+      body.className = "p-3 space-y-2";
+      for (let w = start; w <= end; w++) {
+        const row = document.createElement("div");
+        row.className = "flex gap-3";
+        const label = document.createElement("div");
+        label.className = "w-24 text-xs text-gray-500";
+        label.textContent = `Settimana ${w}`;
+        const evs = document.createElement("div");
+        evs.className = "flex flex-wrap gap-2";
+        weeks[w].forEach(ev => {
+          const chip = document.createElement("div");
+          chip.className = `text-xs px-2 py-1 rounded ${colorMap[ev.event_type] || "bg-gray-200"}`;
+          chip.textContent = eventTitle(ev);
+          evs.appendChild(chip);
+        });
+        row.appendChild(label);
+        row.appendChild(evs);
+        body.appendChild(row);
+      }
+      block.appendChild(body);
+      tlTimeline.appendChild(block);
+    }
+  }
+
+  // ---- fetch ----
+  async function loadEvents() {
+    if (!STUDY_ID) return;
+    console.log("Carico eventi per studio:", STUDY_ID);
+    const res = await fetch(`/api/timeline/${STUDY_ID}`);
+    if (!res.ok) {
+      console.error("Errore loadEvents:", res.status, await res.text());
+      return;
+    }
+    _events = await res.json();
+    console.log("Eventi caricati:", _events);
+    renderEventsList();
+    renderTimeline();
+  }
+
+  async function createEvent(ev) {
+    console.log("Invio evento:", ev);
+    const res = await fetch(`/api/timeline/${STUDY_ID}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ev),
+    });
+    if (!res.ok) {
+      console.error("Errore createEvent:", res.status, await res.text());
+      alert("Errore durante il salvataggio evento");
+      return;
+    }
+    const nuovo = await res.json();
+    console.log("Evento salvato:", nuovo);
+    // reset form
+    evTitle.value = "";
+    evNotes.value = "";
+    evIndications.value = "";
+    evAtWeek.value = "";
+    evRepeatEveryDays.value = "";
+    evStartWeek.value = "";
+    evStopWeek.value = "";
+    evWindowDays.value = "";
+    evOneShot.checked = false;
+    evRecurringWrap.classList.remove("hidden");
+    await loadEvents();
+  }
+
+  async function deleteEvent(id) {
+    console.log("Elimino evento:", id);
+    const res = await fetch(`/api/timeline/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      console.error("Errore deleteEvent:", res.status, await res.text());
+      return;
+    }
+    await loadEvents();
+  }
+
+  function runPendingAction(action) {
+    if (action.type === "create") createEvent(action.payload);
+    if (action.type === "delete") deleteEvent(action.payload.id);
+  }
+
+  // ---- handlers ----
+  evOneShot.addEventListener("change", () => {
+    if (evOneShot.checked) {
+      evSingleWrap.classList.remove("hidden");
+      evRecurringWrap.classList.add("hidden");
+    } else {
+      evSingleWrap.classList.add("hidden");
+      evRecurringWrap.classList.remove("hidden");
+    }
+  });
+
+  evSaveBtn.addEventListener("click", () => {
+    const payload = {
+      event_type: evType.value,
+      title: evTitle.value,
+      notes: evNotes.value,
+      indications: evIndications.value,
+      one_shot: evOneShot.checked,
+      at_week: evOneShot.checked ? parseInt(evAtWeek.value || "0", 10) : null,
+      repeat_every_days: !evOneShot.checked ? parseInt(evRepeatEveryDays.value || "0", 10) : null,
+      start_week: !evOneShot.checked ? parseInt(evStartWeek.value || "0", 10) : null,
+      stop_week: !evOneShot.checked && evStopWeek.value !== "" ? parseInt(evStopWeek.value, 10) : null,
+      window_days: evWindowDays.value !== "" ? parseInt(evWindowDays.value, 10) : null,
+    };
+    console.log("Payload pronto:", payload);
+    showPwdModal({ type: "create", payload });
+  });
+
+  tlEventsList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".tlDeleteBtn");
+    if (!btn) return;
+    const id = btn.getAttribute("data-id");
+    showPwdModal({ type: "delete", payload: { id } });
+  });
+
+  tlRefreshBtn.addEventListener("click", renderTimeline);
+
+  if (STUDY_ID) loadEvents();
+})();
+</script>
+</body>
+</html>

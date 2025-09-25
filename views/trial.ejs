@@ -1,143 +1,189 @@
 <div class="bg-white p-8 rounded-xl shadow-md mb-8">
-    <h1 class="text-2xl font-bold text-dark-sage mb-4">Gestione Studi Clinici</h1>
-    <p class="text-gray-600 mb-6">Aggiungi o visualizza gli studi clinici disponibili.</p>
+  <h1 class="text-2xl font-bold text-dark-sage mb-4">Gestione Studi Clinici</h1>
+  <p class="text-gray-600 mb-6">Aggiungi o visualizza gli studi clinici disponibili.</p>
 
-    <form id="studyForm" class="space-y-4">
-        <!-- Modifica per forzare il riconoscimento del cambiamento in Replit -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="studyTitle" class="block text-sm font-medium text-dark-gray">Titolo dello studio</label>
-                <input type="text" id="studyTitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-            </div>
-            <div>
-                <label for="studySubtitle" class="block text-sm font-medium text-dark-gray">Sottotitolo/descrizione breve</label>
-                <input type="text" id="studySubtitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-            </div>
-            <div>
-                <label for="studyClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
-                <select id="studyClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="Mammella">Mammella</option>
-                    <option value="Polmone">Polmone</option>
-                    <option value="Gastro-Intestinale">Gastro-Intestinale</option>
-                    <option value="Ginecologico">Ginecologico</option>
-                    <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
-                    <option value="Melanoma e Cute">Melanoma e Cute</option>
-                    <option value="Testa-Collo">Testa-Collo</option>
-                    <option value="Fase 1">Fase 1</option>
-                    <option value="Altro">Altro</option>
-                </select>
-            </div>
-            <div id="studySpecificClinicalAreaContainer" class="hidden">
-                <label for="studySpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
-                <select id="studySpecificClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
-            </div>
-            <div>
-                <label for="studyTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
-                <select id="studyTreatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-                    <option value="" disabled selected>Seleziona un setting</option>
-                    <option value="Metastatico">Metastatico</option>
-                    <option value="Adiuvante">Adiuvante</option>
-                    <option value="Neo-adiuvante">Neo-adiuvante</option>
-                </select>
-            </div>
-            <div id="studyTreatmentLineContainer" class="hidden">
-                <label class="block text-sm font-medium text-dark-gray">Linea di Trattamento (min-max)</label>
-                <div class="flex space-x-2 mt-1">
-                    <input type="number" id="minTreatmentLine" class="p-2 w-1/2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Min">
-                    <input type="number" id="maxTreatmentLine" class="p-2 w-1/2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Max">
-                </div>
-            </div>
+  <form id="studyForm" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="studyTitle" class="block text-sm font-medium text-dark-gray">Titolo dello studio</label>
+        <input type="text" id="studyTitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+      </div>
+      <div>
+        <label for="studySubtitle" class="block text-sm font-medium text-dark-gray">Sottotitolo/descrizione breve</label>
+        <input type="text" id="studySubtitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+      </div>
+      <div>
+        <label for="studyClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
+        <select id="studyClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+          <option value="Mammella">Mammella</option>
+          <option value="Polmone">Polmone</option>
+          <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+          <option value="Ginecologico">Ginecologico</option>
+          <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+          <option value="Melanoma e Cute">Melanoma e Cute</option>
+          <option value="Testa-Collo">Testa-Collo</option>
+          <option value="Fase 1">Fase 1</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </div>
+      <div id="studySpecificClinicalAreaContainer" class="hidden">
+        <label for="studySpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
+        <select id="studySpecificClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
+      </div>
+      <div>
+        <label for="studyTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
+        <select id="studyTreatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+          <option value="" disabled selected>Seleziona un setting</option>
+          <option value="Metastatico">Metastatico</option>
+          <option value="Adiuvante">Adiuvante</option>
+          <option value="Neo-adiuvante">Neo-adiuvante</option>
+        </select>
+      </div>
+      <div id="studyTreatmentLineContainer" class="hidden">
+        <label class="block text-sm font-medium text-dark-gray">Linea di Trattamento (min-max)</label>
+        <div class="flex space-x-2 mt-1">
+          <input type="number" id="minTreatmentLine" class="p-2 w-1/2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Min">
+          <input type="number" id="maxTreatmentLine" class="p-2 w-1/2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Max">
         </div>
+      </div>
+    </div>
 
-        <h3 class="text-lg font-bold text-dark-gray mt-6 mb-2">Criteri di Inclusione/Esclusione</h3>
-        <div id="criteriaList" class="space-y-2 mb-4">
-            <!-- I criteri verranno aggiunti dinamicamente qui -->
-        </div>
+    <h3 class="text-lg font-bold text-dark-gray mt-6 mb-2">Criteri di Inclusione/Esclusione</h3>
+    <div id="criteriaList" class="space-y-2 mb-4"></div>
 
-        <button type="button" id="addCriteriaBtn" class="bg-gray-200 text-dark-gray px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
-            Aggiungi Criterio
-        </button>
+    <button type="button" id="addCriteriaBtn" class="bg-gray-200 text-dark-gray px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+      Aggiungi Criterio
+    </button>
 
-        <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md mt-6">
-            Salva Studio
-        </button>
-    </form>
+    <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md mt-6">
+      Salva Studio
+    </button>
+  </form>
 </div>
 
 <div id="trialListSection" class="mt-8">
-    <h2 class="text-xl font-bold text-dark-sage mb-4">Studi Attivi</h2>
-    <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-        <form id="trialFilterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label for="filterClinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica</label>
-                <select id="filterClinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-                    <option value="">Tutte le Aree</option>
-                    <option value="Mammella">Mammella</option>
-                    <option value="Polmone">Polmone</option>
-                    <option value="Gastro-Intestinale">Gastro-Intestinale</option>
-                    <option value="Ginecologico">Ginecologico</option>
-                    <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
-                    <option value="Melanoma e Cute">Melanoma e Cute</option>
-                    <option value="Testa-Collo">Testa-Collo</option>
-                    <option value="Fase 1">Fase 1</option>
-                    <option value="Altro">Altro</option>
-                </select>
-            </div>
-            <div id="filterSpecificClinicalAreaContainer" class="hidden">
-                <label for="filterSpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area</label>
-                <select id="filterSpecificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-                    <option value="">Tutte le Specifiche</option>
-                </select>
-            </div>
-            <div>
-                <label for="filterTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting</label>
-                <select id="filterTreatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-                    <option value="">Tutti i Setting</option>
-                    <option value="Metastatico">Metastatico</option>
-                    <option value="Adiuvante">Adiuvante</option>
-                    <option value="Neo-adiuvante">Neo-adiuvante</option>
-                </select>
-            </div>
-        </form>
-    </div>
-    <div id="trialList" class="space-y-4 mt-4">
-        <!-- I risultati verranno iniettati qui -->
-    </div>
+  <h2 class="text-xl font-bold text-sage mb-4">Studi Attivi</h2>
+  <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+    <form id="trialFilterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label for="filterClinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica</label>
+        <select id="filterClinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          <option value="">Tutte le Aree</option>
+          <option value="Mammella">Mammella</option>
+          <option value="Polmone">Polmone</option>
+          <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+          <option value="Ginecologico">Ginecologico</option>
+          <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+          <option value="Melanoma e Cute">Melanoma e Cute</option>
+          <option value="Testa-Collo">Testa-Collo</option>
+          <option value="Fase 1">Fase 1</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </div>
+      <div id="filterSpecificClinicalAreaContainer" class="hidden">
+        <label for="filterSpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area</label>
+        <select id="filterSpecificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          <option value="">Tutte le Specifiche</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterTreatmentSetting" class="block text-sm font-medium text-dark-gray">Setting</label>
+        <select id="filterTreatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          <option value="">Tutti i Setting</option>
+          <option value="Metastatico">Metastatico</option>
+          <option value="Adiuvante">Adiuvante</option>
+          <option value="Neo-adiuvante">Neo-adiuvante</option>
+        </select>
+      </div>
+    </form>
+  </div>
+  <div id="trialList" class="space-y-4 mt-4"></div>
 </div>
 
 <!-- Modal Dettagli Studio -->
-<div id="studyDetailModal" class="fixed top-0 left-0 right-0 bottom-16 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-    <!-- Il riquadro bianco del modale -->
-    <div class="relative w-11/12 md:w-3/4 lg:w-1/2 bg-white rounded-xl shadow-lg flex flex-col max-h-full">
-        <div class="p-6 flex-shrink-0">
-            <h3 class="text-lg leading-6 font-bold text-dark-gray" id="modalTitle"></h3>
-            <p class="text-sm text-gray-500 mb-4" id="modalSubtitle"></p>
-        </div>
-        <!-- Il contenuto che deve scorrere -->
-        <div class="modal-content flex-grow overflow-y-auto px-6">
-            <div>
-                <h4 class="font-bold text-dark-gray mb-2">Dettagli dello Studio</h4>
-                <div class="space-y-2 text-sm text-dark-gray">
-                    <div><span class="font-bold">Area Clinica:</span> <span id="modalClinicalAreas"></span></div>
-                    <div><span class="font-bold">Specifica Area:</span> <span id="modalSpecificClinicalAreas"></span></div>
-                    <div><span class="font-bold">Setting:</span> <span id="modalTreatmentSetting"></span></div>
-                    <div id="modalTreatmentLineContainer" class="hidden">
-                        <span class="font-bold">Linea di Trattamento:</span> <span id="modalTreatmentLine"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <h4 class="font-bold text-dark-gray mb-2">Criteri di Inclusione/Esclusione</h4>
-                <div class="flex flex-col space-y-2" id="criteriaContainer">
-                    <!-- I criteri verranno iniettati qui -->
-                </div>
-            </div>
-        </div>
-        <!-- Il pulsante di chiusura non scorre più con il contenuto -->
-        <div class="p-6 border-t border-gray-200 flex-shrink-0">
-            <button id="closeModalBtn" class="px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
-                Chiudi
-            </button>
-        </div>
+<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+  <div class="relative w-11/12 md:w-3/4 lg:w-1/2 bg-white rounded-xl shadow-lg flex flex-col max-h-[80vh]">
+    <div class="p-6 flex-shrink-0">
+      <h3 class="text-lg leading-6 font-bold text-dark-gray" id="modalTitle"></h3>
+      <p class="text-sm text-gray-500 mb-4" id="modalSubtitle"></p>
     </div>
+    <div class="modal-content flex-grow overflow-y-auto px-6">
+      <div>
+        <h4 class="font-bold text-dark-gray mb-2">Dettagli dello Studio</h4>
+        <div class="space-y-2 text-sm text-dark-gray">
+          <div><span class="font-bold">Area Clinica:</span> <span id="modalClinicalAreas"></span></div>
+          <div><span class="font-bold">Specifica Area:</span> <span id="modalSpecificClinicalAreas"></span></div>
+          <div><span class="font-bold">Setting:</span> <span id="modalTreatmentSetting"></span></div>
+          <div id="modalTreatmentLineContainer" class="hidden">
+            <span class="font-bold">Linea di Trattamento:</span> <span id="modalTreatmentLine"></span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <h4 class="font-bold text-dark-gray mb-2">Criteri di Inclusione/Esclusione</h4>
+        <div class="flex flex-col space-y-2" id="criteriaContainer"></div>
+      </div>
+    </div>
+    <div class="p-6 border-t border-gray-200 flex-shrink-0 space-y-2">
+      <button id="openTimelineBtn" class="w-full bg-sage text-white text-base font-medium rounded-lg px-4 py-2 shadow-md hover:bg-dark-sage flex items-center justify-center gap-2 transition-colors">
+        <i class="fas fa-calendar-alt"></i> Timeline
+      </button>
+      <button id="closeModalBtn" class="px-4 py-2 bg-gray-300 text-dark-gray text-base font-medium rounded-lg w-full shadow-md hover:bg-gray-400">
+        Chiudi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Timeline Studio -->
+<div id="timelineModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+  <div class="bg-white rounded-xl shadow-lg w-11/12 md:w-2/3 lg:w-1/2 flex flex-col max-h-[80vh]">
+    <!-- Header -->
+    <div class="p-4 flex-shrink-0">
+      <h2 class="text-xl font-bold text-sage">Timeline Studio</h2>
+      <p id="timelineEmptyMessage" class="text-gray-500 text-sm">Nessun evento in timeline.</p>
+    </div>
+
+    <!-- Contenuto scrollabile -->
+    <div class="flex-grow overflow-y-auto p-4 space-y-4">
+      <button id="addTimelineEventBtn" class="w-full bg-sage text-white font-medium rounded-lg py-2 hover:bg-dark-sage">
+        + Aggiungi Evento
+      </button>
+
+      <select id="eventType" class="w-full border border-gray-300 rounded-lg p-2">
+        <option value="oncological_visit">Visita oncologica</option>
+        <option value="blood_test">Esami ematici</option>
+        <option value="radiology">Esami radiologici</option>
+        <option value="therapy">Terapia</option>
+        <option value="custom">Personalizzato</option>
+      </select>
+
+      <input type="text" id="eventTitle" placeholder="Titolo (opzionale)" class="w-full border border-gray-300 rounded-lg p-2">
+
+      <textarea id="eventNotes" placeholder="Note" class="w-full border border-gray-300 rounded-lg p-2"></textarea>
+
+      <input type="text" id="eventIndications" placeholder="Indicazioni" class="w-full border border-gray-300 rounded-lg p-2">
+
+      <label class="flex items-center space-x-2">
+        <input type="checkbox" id="eventOneShot" class="rounded"> <span>Evento singolo?</span>
+      </label>
+
+      <input type="number" id="eventAtWeek" placeholder="Settimana (se singolo)" class="w-full border border-gray-300 rounded-lg p-2">
+
+      <div class="grid grid-cols-3 gap-2">
+        <input type="number" id="eventRepeatEvery" placeholder="Ogni N sett." class="border border-gray-300 rounded-lg p-2">
+        <input type="number" id="eventStartWeek" placeholder="Da settimana" class="border border-gray-300 rounded-lg p-2">
+        <input type="number" id="eventStopWeek" placeholder="A settimana" class="border border-gray-300 rounded-lg p-2">
+      </div>
+
+      <input type="number" id="eventWindowDays" placeholder="Finestra ± giorni" class="w-full border border-gray-300 rounded-lg p-2">
+    </div>
+
+    <!-- Footer -->
+    <div class="p-4 border-t flex-shrink-0">
+      <button id="closeTimelineBtn" class="px-4 py-2 bg-gray-300 text-dark-gray rounded-lg w-full hover:bg-gray-400">
+        Chiudi
+      </button>
+    </div>
+  </div>
 </div>
