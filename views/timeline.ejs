@@ -5,32 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Timeline Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --color-sage:#9baf93;
+      --color-light-sage:#c7d2c1;
+      --color-dark-sage:#6c7e63;
+      --color-dark-gray:#4a5568;
+      --color-blue:#bfdbfe;      /* radiology */
+      --color-orange:#fdba74;    /* therapy */
+      --color-gray:#e5e7eb;      /* custom */
+    }
+    .bg-sage{background-color:var(--color-sage)}
+    .bg-light-sage{background-color:var(--color-light-sage)}
+    .bg-dark-sage{background-color:var(--color-dark-sage)}
+    .text-dark-gray{color:var(--color-dark-gray)}
+    .hover\:bg-dark-sage:hover{background-color:var(--color-dark-sage)}
+
+    /* chip colori evento */
+    .chip{font-size:.75rem; line-height:1; padding:.25rem .5rem; border-radius:.375rem; display:inline-block; white-space:nowrap}
+    .chip-oncological_visit{background:var(--color-dark-sage); color:#fff}
+    .chip-blood_test{background:var(--color-light-sage); color:var(--color-dark-gray)}
+    .chip-radiology{background:var(--color-blue); color:var(--color-dark-gray)}
+    .chip-therapy{background:var(--color-orange); color:var(--color-dark-gray)}
+    .chip-custom{background:var(--color-gray); color:var(--color-dark-gray)}
+
+    /* sfumatura finestra ± giorni */
+    .win-oncological_visit{background:rgba(108,126,99,.18)}
+    .win-blood_test{background:rgba(199,210,193,.22)}
+    .win-radiology{background:rgba(191,219,254,.22)}
+    .win-therapy{background:rgba(253,186,116,.22)}
+    .win-custom{background:rgba(229,231,235,.22)}
+
+    /* celle calendario */
+    .daycell{min-height:44px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; gap:.25rem; padding:.25rem .35rem; cursor:pointer}
+    .daycell:hover{outline:2px solid var(--color-light-sage)}
+    .daycell.selected{outline:3px solid var(--color-sage)}
+    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap}
+    .dow{font-size:.75rem; color:#6b7280}
+    .weeklabel{width:6.5rem}
+    .grid-colgap{gap:.5rem}
+
+    /* card evento */
+    .event-card{border:1px solid #e5e7eb; border-left-width:8px; border-radius:.75rem; background:#fff; padding:.75rem 1rem}
+    .event-left-oncological_visit{border-left-color:var(--color-dark-sage)}
+    .event-left-blood_test{border-left-color:var(--color-light-sage)}
+    .event-left-radiology{border-left-color:var(--color-blue)}
+    .event-left-therapy{border-left-color:var(--color-orange)}
+    .event-left-custom{border-left-color:var(--color-gray)}
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
+<!-- Header -->
 <div class="bg-white p-6 rounded-xl shadow-md mb-6">
   <div class="flex items-start justify-between gap-4 flex-wrap">
     <div>
       <h1 class="text-2xl font-bold text-dark-sage">Timeline Studio</h1>
-      <p class="text-gray-600 text-sm">Gestione degli eventi di calendario per lo studio selezionato.</p>
+      <p class="text-gray-600 text-sm">Gestione degli eventi per lo studio selezionato.</p>
     </div>
     <div class="text-sm">
       <div class="flex items-center gap-2 flex-wrap">
-        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-dark-sage text-white">
-          <span class="w-2.5 h-2.5 rounded-full bg-white/80"></span> Visita oncologica
-        </span>
-        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-light-sage text-dark-gray">
-          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Esami ematici
-        </span>
-        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-blue-200 text-dark-gray">
-          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Radiologia
-        </span>
-        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-orange-300 text-dark-gray">
-          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Terapia
-        </span>
-        <span class="inline-flex items-center gap-2 px-2 py-1 rounded bg-gray-300 text-dark-gray">
-          <span class="w-2.5 h-2.5 rounded-full bg-dark-sage/60"></span> Custom
-        </span>
+        <span class="chip chip-oncological_visit">Visita oncologica</span>
+        <span class="chip chip-blood_test">Esami ematici</span>
+        <span class="chip chip-radiology">Radiologia</span>
+        <span class="chip chip-therapy">Terapia</span>
+        <span class="chip chip-custom">Custom</span>
       </div>
     </div>
   </div>
@@ -40,7 +79,7 @@
 <div class="bg-white p-4 rounded-xl shadow-md mb-6">
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div>
-      <label class="block text-sm font-medium text-dark-gray">Settimane totali (orizzonte)</label>
+      <label class="block text-sm font-medium text-dark-gray">Settimane totali</label>
       <input id="tlTotalWeeks" type="number" min="4" max="104" value="24"
              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
     </div>
@@ -52,7 +91,7 @@
     <div class="flex items-end">
       <button id="tlRefreshBtn"
               class="w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
-        Aggiorna visualizzazione
+        Aggiorna
       </button>
     </div>
   </div>
@@ -84,7 +123,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-dark-gray">Tipo di evento</label>
-          <select id="evType" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          <select id="evType" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             <option value="oncological_visit">Visita oncologica</option>
             <option value="blood_test">Esami ematici</option>
             <option value="radiology">Esami radiologici</option>
@@ -95,47 +134,61 @@
 
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-dark-gray">Titolo (opzionale)</label>
-          <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+          <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
         </div>
 
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-dark-gray">Note</label>
-          <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></textarea>
+          <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
         </div>
 
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-dark-gray">Indicazioni</label>
-          <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></textarea>
+          <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
         </div>
 
+        <!-- toggle -->
         <div class="md:col-span-2 flex items-center gap-2">
           <input id="evOneShot" type="checkbox" class="rounded">
           <label for="evOneShot" class="text-sm text-dark-gray">Evento singolo</label>
+          <span class="text-xs text-gray-400">(se non spuntato: evento ricorrente)</span>
         </div>
 
-        <div id="evSingleWrap" class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Settimana (se evento singolo)</label>
-          <input id="evAtWeek" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-        </div>
-
-        <div id="evRecurringWrap" class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 hidden">
-          <div>
-            <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
-            <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-dark-gray">Da settimana</label>
-            <input id="evStartWeek" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-dark-gray">A settimana (facoltativo)</label>
-            <input id="evStopWeek" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+        <!-- singolo -->
+        <div id="evSingleWrap" class="md:col-span-2 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Giorno (da inizio studio)</label>
+              <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <p class="text-xs text-gray-500 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Finestra ± giorni (opz.)</label>
+              <input id="evWindowDays" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
           </div>
         </div>
 
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Finestra di esecuzione (± giorni) — facoltativa</label>
-          <input id="evWindowDays" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+        <!-- ricorrente -->
+        <div id="evRecurringWrap" class="md:col-span-2">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
+              <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Da giorno</label>
+              <input id="evStartDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">A giorno (opz.)</label>
+              <input id="evStopDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Finestra ± giorni (opz.)</label>
+              <input id="evWindowDaysR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -151,7 +204,7 @@
 <div id="tlPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
   <div class="bg-white p-6 rounded-lg shadow-xl w-80">
     <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>
-    <input type="password" id="tlPasswordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage" />
+    <input type="password" id="tlPasswordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sage" />
     <p id="tlPasswordError" class="text-red-400 text-sm mt-2 hidden">Password errata.</p>
     <div class="flex justify-end mt-4 space-x-2">
       <button id="tlCancelPwdBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Annulla</button>
@@ -164,33 +217,54 @@
 (() => {
   const STUDY_ID = "<%= typeof studyId !== 'undefined' ? studyId : '' %>";
 
-  // ---- colori ----
-  const colorMap = {
-    oncological_visit: "bg-dark-sage text-white",
-    blood_test: "bg-light-sage text-dark-gray",
-    radiology: "bg-blue-200 text-dark-gray",
-    therapy: "bg-orange-300 text-dark-gray",
-    custom: "bg-gray-300 text-dark-gray",
-  };
+  // utilità colori e titoli
+  const chipClass = (t) => ({
+    oncological_visit: "chip chip-oncological_visit",
+    blood_test: "chip chip-blood_test",
+    radiology: "chip chip-radiology",
+    therapy: "chip chip-therapy",
+    custom: "chip chip-custom",
+  }[t] || "chip chip-custom");
 
-  // ---- selettori ----
+  const winClass = (t) => ({
+    oncological_visit: "win-oncological_visit",
+    blood_test: "win-blood_test",
+    radiology: "win-radiology",
+    therapy: "win-therapy",
+    custom: "win-custom",
+  }[t] || "win-custom");
+
+  const titleByType = (t) => ({
+    oncological_visit: "Visita oncologica",
+    blood_test: "Esami ematici",
+    radiology: "Esami radiologici",
+    therapy: "Terapia",
+    custom: "Evento",
+  }[t] || "Evento");
+
+  function eventTitle(ev) {
+    return ev.title?.trim() ? ev.title : titleByType(ev.event_type);
+  }
+
+  // DOM refs
   const tlTimeline = document.getElementById("tlTimeline");
-  const tlTotalWeeks = document.getElementById("tlTotalWeeks");
-  const tlBlockSize = document.getElementById("tlBlockSize");
-  const tlRefreshBtn = document.getElementById("tlRefreshBtn");
   const tlEventsList = document.getElementById("tlEventsList");
   const tlNoEventsMsg = document.getElementById("tlNoEventsMsg");
+  const tlRefreshBtn = document.getElementById("tlRefreshBtn");
 
   const evType = document.getElementById("evType");
   const evTitle = document.getElementById("evTitle");
   const evNotes = document.getElementById("evNotes");
   const evIndications = document.getElementById("evIndications");
   const evOneShot = document.getElementById("evOneShot");
-  const evAtWeek = document.getElementById("evAtWeek");
-  const evRepeatEveryDays = document.getElementById("evRepeatEveryDays");
-  const evStartWeek = document.getElementById("evStartWeek");
-  const evStopWeek = document.getElementById("evStopWeek");
+  const evAtDay = document.getElementById("evAtDay");
   const evWindowDays = document.getElementById("evWindowDays");
+
+  const evRepeatEveryDays = document.getElementById("evRepeatEveryDays");
+  const evStartDay = document.getElementById("evStartDay");
+  const evStopDay = document.getElementById("evStopDay");
+  const evWindowDaysR = document.getElementById("evWindowDaysR");
+
   const evSaveBtn = document.getElementById("evSaveBtn");
 
   const tlPwdModal = document.getElementById("tlPasswordModal");
@@ -204,8 +278,9 @@
 
   let _events = [];
   let _pendingAction = null;
+  let _selectedDay = null;
 
-  // ---- modale password ----
+  /* ---------------- Modal password ---------------- */
   function showPwdModal(action) {
     _pendingAction = action;
     tlPwdInput.value = "";
@@ -216,39 +291,51 @@
   function hidePwdModal() {
     tlPwdModal.classList.add("hidden");
     tlPwdModal.classList.remove("flex");
-    _pendingAction = null;
   }
+  function runPendingAction(action) {
+    if (action.type === "create") createEvent(action.payload);
+    if (action.type === "delete") deleteEvent(action.payload.id);
+    _pendingAction = null; // reset dopo
+  }
+
   tlCancelPwdBtn.addEventListener("click", hidePwdModal);
   tlConfirmPwdBtn.addEventListener("click", () => {
+    console.log(">>> Conferma password premuto. Valore:", tlPwdInput.value);
+    console.log(">>> Pending action:", _pendingAction);
+
     if (tlPwdInput.value === "TRIAL") {
       hidePwdModal();
-      if (_pendingAction) runPendingAction(_pendingAction);
+      if (_pendingAction) {
+        console.log(">>> Avvio azione:", _pendingAction.type);
+        runPendingAction(_pendingAction);
+      } else {
+        console.error(">>> ERRORE: _pendingAction non impostato!");
+      }
     } else {
       tlPwdError.classList.remove("hidden");
     }
   });
 
-  // ---- utilità ----
-  function formatEventLine(ev) {
+
+  /* ---------------- Lista eventi ---------------- */
+  function formatSummary(ev) {
     if (ev.one_shot) {
-      return `Settimana ${ev.at_week}`;
+      const d = ev.at_day;
+      if (d == null) return "Evento singolo";
+      const w = Math.floor(d/7);
+      const dow = d % 7;
+      const dows = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+      const wd = ev.window_days ? ` (±${ev.window_days}g)` : "";
+      return `Giorno ${d} — Settimana ${w}, ${dows[dow]}${wd}`;
     } else {
-      const stop = ev.stop_week != null ? ev.stop_week : "fine";
-      return `Ogni ${ev.repeat_every_days} giorni, da settimana ${ev.start_week} a ${stop}`;
+      const sd = ev.start_day ?? 0;
+      const ed = ev.stop_day ?? null;
+      const rng = ed!=null ? `giorni ${sd}-${ed}` : `dal giorno ${sd}`;
+      const wd = ev.window_days ? ` (±${ev.window_days}g)` : "";
+      return `Ogni ${ev.repeat_every_days} giorni, ${rng}${wd}`;
     }
   }
-  function eventTitle(ev) {
-    const map = {
-      oncological_visit: "Visita oncologica",
-      blood_test: "Esami ematici",
-      radiology: "Esami radiologici",
-      therapy: "Terapia",
-      custom: "Evento",
-    };
-    return ev.title && ev.title.trim() !== "" ? ev.title : map[ev.event_type] || "Evento";
-  }
 
-  // ---- render lista eventi ----
   function renderEventsList() {
     tlEventsList.innerHTML = "";
     if (!_events.length) {
@@ -256,98 +343,176 @@
       return;
     }
     tlNoEventsMsg.classList.add("hidden");
+
     _events.forEach(ev => {
       const card = document.createElement("div");
-      card.className = `p-4 rounded-lg shadow flex justify-between items-start ${colorMap[ev.event_type] || "bg-gray-200"}`;
+      card.className = `event-card event-left-${ev.event_type}`;
       card.innerHTML = `
-        <div class="pr-3">
-          <div class="font-bold">${eventTitle(ev)}</div>
-          <div class="text-sm opacity-90">${formatEventLine(ev)}</div>
+        <div class="flex justify-between gap-3">
+          <div>
+            <div class="font-bold text-dark-gray">${eventTitle(ev)}</div>
+            <div class="text-sm text-gray-600">${formatSummary(ev)}</div>
+          </div>
+          <button data-id="${ev.id}" class="tlDeleteBtn text-red-500 text-sm" title="Elimina">🗑️</button>
         </div>
-        <div>
-          <button data-id="${ev.id}" class="tlDeleteBtn bg-white/20 text-sm px-3 py-1 rounded">🗑️</button>
-        </div>
+        ${ev.notes ? `<div class="mt-1 text-sm text-gray-700">${ev.notes}</div>` : ""}
+        ${ev.indications ? `<div class="mt-1 text-xs text-gray-500"><strong>Indicazioni:</strong> ${ev.indications}</div>` : ""}
       `;
       tlEventsList.appendChild(card);
     });
   }
 
-  // ---- computeOccurrences ----
-  function computeOccurrences(events, totalWeeks) {
-    const weeks = Array.from({ length: totalWeeks }, () => []);
-    events.forEach(ev => {
-      if (ev.one_shot && Number.isInteger(ev.at_week)) {
-        weeks[ev.at_week]?.push(ev);
-      } else if (!ev.one_shot && Number.isInteger(ev.start_week)) {
-        const stop = Number.isInteger(ev.stop_week) ? ev.stop_week : (totalWeeks - 1);
-        const stepDays = Math.max(1, parseInt(ev.repeat_every_days || 1, 10));
-        for (let w = ev.start_week; w <= Math.min(stop, totalWeeks - 1); w++) {
-          const daysFromStart = (w - ev.start_week) * 7;
-          if (daysFromStart % stepDays === 0) {
-            weeks[w]?.push(ev);
+  /* ---------------- Pianificazione per giorni ---------------- */
+  function makeSchedule(events, totalWeeks){
+    const totalDays = totalWeeks*7;
+    const byDay = new Map();   // dayIndex -> [events]
+    const windows = new Map(); // dayIndex -> [types] (per sfumatura)
+
+    const push = (map, key, value) => {
+      if (key < 0 || key >= totalDays) return;
+      const arr = map.get(key) || [];
+      arr.push(value);
+      map.set(key, arr);
+    };
+
+    events.forEach(ev=>{
+      if (ev.one_shot) {
+        const d = Number.isInteger(ev.at_day) ? ev.at_day : null;
+        if (d!=null){
+          push(byDay, d, ev);
+          const win = parseInt(ev.window_days||0,10);
+          if (win>0){
+            for (let k=-win;k<=win;k++){
+              if (k===0) continue;
+              push(windows, d+k, ev.event_type);
+            }
+          }
+        }
+      } else {
+        const startDay = Number.isInteger(ev.start_day) ? ev.start_day : 0;
+        const stopDay = Number.isInteger(ev.stop_day) ? ev.stop_day : (totalDays-1);
+        const step = Math.max(1, parseInt(ev.repeat_every_days||1,10));
+        const win = parseInt(ev.window_days||0,10);
+        for (let d=startDay; d<=stopDay; d+=step){
+          push(byDay, d, ev);
+          if (win>0){
+            for (let k=-win;k<=win;k++){
+              if (k===0) continue;
+              push(windows, d+k, ev.event_type);
+            }
           }
         }
       }
     });
-    return weeks;
+
+    return {byDay, windows};
   }
 
-  // ---- renderTimeline ----
+  /* ---------------- Render timeline ---------------- */
   function renderTimeline() {
     const total = Math.max(4, parseInt(tlTotalWeeks.value || "24", 10));
     const blockSize = Math.max(1, parseInt(tlBlockSize.value || "4", 10));
-    const weeks = computeOccurrences(_events, total);
+    const {byDay, windows} = makeSchedule(_events, total);
+
     tlTimeline.innerHTML = "";
-    for (let start = 0; start < total; start += blockSize) {
-      const end = Math.min(total - 1, start + blockSize - 1);
+    const dows = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+
+    for (let startW = 0; startW < total; startW += blockSize) {
+      const endW = Math.min(total - 1, startW + blockSize - 1);
+
       const block = document.createElement("div");
-      block.className = "rounded-lg border border-gray-200 mb-2";
+      block.className = "rounded-lg border border-gray-200";
       const header = document.createElement("div");
-      header.className = "px-4 py-2 bg-gray-50 rounded-t-lg flex justify-between";
-      header.innerHTML = `<div class="font-semibold">Settimane ${start}-${end}</div>`;
+      header.className = "px-4 py-2 bg-gray-50 rounded-t-lg";
+      header.innerHTML = `<div class="font-semibold">Settimane ${startW}-${endW}</div>`;
       block.appendChild(header);
+
       const body = document.createElement("div");
       body.className = "p-3 space-y-2";
-      for (let w = start; w <= end; w++) {
+
+      // intestazione giorni
+      const hdr = document.createElement("div");
+      hdr.className = "grid grid-cols-8 grid-colgap";
+      hdr.innerHTML = `
+        <div class="dow"></div>
+        ${dows.map(l=>`<div class="dow text-center">${l}</div>`).join("")}
+      `;
+      body.appendChild(hdr);
+
+      // righe settimane
+      for (let w=startW; w<=endW; w++){
         const row = document.createElement("div");
-        row.className = "flex gap-3";
-        const label = document.createElement("div");
-        label.className = "w-24 text-xs text-gray-500";
-        label.textContent = `Settimana ${w}`;
-        const evs = document.createElement("div");
-        evs.className = "flex flex-wrap gap-2";
-        weeks[w].forEach(ev => {
-          const chip = document.createElement("div");
-          chip.className = `text-xs px-2 py-1 rounded ${colorMap[ev.event_type] || "bg-gray-200"}`;
-          chip.textContent = eventTitle(ev);
-          evs.appendChild(chip);
-        });
-        row.appendChild(label);
-        row.appendChild(evs);
+        row.className="grid grid-cols-8 grid-colgap items-start";
+
+        const wlab = document.createElement("div");
+        wlab.className="weeklabel text-sm text-gray-600";
+        wlab.textContent = `Settimana ${w}`;
+        row.appendChild(wlab);
+
+        for (let dow=0; dow<7; dow++){
+          const dayIndex = w*7 + dow;
+
+          const cell = document.createElement("div");
+          cell.className = "daycell";
+          cell.dataset.dayIndex = String(dayIndex);
+
+          // sfumatura finestra (se presente)
+          const wins = windows.get(dayIndex) || [];
+          if (wins.length){
+            cell.classList.add(winClass(wins[0]));
+          }
+
+          // chip degli eventi del giorno
+          const stack = document.createElement("div");
+          stack.className="daycell-stack";
+          const items = byDay.get(dayIndex) || [];
+          items.forEach(ev=>{
+            const chip = document.createElement("span");
+            chip.className = chipClass(ev.event_type);
+            chip.textContent = eventTitle(ev);
+            stack.appendChild(chip);
+          });
+
+          cell.appendChild(stack);
+          row.appendChild(cell);
+        }
+
         body.appendChild(row);
       }
+
       block.appendChild(body);
       tlTimeline.appendChild(block);
     }
+
+    // click su una cella = selezione giorno per evento singolo
+    tlTimeline.querySelectorAll(".daycell").forEach(c=>{
+      c.addEventListener("click", ()=>{
+        tlTimeline.querySelectorAll(".daycell.selected").forEach(s=>s.classList.remove("selected"));
+        c.classList.add("selected");
+        _selectedDay = parseInt(c.dataset.dayIndex,10);
+        // pre-compila form come evento singolo
+        evOneShot.checked = true;
+        toggleMode();
+        evAtDay.value = _selectedDay;
+        evWindowDays.focus();
+      });
+    });
   }
 
-  // ---- fetch ----
+  /* ---------------- Fetch ---------------- */
   async function loadEvents() {
     if (!STUDY_ID) return;
-    console.log("Carico eventi per studio:", STUDY_ID);
     const res = await fetch(`/api/timeline/${STUDY_ID}`);
     if (!res.ok) {
       console.error("Errore loadEvents:", res.status, await res.text());
       return;
     }
     _events = await res.json();
-    console.log("Eventi caricati:", _events);
     renderEventsList();
     renderTimeline();
   }
 
   async function createEvent(ev) {
-    console.log("Invio evento:", ev);
     const res = await fetch(`/api/timeline/${STUDY_ID}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -358,24 +523,22 @@
       alert("Errore durante il salvataggio evento");
       return;
     }
-    const nuovo = await res.json();
-    console.log("Evento salvato:", nuovo);
     // reset form
     evTitle.value = "";
     evNotes.value = "";
     evIndications.value = "";
-    evAtWeek.value = "";
-    evRepeatEveryDays.value = "";
-    evStartWeek.value = "";
-    evStopWeek.value = "";
+    evAtDay.value = "";
     evWindowDays.value = "";
+    evRepeatEveryDays.value = "";
+    evStartDay.value = "";
+    evStopDay.value = "";
+    evWindowDaysR.value = "";
     evOneShot.checked = false;
-    evRecurringWrap.classList.remove("hidden");
+    toggleMode();
     await loadEvents();
   }
 
   async function deleteEvent(id) {
-    console.log("Elimino evento:", id);
     const res = await fetch(`/api/timeline/${id}`, { method: "DELETE" });
     if (!res.ok) {
       console.error("Errore deleteEvent:", res.status, await res.text());
@@ -389,34 +552,69 @@
     if (action.type === "delete") deleteEvent(action.payload.id);
   }
 
-  // ---- handlers ----
-  evOneShot.addEventListener("change", () => {
-    if (evOneShot.checked) {
+  /* ---------------- UI: toggle modalità ---------------- */
+  function toggleMode(){
+    if (evOneShot.checked){
       evSingleWrap.classList.remove("hidden");
       evRecurringWrap.classList.add("hidden");
     } else {
       evSingleWrap.classList.add("hidden");
       evRecurringWrap.classList.remove("hidden");
     }
-  });
+  }
+  evOneShot.addEventListener("change", toggleMode);
+  toggleMode(); // default: ricorrente
 
+  /* ---------------- Salva ---------------- */
   evSaveBtn.addEventListener("click", () => {
-    const payload = {
+    let payload = {
       event_type: evType.value,
       title: evTitle.value,
       notes: evNotes.value,
       indications: evIndications.value,
       one_shot: evOneShot.checked,
-      at_week: evOneShot.checked ? parseInt(evAtWeek.value || "0", 10) : null,
-      repeat_every_days: !evOneShot.checked ? parseInt(evRepeatEveryDays.value || "0", 10) : null,
-      start_week: !evOneShot.checked ? parseInt(evStartWeek.value || "0", 10) : null,
-      stop_week: !evOneShot.checked && evStopWeek.value !== "" ? parseInt(evStopWeek.value, 10) : null,
-      window_days: evWindowDays.value !== "" ? parseInt(evWindowDays.value, 10) : null,
     };
-    console.log("Payload pronto:", payload);
+
+    if (evOneShot.checked){
+      const atDay = parseInt(evAtDay.value ?? "",10);
+      if (!Number.isInteger(atDay) || atDay < 0){
+        alert("Inserisci un 'Giorno da inizio studio' valido (>=0).");
+        return;
+      }
+      payload.at_day = atDay;
+      payload.window_days = evWindowDays.value ? parseInt(evWindowDays.value,10) : null;
+
+      // azzera i campi ricorrenti
+      payload.repeat_every_days = null;
+      payload.start_day = null;
+      payload.stop_day = null;
+    } else {
+      const every = parseInt(evRepeatEveryDays.value ?? "",10);
+      const startD = parseInt(evStartDay.value ?? "",10);
+      const stopD = evStopDay.value !== "" ? parseInt(evStopDay.value,10) : null;
+      if (!Number.isInteger(every) || every<=0){
+        alert("Inserisci 'Ogni N giorni' valido (>0).");
+        return;
+      }
+      if (!Number.isInteger(startD) || startD<0){
+        alert("Inserisci 'Da giorno' valido (>=0).");
+        return;
+      }
+      if (stopD!=null && (stopD<startD)){
+        alert("'A giorno' deve essere ≥ di 'Da giorno'.");
+        return;
+      }
+      payload.at_day = null;
+      payload.repeat_every_days = every;
+      payload.start_day = startD;
+      payload.stop_day = stopD;
+      payload.window_days = evWindowDaysR.value ? parseInt(evWindowDaysR.value,10) : null;
+    }
+
     showPwdModal({ type: "create", payload });
   });
 
+  // delete dalla lista
   tlEventsList.addEventListener("click", (e) => {
     const btn = e.target.closest(".tlDeleteBtn");
     if (!btn) return;
