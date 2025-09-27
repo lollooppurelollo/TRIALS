@@ -16,31 +16,42 @@
       --color-gray:#e5e7eb;        /* custom */
       --color-light-red:#fecaca;   /* blood test */
     }
+
     .bg-sage{background-color:var(--color-sage)}
     .bg-light-sage{background-color:var(--color-light-sage)}
     .bg-dark-sage{background-color:var(--color-dark-sage)}
     .text-dark-gray{color:var(--color-dark-gray)}
     .hover\:bg-dark-sage:hover{background-color:var(--color-dark-sage)}
 
-    /* chip colori evento */
+    /* CHIP per evento */
     .chip{font-size:.75rem; line-height:1; padding:.25rem .5rem; border-radius:.375rem; display:inline-block; white-space:nowrap}
     .chip-oncological_visit{background:var(--color-dark-sage); color:#fff}
     .chip-blood_test{background:var(--color-light-red); color:#7f1d1d}
     .chip-radiology{background:var(--color-blue); color:var(--color-dark-gray)}
     .chip-therapy{background:var(--color-orange); color:var(--color-dark-gray)}
     .chip-custom{background:var(--color-gray); color:var(--color-dark-gray)}
-
-    /* sfumatura finestra ± giorni (ora con chip più chiari) */
     .chip-win{opacity:0.4}
+
+    /* GRID settimana: prima colonna fissa + 7 giorni */
+    .grid-week{
+      display:grid;
+      grid-template-columns: 6.5rem repeat(7, minmax(0, 1fr));
+      gap:.5rem;
+    }
 
     /* celle calendario */
     .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.25rem; cursor:pointer}
     .daycell:hover{outline:2px solid var(--color-light-sage)}
     .daycell.selected{outline:3px solid var(--color-sage)}
     .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center}
-    .weeklabel{width:5rem; font-size:.75rem; color:#6b7280; display:flex; align-items:center; justify-content:center}
 
-    /* card evento */
+    /* colonna label “Settimana” */
+    .weeklabel{font-size:.8rem; color:#6b7280; display:flex; align-items:center; justify-content:center}
+
+    /* header giorni (1–7) più piccolo */
+    .daynum{font-size:.8rem; color:#9ca3af; font-weight:600}
+
+    /* card evento a destra */
     .event-card{border:1px solid #e5e7eb; border-left-width:8px; border-radius:.75rem; background:#fff; padding:.75rem 1rem}
     .event-left-oncological_visit{border-left-color:var(--color-dark-sage)}
     .event-left-blood_test{border-left-color:var(--color-light-red)}
@@ -332,6 +343,7 @@
     });
   }
 
+  /* Pianificazione per giorni con finestra ± */
   function makeSchedule(events, totalWeeks){
     const totalDays = totalWeeks*7;
     const byDay = new Map();
@@ -374,64 +386,85 @@
     return {byDay, windows};
   }
 
+  /* Render timeline */
   function renderTimeline() {
     const total = Math.max(4, parseInt(tlTotalWeeks.value || "24", 10));
     const blockSize = Math.max(1, parseInt(tlBlockSize.value || "4", 10));
     const {byDay, windows} = makeSchedule(_events, total);
+
     tlTimeline.innerHTML = "";
+
     for (let startW = 0; startW < total; startW += blockSize) {
       const endW = Math.min(total - 1, startW + blockSize - 1);
+
       const block = document.createElement("div");
       block.className = "rounded-lg border border-gray-200";
+
       const header = document.createElement("div");
       header.className = "px-4 py-2 bg-gray-50 rounded-t-lg";
       header.innerHTML = `<div class="font-semibold">Settimane ${startW}-${endW}</div>`;
       block.appendChild(header);
+
       const body = document.createElement("div");
       body.className = "p-3 space-y-2";
+
+      /* intestazione 1..7 */
       const hdr = document.createElement("div");
-      hdr.className = "grid grid-cols-8 gap-2";
+      hdr.className = "grid-week";
       hdr.innerHTML = `
-        <div class="dow"></div>
-        ${[1,2,3,4,5,6,7].map(n=>`<div class="dow text-center">${n}</div>`).join("")}
+        <div></div>
+        ${[1,2,3,4,5,6,7].map(n=>`<div class="daynum text-center">${n}</div>`).join("")}
       `;
       body.appendChild(hdr);
+
+      /* righe settimane */
       for (let w=startW; w<=endW; w++){
         const row = document.createElement("div");
-        row.className="grid grid-cols-8 gap-2 items-start";
+        row.className="grid-week items-start";
+
         const wlab = document.createElement("div");
         wlab.className="weeklabel";
         wlab.textContent = `Settimana ${w}`;
         row.appendChild(wlab);
+
         for (let dow=0; dow<7; dow++){
           const dayIndex = w*7 + dow;
+
           const cell = document.createElement("div");
           cell.className = "daycell";
           cell.dataset.dayIndex = String(dayIndex);
+
           const stack = document.createElement("div");
           stack.className="daycell-stack";
-          const items = byDay.get(dayIndex) || [];
-          items.forEach(ev=>{
+
+          /* Eventi del giorno (chip pieni) */
+          (byDay.get(dayIndex) || []).forEach(ev=>{
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type);
             chip.textContent = eventTitle(ev);
             stack.appendChild(chip);
           });
-          const wins = windows.get(dayIndex) || [];
-          wins.forEach(ev=>{
+
+          /* Finestra ± (chip chiari, uno per evento) */
+          (windows.get(dayIndex) || []).forEach(ev=>{
             const chip = document.createElement("span");
-            chip.className = chipClass(ev.event_type)+" chip-win";
+            chip.className = chipClass(ev.event_type) + " chip-win";
             chip.textContent = eventTitle(ev);
             stack.appendChild(chip);
           });
+
           cell.appendChild(stack);
           row.appendChild(cell);
         }
+
         body.appendChild(row);
       }
+
       block.appendChild(body);
       tlTimeline.appendChild(block);
     }
+
+    /* click = seleziona giorno e precompila evento singolo */
     tlTimeline.querySelectorAll(".daycell").forEach(c=>{
       c.addEventListener("click", ()=>{
         tlTimeline.querySelectorAll(".daycell.selected").forEach(s=>s.classList.remove("selected"));
@@ -445,25 +478,40 @@
     });
   }
 
+  /* Fetch */
   async function loadEvents() {
     if (!STUDY_ID) return;
     const res = await fetch(`/api/timeline/${STUDY_ID}`);
-    if (!res.ok) return;
+    if (!res.ok) { console.error("Errore loadEvents:", res.status); return; }
     _events = await res.json();
     renderEventsList();
     renderTimeline();
   }
+
   async function createEvent(ev) {
     const res = await fetch(`/api/timeline/${STUDY_ID}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ev),
     });
-    if (!res.ok) {alert("Errore salvataggio");return;}
-    evTitle.value = ""; evNotes.value = ""; evIndications.value = ""; evAtDay.value = ""; evWindowDays.value = "";
-    evRepeatEveryDays.value = ""; evStartDay.value = ""; evStopDay.value = ""; evWindowDaysR.value = ""; evOneShot.checked = false;
-    toggleMode(); await loadEvents();
+    if (!res.ok) { alert("Errore salvataggio"); return; }
+
+    /* reset form */
+    evTitle.value = "";
+    evNotes.value = "";
+    evIndications.value = "";
+    evAtDay.value = "";
+    evWindowDays.value = "";
+    evRepeatEveryDays.value = "";
+    evStartDay.value = "";
+    evStopDay.value = "";
+    evWindowDaysR.value = "";
+    evOneShot.checked = false;
+    toggleMode();
+
+    await loadEvents();
   }
+
   async function deleteEvent(id) {
     const res = await fetch(`/api/timeline/${id}`, { method: "DELETE" });
     if (!res.ok) return;
@@ -482,6 +530,7 @@
   evOneShot.addEventListener("change", toggleMode);
   toggleMode();
 
+  /* Salva → apre modale password */
   evSaveBtn.addEventListener("click", () => {
     let payload = {
       event_type: evType.value,
@@ -490,26 +539,45 @@
       indications: evIndications.value,
       one_shot: evOneShot.checked,
     };
+
     if (evOneShot.checked){
       const atDay = parseInt(evAtDay.value ?? "",10);
-      if (!Number.isInteger(atDay) || atDay < 0){alert("Inserisci giorno valido");return;}
+      if (!Number.isInteger(atDay) || atDay < 0){
+        alert("Inserisci un 'Giorno da inizio studio' valido (>=0).");
+        return;
+      }
       payload.at_day = atDay;
       payload.window_days = evWindowDays.value ? parseInt(evWindowDays.value,10) : null;
-      payload.repeat_every_days = null; payload.start_day = null; payload.stop_day = null;
+      payload.repeat_every_days = null;
+      payload.start_day = null;
+      payload.stop_day = null;
     } else {
       const every = parseInt(evRepeatEveryDays.value ?? "",10);
       const startD = parseInt(evStartDay.value ?? "",10);
       const stopD = evStopDay.value !== "" ? parseInt(evStopDay.value,10) : null;
-      if (!Number.isInteger(every)||every<=0){alert("Inserisci ogni N giorni valido");return;}
-      if (!Number.isInteger(startD)||startD<0){alert("Inserisci da giorno valido");return;}
-      if (stopD!=null && (stopD<startD)){alert("A giorno deve essere ≥ Da giorno");return;}
+      if (!Number.isInteger(every) || every<=0){
+        alert("Inserisci 'Ogni N giorni' valido (>0).");
+        return;
+      }
+      if (!Number.isInteger(startD) || startD<0){
+        alert("Inserisci 'Da giorno' valido (>=0).");
+        return;
+      }
+      if (stopD!=null && (stopD<startD)){
+        alert("'A giorno' deve essere ≥ di 'Da giorno'.");
+        return;
+      }
       payload.at_day = null;
-      payload.repeat_every_days = every; payload.start_day = startD; payload.stop_day = stopD;
+      payload.repeat_every_days = every;
+      payload.start_day = startD;
+      payload.stop_day = stopD;
       payload.window_days = evWindowDaysR.value ? parseInt(evWindowDaysR.value,10) : null;
     }
+
     showPwdModal({ type: "create", payload });
   });
 
+  /* elimina */
   tlEventsList.addEventListener("click", (e) => {
     const btn = e.target.closest(".tlDeleteBtn");
     if (!btn) return;
