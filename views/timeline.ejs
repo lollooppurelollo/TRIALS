@@ -11,9 +11,10 @@
       --color-light-sage:#c7d2c1;
       --color-dark-sage:#6c7e63;
       --color-dark-gray:#4a5568;
-      --color-blue:#bfdbfe;      /* radiology */
-      --color-orange:#fdba74;    /* therapy */
-      --color-gray:#e5e7eb;      /* custom */
+      --color-blue:#bfdbfe;        /* radiology */
+      --color-orange:#fdba74;      /* therapy */
+      --color-gray:#e5e7eb;        /* custom */
+      --color-light-red:#fecaca;   /* blood test */
     }
     .bg-sage{background-color:var(--color-sage)}
     .bg-light-sage{background-color:var(--color-light-sage)}
@@ -24,31 +25,25 @@
     /* chip colori evento */
     .chip{font-size:.75rem; line-height:1; padding:.25rem .5rem; border-radius:.375rem; display:inline-block; white-space:nowrap}
     .chip-oncological_visit{background:var(--color-dark-sage); color:#fff}
-    .chip-blood_test{background:var(--color-light-sage); color:var(--color-dark-gray)}
+    .chip-blood_test{background:var(--color-light-red); color:#7f1d1d}
     .chip-radiology{background:var(--color-blue); color:var(--color-dark-gray)}
     .chip-therapy{background:var(--color-orange); color:var(--color-dark-gray)}
     .chip-custom{background:var(--color-gray); color:var(--color-dark-gray)}
 
-    /* sfumatura finestra ± giorni */
-    .win-oncological_visit{background:rgba(108,126,99,.18)}
-    .win-blood_test{background:rgba(199,210,193,.22)}
-    .win-radiology{background:rgba(191,219,254,.22)}
-    .win-therapy{background:rgba(253,186,116,.22)}
-    .win-custom{background:rgba(229,231,235,.22)}
+    /* sfumatura finestra ± giorni (ora con chip più chiari) */
+    .chip-win{opacity:0.4}
 
     /* celle calendario */
-    .daycell{min-height:44px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; gap:.25rem; padding:.25rem .35rem; cursor:pointer}
+    .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.25rem; cursor:pointer}
     .daycell:hover{outline:2px solid var(--color-light-sage)}
     .daycell.selected{outline:3px solid var(--color-sage)}
-    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap}
-    .dow{font-size:.75rem; color:#6b7280}
-    .weeklabel{width:6.5rem}
-    .grid-colgap{gap:.5rem}
+    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center}
+    .weeklabel{width:5rem; font-size:.75rem; color:#6b7280; display:flex; align-items:center; justify-content:center}
 
     /* card evento */
     .event-card{border:1px solid #e5e7eb; border-left-width:8px; border-radius:.75rem; background:#fff; padding:.75rem 1rem}
     .event-left-oncological_visit{border-left-color:var(--color-dark-sage)}
-    .event-left-blood_test{border-left-color:var(--color-light-sage)}
+    .event-left-blood_test{border-left-color:var(--color-light-red)}
     .event-left-radiology{border-left-color:var(--color-blue)}
     .event-left-therapy{border-left-color:var(--color-orange)}
     .event-left-custom{border-left-color:var(--color-gray)}
@@ -138,12 +133,12 @@
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Note</label>
+          <label class="block text-sm font-medium text-dark-gray">Note (opzionale)</label>
           <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Indicazioni</label>
+          <label class="block text-sm font-medium text-dark-gray">Indicazioni (opzionale)</label>
           <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
         </div>
 
@@ -217,7 +212,6 @@
 (() => {
   const STUDY_ID = "<%= typeof studyId !== 'undefined' ? studyId : '' %>";
 
-  // utilità colori e titoli
   const chipClass = (t) => ({
     oncological_visit: "chip chip-oncological_visit",
     blood_test: "chip chip-blood_test",
@@ -225,14 +219,6 @@
     therapy: "chip chip-therapy",
     custom: "chip chip-custom",
   }[t] || "chip chip-custom");
-
-  const winClass = (t) => ({
-    oncological_visit: "win-oncological_visit",
-    blood_test: "win-blood_test",
-    radiology: "win-radiology",
-    therapy: "win-therapy",
-    custom: "win-custom",
-  }[t] || "win-custom");
 
   const titleByType = (t) => ({
     oncological_visit: "Visita oncologica",
@@ -246,7 +232,6 @@
     return ev.title?.trim() ? ev.title : titleByType(ev.event_type);
   }
 
-  // DOM refs
   const tlTimeline = document.getElementById("tlTimeline");
   const tlEventsList = document.getElementById("tlEventsList");
   const tlNoEventsMsg = document.getElementById("tlNoEventsMsg");
@@ -259,12 +244,10 @@
   const evOneShot = document.getElementById("evOneShot");
   const evAtDay = document.getElementById("evAtDay");
   const evWindowDays = document.getElementById("evWindowDays");
-
   const evRepeatEveryDays = document.getElementById("evRepeatEveryDays");
   const evStartDay = document.getElementById("evStartDay");
   const evStopDay = document.getElementById("evStopDay");
   const evWindowDaysR = document.getElementById("evWindowDaysR");
-
   const evSaveBtn = document.getElementById("evSaveBtn");
 
   const tlPwdModal = document.getElementById("tlPasswordModal");
@@ -280,7 +263,6 @@
   let _pendingAction = null;
   let _selectedDay = null;
 
-  /* ---------------- Modal password ---------------- */
   function showPwdModal(action) {
     _pendingAction = action;
     tlPwdInput.value = "";
@@ -295,38 +277,27 @@
   function runPendingAction(action) {
     if (action.type === "create") createEvent(action.payload);
     if (action.type === "delete") deleteEvent(action.payload.id);
-    _pendingAction = null; // reset dopo
+    _pendingAction = null;
   }
 
   tlCancelPwdBtn.addEventListener("click", hidePwdModal);
   tlConfirmPwdBtn.addEventListener("click", () => {
-    console.log(">>> Conferma password premuto. Valore:", tlPwdInput.value);
-    console.log(">>> Pending action:", _pendingAction);
-
     if (tlPwdInput.value === "TRIAL") {
       hidePwdModal();
-      if (_pendingAction) {
-        console.log(">>> Avvio azione:", _pendingAction.type);
-        runPendingAction(_pendingAction);
-      } else {
-        console.error(">>> ERRORE: _pendingAction non impostato!");
-      }
+      if (_pendingAction) runPendingAction(_pendingAction);
     } else {
       tlPwdError.classList.remove("hidden");
     }
   });
 
-
-  /* ---------------- Lista eventi ---------------- */
   function formatSummary(ev) {
     if (ev.one_shot) {
       const d = ev.at_day;
       if (d == null) return "Evento singolo";
       const w = Math.floor(d/7);
-      const dow = d % 7;
-      const dows = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+      const dow = (d % 7)+1;
       const wd = ev.window_days ? ` (±${ev.window_days}g)` : "";
-      return `Giorno ${d} — Settimana ${w}, ${dows[dow]}${wd}`;
+      return `Giorno ${d} — Settimana ${w}, Giorno ${dow}${wd}`;
     } else {
       const sd = ev.start_day ?? 0;
       const ed = ev.stop_day ?? null;
@@ -343,7 +314,6 @@
       return;
     }
     tlNoEventsMsg.classList.add("hidden");
-
     _events.forEach(ev => {
       const card = document.createElement("div");
       card.className = `event-card event-left-${ev.event_type}`;
@@ -362,19 +332,16 @@
     });
   }
 
-  /* ---------------- Pianificazione per giorni ---------------- */
   function makeSchedule(events, totalWeeks){
     const totalDays = totalWeeks*7;
-    const byDay = new Map();   // dayIndex -> [events]
-    const windows = new Map(); // dayIndex -> [types] (per sfumatura)
-
+    const byDay = new Map();
+    const windows = new Map();
     const push = (map, key, value) => {
       if (key < 0 || key >= totalDays) return;
       const arr = map.get(key) || [];
       arr.push(value);
       map.set(key, arr);
     };
-
     events.forEach(ev=>{
       if (ev.one_shot) {
         const d = Number.isInteger(ev.at_day) ? ev.at_day : null;
@@ -384,7 +351,7 @@
           if (win>0){
             for (let k=-win;k<=win;k++){
               if (k===0) continue;
-              push(windows, d+k, ev.event_type);
+              push(windows, d+k, ev);
             }
           }
         }
@@ -398,71 +365,49 @@
           if (win>0){
             for (let k=-win;k<=win;k++){
               if (k===0) continue;
-              push(windows, d+k, ev.event_type);
+              push(windows, d+k, ev);
             }
           }
         }
       }
     });
-
     return {byDay, windows};
   }
 
-  /* ---------------- Render timeline ---------------- */
   function renderTimeline() {
     const total = Math.max(4, parseInt(tlTotalWeeks.value || "24", 10));
     const blockSize = Math.max(1, parseInt(tlBlockSize.value || "4", 10));
     const {byDay, windows} = makeSchedule(_events, total);
-
     tlTimeline.innerHTML = "";
-    const dows = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-
     for (let startW = 0; startW < total; startW += blockSize) {
       const endW = Math.min(total - 1, startW + blockSize - 1);
-
       const block = document.createElement("div");
       block.className = "rounded-lg border border-gray-200";
       const header = document.createElement("div");
       header.className = "px-4 py-2 bg-gray-50 rounded-t-lg";
       header.innerHTML = `<div class="font-semibold">Settimane ${startW}-${endW}</div>`;
       block.appendChild(header);
-
       const body = document.createElement("div");
       body.className = "p-3 space-y-2";
-
-      // intestazione giorni
       const hdr = document.createElement("div");
-      hdr.className = "grid grid-cols-8 grid-colgap";
+      hdr.className = "grid grid-cols-8 gap-2";
       hdr.innerHTML = `
         <div class="dow"></div>
-        ${dows.map(l=>`<div class="dow text-center">${l}</div>`).join("")}
+        ${[1,2,3,4,5,6,7].map(n=>`<div class="dow text-center">${n}</div>`).join("")}
       `;
       body.appendChild(hdr);
-
-      // righe settimane
       for (let w=startW; w<=endW; w++){
         const row = document.createElement("div");
-        row.className="grid grid-cols-8 grid-colgap items-start";
-
+        row.className="grid grid-cols-8 gap-2 items-start";
         const wlab = document.createElement("div");
-        wlab.className="weeklabel text-sm text-gray-600";
+        wlab.className="weeklabel";
         wlab.textContent = `Settimana ${w}`;
         row.appendChild(wlab);
-
         for (let dow=0; dow<7; dow++){
           const dayIndex = w*7 + dow;
-
           const cell = document.createElement("div");
           cell.className = "daycell";
           cell.dataset.dayIndex = String(dayIndex);
-
-          // sfumatura finestra (se presente)
-          const wins = windows.get(dayIndex) || [];
-          if (wins.length){
-            cell.classList.add(winClass(wins[0]));
-          }
-
-          // chip degli eventi del giorno
           const stack = document.createElement("div");
           stack.className="daycell-stack";
           const items = byDay.get(dayIndex) || [];
@@ -472,25 +417,26 @@
             chip.textContent = eventTitle(ev);
             stack.appendChild(chip);
           });
-
+          const wins = windows.get(dayIndex) || [];
+          wins.forEach(ev=>{
+            const chip = document.createElement("span");
+            chip.className = chipClass(ev.event_type)+" chip-win";
+            chip.textContent = eventTitle(ev);
+            stack.appendChild(chip);
+          });
           cell.appendChild(stack);
           row.appendChild(cell);
         }
-
         body.appendChild(row);
       }
-
       block.appendChild(body);
       tlTimeline.appendChild(block);
     }
-
-    // click su una cella = selezione giorno per evento singolo
     tlTimeline.querySelectorAll(".daycell").forEach(c=>{
       c.addEventListener("click", ()=>{
         tlTimeline.querySelectorAll(".daycell.selected").forEach(s=>s.classList.remove("selected"));
         c.classList.add("selected");
         _selectedDay = parseInt(c.dataset.dayIndex,10);
-        // pre-compila form come evento singolo
         evOneShot.checked = true;
         toggleMode();
         evAtDay.value = _selectedDay;
@@ -499,60 +445,31 @@
     });
   }
 
-  /* ---------------- Fetch ---------------- */
   async function loadEvents() {
     if (!STUDY_ID) return;
     const res = await fetch(`/api/timeline/${STUDY_ID}`);
-    if (!res.ok) {
-      console.error("Errore loadEvents:", res.status, await res.text());
-      return;
-    }
+    if (!res.ok) return;
     _events = await res.json();
     renderEventsList();
     renderTimeline();
   }
-
   async function createEvent(ev) {
     const res = await fetch(`/api/timeline/${STUDY_ID}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ev),
     });
-    if (!res.ok) {
-      console.error("Errore createEvent:", res.status, await res.text());
-      alert("Errore durante il salvataggio evento");
-      return;
-    }
-    // reset form
-    evTitle.value = "";
-    evNotes.value = "";
-    evIndications.value = "";
-    evAtDay.value = "";
-    evWindowDays.value = "";
-    evRepeatEveryDays.value = "";
-    evStartDay.value = "";
-    evStopDay.value = "";
-    evWindowDaysR.value = "";
-    evOneShot.checked = false;
-    toggleMode();
-    await loadEvents();
+    if (!res.ok) {alert("Errore salvataggio");return;}
+    evTitle.value = ""; evNotes.value = ""; evIndications.value = ""; evAtDay.value = ""; evWindowDays.value = "";
+    evRepeatEveryDays.value = ""; evStartDay.value = ""; evStopDay.value = ""; evWindowDaysR.value = ""; evOneShot.checked = false;
+    toggleMode(); await loadEvents();
   }
-
   async function deleteEvent(id) {
     const res = await fetch(`/api/timeline/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      console.error("Errore deleteEvent:", res.status, await res.text());
-      return;
-    }
+    if (!res.ok) return;
     await loadEvents();
   }
 
-  function runPendingAction(action) {
-    if (action.type === "create") createEvent(action.payload);
-    if (action.type === "delete") deleteEvent(action.payload.id);
-  }
-
-  /* ---------------- UI: toggle modalità ---------------- */
   function toggleMode(){
     if (evOneShot.checked){
       evSingleWrap.classList.remove("hidden");
@@ -563,9 +480,8 @@
     }
   }
   evOneShot.addEventListener("change", toggleMode);
-  toggleMode(); // default: ricorrente
+  toggleMode();
 
-  /* ---------------- Salva ---------------- */
   evSaveBtn.addEventListener("click", () => {
     let payload = {
       event_type: evType.value,
@@ -574,47 +490,26 @@
       indications: evIndications.value,
       one_shot: evOneShot.checked,
     };
-
     if (evOneShot.checked){
       const atDay = parseInt(evAtDay.value ?? "",10);
-      if (!Number.isInteger(atDay) || atDay < 0){
-        alert("Inserisci un 'Giorno da inizio studio' valido (>=0).");
-        return;
-      }
+      if (!Number.isInteger(atDay) || atDay < 0){alert("Inserisci giorno valido");return;}
       payload.at_day = atDay;
       payload.window_days = evWindowDays.value ? parseInt(evWindowDays.value,10) : null;
-
-      // azzera i campi ricorrenti
-      payload.repeat_every_days = null;
-      payload.start_day = null;
-      payload.stop_day = null;
+      payload.repeat_every_days = null; payload.start_day = null; payload.stop_day = null;
     } else {
       const every = parseInt(evRepeatEveryDays.value ?? "",10);
       const startD = parseInt(evStartDay.value ?? "",10);
       const stopD = evStopDay.value !== "" ? parseInt(evStopDay.value,10) : null;
-      if (!Number.isInteger(every) || every<=0){
-        alert("Inserisci 'Ogni N giorni' valido (>0).");
-        return;
-      }
-      if (!Number.isInteger(startD) || startD<0){
-        alert("Inserisci 'Da giorno' valido (>=0).");
-        return;
-      }
-      if (stopD!=null && (stopD<startD)){
-        alert("'A giorno' deve essere ≥ di 'Da giorno'.");
-        return;
-      }
+      if (!Number.isInteger(every)||every<=0){alert("Inserisci ogni N giorni valido");return;}
+      if (!Number.isInteger(startD)||startD<0){alert("Inserisci da giorno valido");return;}
+      if (stopD!=null && (stopD<startD)){alert("A giorno deve essere ≥ Da giorno");return;}
       payload.at_day = null;
-      payload.repeat_every_days = every;
-      payload.start_day = startD;
-      payload.stop_day = stopD;
+      payload.repeat_every_days = every; payload.start_day = startD; payload.stop_day = stopD;
       payload.window_days = evWindowDaysR.value ? parseInt(evWindowDaysR.value,10) : null;
     }
-
     showPwdModal({ type: "create", payload });
   });
 
-  // delete dalla lista
   tlEventsList.addEventListener("click", (e) => {
     const btn = e.target.closest(".tlDeleteBtn");
     if (!btn) return;
