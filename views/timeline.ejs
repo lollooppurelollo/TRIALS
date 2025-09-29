@@ -23,7 +23,15 @@
     .hover\:bg-dark-sage:hover{background-color:var(--color-dark-sage)}
 
     /* chip colori evento */
-    .chip{font-size:.75rem; line-height:1; padding:.25rem .5rem; border-radius:.375rem; display:inline-block; white-space:nowrap}
+    .chip{
+      font-size:.75rem; line-height:1;
+      padding:.25rem .5rem; border-radius:.375rem;
+      display:inline-block; white-space:nowrap;
+      /* aggiunte ↓ */
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .chip-oncological_visit{background:var(--color-dark-sage); color:#fff}
     .chip-blood_test{background:var(--color-light-red); color:#7f1d1d}
     .chip-radiology{background:var(--color-blue); color:var(--color-dark-gray)}
@@ -43,7 +51,7 @@
     .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.25rem; cursor:pointer}
     .daycell:hover{outline:2px solid var(--color-light-sage)}
     .daycell.selected{outline:3px solid var(--color-sage)}
-    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center}
+    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center;width:100%}
 
     /* colonna label “Settimana” */
     .weeklabel{font-size:.8rem; color:#6b7280; display:flex; align-items:center; justify-content:flex-end; padding-right:.25rem}
@@ -99,7 +107,7 @@
     </div>
     <div>
       <label class="block text-sm font-medium text-dark-gray">Settimane per ciclo</label>
-      <input id="tlCycleWeeks" type="number" min="1" max="12" value="4"
+      <input id="tlCycleWeeks" type="number" min="1" max="12" value="4" disabled
              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
     </div>
     <div class="flex items-end">
@@ -177,48 +185,50 @@
               <p class="text-xs text-gray-500 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-dark-gray">Finestra ± giorni (opz.)</label>
-              <input id="evWindowDays" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <label class="block text-sm font-medium text-dark-gray">Finestra indietro (−g, opz.)</label>
+              <input id="evWindowBefore" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Finestra avanti (+g, opz.)</label>
+              <input id="evWindowAfter" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
           </div>
         </div>
-
+        <!-- ricorrente -->
         <!-- ricorrente -->
         <div id="evRecurringWrap" class="md:col-span-2">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
             <div>
               <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
               <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
               <label class="block text-sm font-medium text-dark-gray">Da giorno</label>
-              <input id="evStartDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <!-- Input 1 -> indice 0 interno -->
+              <input id="evStartDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
               <label class="block text-sm font-medium text-dark-gray">A giorno (opz.)</label>
-              <input id="evStopDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <!-- 1-based per coerenza con "Da giorno" -->
+              <input id="evStopDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
-              <label class="block text-sm font-medium text-dark-gray">Finestra ± giorni (opz.)</label>
-              <input id="evWindowDaysR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <label class="block text-sm font-medium text-dark-gray">Finestra indietro (−g, opz.)</label>
+              <input id="evWindowBeforeR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-dark-gray">Finestra avanti (+g, opz.)</label>
+              <input id="evWindowAfterR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
           </div>
         </div>
-      </div>
+          </div> <!-- chiude la griglia -->
+            <div class="flex gap-2 mt-4">
+              <button id="evSaveBtn" class="flex-1 bg-sage ...">Salva evento</button>
+              <button id="evCancelEditBtn" class="hidden px-4 ...">Annulla modifica</button>
+            </div>
+          </div> <!-- chiude #evFormWrap -->
 
-      <div class="flex gap-2 mt-4">
-        <button id="evSaveBtn"
-                class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
-          Salva evento
-        </button>
-        <button id="evCancelEditBtn"
-                class="hidden px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
-          Annulla modifica
-        </button>
-      </div>
-    </div>
-  </section>
-</div>
 
 <!-- Modale password (usata solo per entrare/uscire dalla modalità modifica) -->
 <div id="tlPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
@@ -275,13 +285,15 @@
   const evTitle = document.getElementById("evTitle");
   const evNotes = document.getElementById("evNotes");
   const evIndications = document.getElementById("evIndications");
+  const evWindowBefore  = document.getElementById("evWindowBefore");
+  const evWindowAfter   = document.getElementById("evWindowAfter");
+  const evWindowBeforeR = document.getElementById("evWindowBeforeR");
+  const evWindowAfterR  = document.getElementById("evWindowAfterR");
   const evOneShot = document.getElementById("evOneShot");
   const evAtDay = document.getElementById("evAtDay");
-  const evWindowDays = document.getElementById("evWindowDays");
   const evRepeatEveryDays = document.getElementById("evRepeatEveryDays");
   const evStartDay = document.getElementById("evStartDay");
   const evStopDay = document.getElementById("evStopDay");
-  const evWindowDaysR = document.getElementById("evWindowDaysR");
   const evSaveBtn = document.getElementById("evSaveBtn");
 
   const tlPwdModal = document.getElementById("tlPasswordModal");
@@ -317,12 +329,14 @@
       _editMode = true;
       evFormWrap.classList.remove("hidden");
       tlEditToggleBtn.textContent = "Esci e salva modifiche";
+       tlCycleWeeks.disabled = false; 
     }
     if (action.type === "exit-edit") {
       _editMode = false;
       evFormWrap.classList.add("hidden");
       tlEditToggleBtn.textContent = "Entra in modalità modifica";
       resetForm();
+       tlCycleWeeks.disabled = true;
     }
     _pendingAction = null;
     renderEventsList();
@@ -343,21 +357,28 @@
 
   /* -------------- Lista eventi (card) -------------- */
   function formatSummary(ev) {
+    // Fallback per record vecchi: se c'è solo window_days, usalo per entrambi
+    const wb = (ev.window_before_days ?? ev.window_days ?? 0) | 0; // indietro
+    const wa = (ev.window_after_days  ?? ev.window_days ?? 0) | 0; // avanti
+    const parts = [];
+    if (wa) parts.push(`+${wa}g`);
+    if (wb) parts.push(`-${wb}g`);
+    const winText = parts.length ? ` (${parts.join(" / ")})` : "";
+
     if (ev.one_shot) {
       const d = ev.at_day;
       if (d == null) return "Evento singolo";
-      const w = Math.floor(d/7);
-      const dow = (d % 7)+1;
-      const wd = ev.window_days ? ` (±${ev.window_days}g)` : "";
-      return `Giorno ${d} — Settimana ${w}, Giorno ${dow}${wd}`;
+      const w = Math.floor(d / 7);
+      const dow = (d % 7) + 1;
+      return `Giorno ${d + 1} — Settimana ${w}, Giorno ${dow}${winText}`;
     } else {
-      const sd = ev.start_day ?? 0;
-      const ed = ev.stop_day ?? null;
-      const rng = ed!=null ? `giorni ${sd}-${ed}` : `dal giorno ${sd}`;
-      const wd = ev.window_days ? ` (±${ev.window_days}g)` : "";
-      return `Ogni ${ev.repeat_every_days} giorni, ${rng}${wd}`;
+      const sd = ev.start_day != null ? ev.start_day + 1 : 1;   // 1-based in output
+      const ed = ev.stop_day  != null ? ev.stop_day  + 1 : null; // 1-based in output
+      const rng = ed != null ? `giorni ${sd}-${ed}` : `dal giorno ${sd}`;
+      return `Ogni ${ev.repeat_every_days} giorni, ${rng}${winText}`;
     }
   }
+
 
   function renderEventsList() {
     tlEventsList.innerHTML = "";
@@ -405,32 +426,28 @@
       map.set(key, arr);
     };
 
-    events.forEach(ev=>{
+    events.forEach(ev => {
+      // Fallback: se esiste solo window_days (legacy) lo usiamo per entrambi
+      const winBefore = parseInt(ev.window_before_days ?? ev.window_days ?? 0, 10) || 0; // indietro
+      const winAfter  = parseInt(ev.window_after_days  ?? ev.window_days ?? 0, 10) || 0; // avanti
+
       if (ev.one_shot) {
         const d = Number.isInteger(ev.at_day) ? ev.at_day : null;
-        if (d!=null){
+        if (d != null) {
           push(byDay, d, ev);
-          const win = parseInt(ev.window_days||0,10);
-          if (win>0){
-            for (let k=-win;k<=win;k++){
-              if (k===0) continue;
-              push(windows, d+k, ev);
-            }
-          }
+          // solo indietro
+          for (let k = 1; k <= winBefore; k++) push(windows, d - k, ev);
+          // solo avanti
+          for (let k = 1; k <= winAfter;  k++) push(windows, d + k, ev);
         }
       } else {
         const startDay = Number.isInteger(ev.start_day) ? ev.start_day : 0;
-        const stopDay = Number.isInteger(ev.stop_day) ? ev.stop_day : (totalDays-1);
-        const step = Math.max(1, parseInt(ev.repeat_every_days||1,10));
-        const win = parseInt(ev.window_days||0,10);
-        for (let d=startDay; d<=stopDay; d+=step){
+        const stopDay  = Number.isInteger(ev.stop_day)  ? ev.stop_day  : (totalDays - 1);
+        const step = Math.max(1, parseInt(ev.repeat_every_days || 1, 10));
+        for (let d = startDay; d <= stopDay; d += step) {
           push(byDay, d, ev);
-          if (win>0){
-            for (let k=-win;k<=win;k++){
-              if (k===0) continue;
-              push(windows, d+k, ev);
-            }
-          }
+          for (let k = 1; k <= winBefore; k++) push(windows, d - k, ev);
+          for (let k = 1; k <= winAfter;  k++) push(windows, d + k, ev);
         }
       }
     });
@@ -488,7 +505,7 @@
           const stack = document.createElement("div");
           stack.className="daycell-stack";
 
-          /* Eventi del giorno (chip pieni) */
+          /* Eventi del giorno (chip pieni) → titolo se presente */
           (byDay.get(dayIndex) || []).forEach(ev=>{
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type);
@@ -496,11 +513,11 @@
             stack.appendChild(chip);
           });
 
-          /* Finestra ± (chip chiari, uno per evento) */
+          /* Finestra ± (chip chiari) → SOLO tipo evento (niente titolo) */
           (windows.get(dayIndex) || []).forEach(ev=>{
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type) + " chip-win";
-            chip.textContent = eventTitle(ev);
+            chip.textContent = "";
             stack.appendChild(chip);
           });
 
@@ -524,7 +541,7 @@
         evOneShot.checked = true;
         toggleMode();
         evAtDay.value = _selectedDay;
-        evWindowDays.focus();
+        evWindowAfter.focus();   // o evWindowBefore.focus()
       });
     });
   }
@@ -581,11 +598,13 @@
     evIndications.value = "";
     evOneShot.checked = false;
     evAtDay.value = "";
-    evWindowDays.value = "";
     evRepeatEveryDays.value = "";
     evStartDay.value = "";
     evStopDay.value = "";
-    evWindowDaysR.value = "";
+    evWindowBefore.value  = "";
+    evWindowAfter.value   = "";
+    evWindowBeforeR.value = "";
+    evWindowAfterR.value  = "";
     toggleMode();
   }
 
@@ -609,7 +628,9 @@
         return;
       }
       payload.at_day = atDay;
-      payload.window_days = evWindowDays.value ? parseInt(evWindowDays.value,10) : null;
+      payload.window_before_days = evWindowBefore.value ? parseInt(evWindowBefore.value,10) : null;
+      payload.window_after_days  = evWindowAfter.value  ? parseInt(evWindowAfter.value,10)  : null;
+      payload.window_days = null; // (legacy, lasciamo null)
 
       // azzera i campi ricorrenti
       payload.repeat_every_days = null;
@@ -623,8 +644,8 @@
         alert("Inserisci 'Ogni N giorni' valido (>0).");
         return;
       }
-      if (!Number.isInteger(startD) || startD<0){
-        alert("Inserisci 'Da giorno' valido (>=0).");
+      if (!Number.isInteger(startD) || startD<=0){
+        alert("Inserisci 'Da giorno' valido (>=1).");
         return;
       }
       if (stopD!=null && (stopD<startD)){
@@ -633,9 +654,11 @@
       }
       payload.at_day = null;
       payload.repeat_every_days = every;
-      payload.start_day = startD;
-      payload.stop_day = stopD;
-      payload.window_days = evWindowDaysR.value ? parseInt(evWindowDaysR.value,10) : null;
+      payload.start_day = startD - 1;                 // <<< 1-based → 0-based
+      payload.stop_day = stopD != null ? stopD - 1 : null; // <<< 1-based → 0-based
+      payload.window_before_days = evWindowBeforeR.value ? parseInt(evWindowBeforeR.value,10) : null;
+      payload.window_after_days  = evWindowAfterR.value  ? parseInt(evWindowAfterR.value,10)  : null;
+      payload.window_days = null; // (legacy)
     }
 
     // UPDATE: delete + post
@@ -683,14 +706,20 @@
       evOneShot.checked = !!ev.one_shot;
       toggleMode();
 
+      // fallback: se il record ha solo window_days (legacy), lo usiamo per entrambi
+      const wb = ev.window_before_days ?? ev.window_days ?? "";
+      const wa = ev.window_after_days  ?? ev.window_days ?? "";
+
       if (ev.one_shot) {
         evAtDay.value = ev.at_day ?? "";
-        evWindowDays.value = ev.window_days ?? "";
+        evWindowBefore.value = wb ?? "";
+        evWindowAfter.value  = wa ?? "";
       } else {
         evRepeatEveryDays.value = ev.repeat_every_days ?? "";
-        evStartDay.value = ev.start_day ?? "";
-        evStopDay.value = ev.stop_day ?? "";
-        evWindowDaysR.value = ev.window_days ?? "";
+        evStartDay.value = ev.start_day != null ? ev.start_day + 1 : ""; // 1-based in edit
+        evStopDay.value  = ev.stop_day  != null ? ev.stop_day  + 1 : ""; // 1-based in edit
+        evWindowBeforeR.value = wb ?? "";
+        evWindowAfterR.value  = wa ?? "";
       }
     }
   });
@@ -708,7 +737,7 @@
       evOneShot.checked = true;
       toggleMode();
       evAtDay.value = _selectedDay;
-      evWindowDays.focus();
+      evWindowAfter.focus();   // o evWindowBefore.focus()
     }
   });
 

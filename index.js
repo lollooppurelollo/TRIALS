@@ -59,8 +59,10 @@ function sanitizeEvent(body, studyId) {
     start_day: !one_shot ? toIntOrNull(body.start_day) : null,
     stop_day: !one_shot ? toIntOrNull(body.stop_day) : null,
 
-    // finestra opzionale
-    window_days: toIntOrNull(body.window_days),
+    // finestre (nuove) + compat legacy
+    window_before_days: toIntOrNull(body.window_before_days),
+    window_after_days: toIntOrNull(body.window_after_days),
+    window_days: toIntOrNull(body.window_days), // legacy; il nuovo form lo manda null
   };
 }
 
