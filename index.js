@@ -115,6 +115,83 @@ app.delete("/api/studies/:id", async (req, res) => {
   res.sendStatus(204);
 });
 
+// Leggi uno studio (serve cycle_weeks)
+app.get("/api/studies/:id", async (req, res) => {
+  const { data, error } = await supabase
+    .from("studies")
+    .select("*")
+    .eq("id", req.params.id)
+    .single();
+
+  if (error) {
+    // Se non esiste, restituiamo 404 (il frontend sa gestirlo e poi farà PATCH per crearlo)
+    if (error.code === "PGRST116") return res.status(404).send("Not found");
+    console.error("Errore GET /api/studies/:id:", error);
+    return res.status(500).send("Errore recupero studio");
+  }
+  res.json(data || null);
+});
+
+// Aggiorna settimane per ciclo (create-or-update)
+app.patch("/api/studies/:id", async (req, res) => {
+  const id = req.params.id;
+  const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
+
+  if (!cycle_weeks || cycle_weeks < 1 || cycle_weeks > 12) {
+    return res.status(400).send("cycle_weeks non valido");
+  }
+
+  try {
+    const { data, error, status } = await supabase
+      .from("studies")
+      .upsert({ id, cycle_weeks }, { onConflict: "id" }) // crea se non esiste, aggiorna se c'è
+      .select()
+      .single();
+
+    if (error) {
+      console.error("PATCH /api/studies/:id supabase error:", { status, error });
+      return res.status(500).send(error.message || "Errore aggiornamento/creazione studio");
+    }
+
+    return res.json(data);
+  } catch (e) {
+    console.error("PATCH /api/studies/:id exception:", e);
+    return res.status(500).send("Errore interno");
+  }
+});
+
+
+  // 1) Prova a fare update
+  const { data: upd, error: updErr } = await supabase
+    .from("studies")
+    .update({ cycle_weeks })
+    .eq("id", id)
+    .select();
+
+  if (updErr) {
+    console.error("Errore UPDATE studies:", updErr);
+    return res.status(500).send("Errore aggiornamento studio");
+  }
+
+  if (upd && upd.length > 0) {
+    return res.json(upd[0]);
+  }
+
+  // 2) Se non esiste, crea la riga (upsert manuale)
+  const { data: ins, error: insErr } = await supabase
+    .from("studies")
+    .insert([{ id, cycle_weeks }])
+    .select()
+    .single();
+
+  if (insErr) {
+    console.error("Errore INSERT studies:", insErr);
+    return res.status(500).send("Errore creazione studio");
+  }
+
+  return res.json(ins);
+});
+
 /* -------------------- API TIMELINE -------------------- */
 app.get("/api/timeline/:studyId", async (req, res) => {
   const { data, error } = await supabase

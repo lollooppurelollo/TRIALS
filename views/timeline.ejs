@@ -24,8 +24,8 @@
 
     /* chip colori evento */
     .chip{
-      font-size:.75rem; line-height:1;
-      padding:.25rem .5rem; border-radius:.375rem;
+      font-size:.65rem; line-height:1.05;
+      padding:.15rem .4rem; border-radius:.375rem;
       display:inline-block; white-space:nowrap;
       max-width:100%;
       overflow:hidden;
@@ -42,12 +42,12 @@
     /* GRID settimana: prima colonna fissa + 7 giorni */
     .grid-week{
       display:grid;
-      grid-template-columns: 6.5rem repeat(7, minmax(0, 1fr));
+      grid-template-columns: 3rem repeat(7, minmax(0, 1fr));
       gap:.5rem;
     }
 
     /* celle calendario */
-    .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.25rem; cursor:pointer}
+    .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.20rem; cursor:pointer}
     .daycell:hover{outline:2px solid var(--color-light-sage)}
     .daycell.selected{outline:3px solid var(--color-sage)}
     .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center; width:100%}
@@ -321,6 +321,7 @@
   let _pendingAction = null;
   let _selectedDay = null;
   let _editingEvent = null; // se non null → siamo in modifica (DELETE+POST)
+  let _cycleWeeksDb = null; // valore cycle_weeks letto dal DB
 
   /* -------------- Password: solo ingresso/uscita edit mode -------------- */
   function showPwdModal(action) {
@@ -345,9 +346,19 @@
       _editMode = false;
       evFormWrap.classList.add("hidden");
       tlEditToggleBtn.textContent = "Entra in modalità modifica";
-      resetForm();
-      tlCycleWeeks.disabled = true;
-    }
+      // se il valore è cambiato, salva su DB
+        const current = parseInt(tlCycleWeeks.value || "4", 10);
+        if (_cycleWeeksDb == null || current !== _cycleWeeksDb) {
+          saveStudySettings(current).then((ok) => {
+            if (ok) {
+              renderTimeline(); // ridisegna con il nuovo ciclo
+            }
+          });
+        }
+
+        resetForm();
+        tlCycleWeeks.disabled = true;
+      }
     _pendingAction = null;
     renderEventsList();
   }
@@ -517,7 +528,10 @@
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type);
             chip.textContent = eventTitle(ev);
-            chip.title = eventTitle(ev); // tooltip testo completo
+            // Tooltip completo (titolo + note su nuova riga se presenti)
+            chip.title = ev.notes && ev.notes.trim()
+              ? `${eventTitle(ev)}\nNote: ${ev.notes}`
+              : eventTitle(ev);
             stack.appendChild(chip);
           });
 
@@ -525,7 +539,11 @@
           (windows.get(dayIndex) || []).forEach(ev=>{
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type) + " chip-win";
-            chip.textContent = "";
+            chip.textContent = ""; // niente testo (solo colore)
+            // Anche qui tooltip utile
+            chip.title = ev.notes && ev.notes.trim()
+              ? `${eventTitle(ev)}\nNote: ${ev.notes}`
+              : eventTitle(ev);
             stack.appendChild(chip);
           });
 
@@ -580,6 +598,43 @@
     if (!res.ok) { alert("Errore eliminazione"); return false; }
     return true;
   }
+  async function loadStudySettings() {
+    if (!STUDY_ID) return;
+    const res = await fetch(`/api/studies/${STUDY_ID}`);
+    if (!res.ok) {
+      if (res.status === 404) {
+        // Studio non presente: non è un errore fatale.
+        _cycleWeeksDb = null;
+        console.warn("Studio non trovato (404). Verrà creato al primo salvataggio.");
+        return;
+      }
+      const txt = await res.text().catch(() => "");
+      console.error("Errore loadStudySettings:", res.status, txt);
+      return;
+    }
+    const study = await res.json();
+    if (study && typeof study.cycle_weeks === "number") {
+      _cycleWeeksDb = study.cycle_weeks;
+      tlCycleWeeks.value = String(study.cycle_weeks);
+    }
+  }
+
+  async function saveStudySettings(newCycleWeeks) {
+    if (!STUDY_ID) return true;
+    const res = await fetch(`/api/studies/${STUDY_ID}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cycle_weeks: newCycleWeeks }),
+    });
+    if (!res.ok) {
+      alert("Errore salvataggio settimane/ciclo");
+      return false;
+    }
+    const updated = await res.json();
+    _cycleWeeksDb = updated.cycle_weeks; // aggiorna cache locale
+    return true;
+  }
+
 
   /* -------------- UI: toggle modalità (singolo/ricorrente) -------------- */
   function toggleMode(){
@@ -752,7 +807,9 @@
   });
 
   /* -------------- Start -------------- */
-  if (STUDY_ID) loadEvents();
+  if (STUDY_ID) {
+  loadStudySettings().then(loadEvents);
+  }
 })();
 </script>
 </body>
