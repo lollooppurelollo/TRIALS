@@ -27,7 +27,6 @@
       font-size:.75rem; line-height:1;
       padding:.25rem .5rem; border-radius:.375rem;
       display:inline-block; white-space:nowrap;
-      /* aggiunte ↓ */
       max-width:100%;
       overflow:hidden;
       text-overflow:ellipsis;
@@ -51,10 +50,10 @@
     .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.25rem; cursor:pointer}
     .daycell:hover{outline:2px solid var(--color-light-sage)}
     .daycell.selected{outline:3px solid var(--color-sage)}
-    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center;width:100%}
+    .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center; width:100%}
 
-    /* colonna label “Settimana” */
-    .weeklabel{font-size:.8rem; color:#6b7280; display:flex; align-items:center; justify-content:flex-end; padding-right:.25rem}
+    /* colonna label settimana (solo numero) */
+    .weeklabel{font-size:.85rem; color:#6b7280; display:flex; align-items:center; justify-content:flex-end; padding-right:.25rem; font-weight:600}
 
     /* header giorni (1–7) più piccolo */
     .daynum{font-size:.8rem; color:#9ca3af; font-weight:600}
@@ -178,26 +177,28 @@
 
         <!-- singolo -->
         <div id="evSingleWrap" class="md:col-span-2 hidden">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- allineamento: inputs in basso -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
             <div>
               <label class="block text-sm font-medium text-dark-gray">Giorno (da inizio studio)</label>
               <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
               <p class="text-xs text-gray-500 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-dark-gray">Finestra indietro (−g, opz.)</label>
+              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
               <input id="evWindowBefore" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
-              <label class="block text-sm font-medium text-dark-gray">Finestra avanti (+g, opz.)</label>
+              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
               <input id="evWindowAfter" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
           </div>
         </div>
-        <!-- ricorrente -->
+
         <!-- ricorrente -->
         <div id="evRecurringWrap" class="md:col-span-2">
-          <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+          <!-- allineamento: 5 colonne + items-end -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
             <div>
               <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
               <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
@@ -213,22 +214,31 @@
               <input id="evStopDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
-              <label class="block text-sm font-medium text-dark-gray">Finestra indietro (−g, opz.)</label>
+              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
               <input id="evWindowBeforeR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
             <div>
-              <label class="block text-sm font-medium text-dark-gray">Finestra avanti (+g, opz.)</label>
+              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
               <input id="evWindowAfterR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
             </div>
           </div>
         </div>
-          </div> <!-- chiude la griglia -->
-            <div class="flex gap-2 mt-4">
-              <button id="evSaveBtn" class="flex-1 bg-sage ...">Salva evento</button>
-              <button id="evCancelEditBtn" class="hidden px-4 ...">Annulla modifica</button>
-            </div>
-          </div> <!-- chiude #evFormWrap -->
+      </div>
 
+      <!-- Bottoni del form -->
+      <div class="flex gap-2 mt-4">
+        <button id="evSaveBtn"
+                class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-xl hover:bg-dark-sage transition-colors shadow-md">
+          Salva evento
+        </button>
+        <button id="evCancelEditBtn"
+                class="hidden px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
+          Annulla modifica
+        </button>
+      </div>
+    </div> <!-- /#evFormWrap -->
+  </section>
+</div>
 
 <!-- Modale password (usata solo per entrare/uscire dalla modalità modifica) -->
 <div id="tlPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
@@ -329,14 +339,14 @@
       _editMode = true;
       evFormWrap.classList.remove("hidden");
       tlEditToggleBtn.textContent = "Esci e salva modifiche";
-       tlCycleWeeks.disabled = false; 
+      tlCycleWeeks.disabled = false; 
     }
     if (action.type === "exit-edit") {
       _editMode = false;
       evFormWrap.classList.add("hidden");
       tlEditToggleBtn.textContent = "Entra in modalità modifica";
       resetForm();
-       tlCycleWeeks.disabled = true;
+      tlCycleWeeks.disabled = true;
     }
     _pendingAction = null;
     renderEventsList();
@@ -378,7 +388,6 @@
       return `Ogni ${ev.repeat_every_days} giorni, ${rng}${winText}`;
     }
   }
-
 
   function renderEventsList() {
     tlEventsList.innerHTML = "";
@@ -435,9 +444,7 @@
         const d = Number.isInteger(ev.at_day) ? ev.at_day : null;
         if (d != null) {
           push(byDay, d, ev);
-          // solo indietro
           for (let k = 1; k <= winBefore; k++) push(windows, d - k, ev);
-          // solo avanti
           for (let k = 1; k <= winAfter;  k++) push(windows, d + k, ev);
         }
       } else {
@@ -476,11 +483,11 @@
       const body = document.createElement("div");
       body.className = "p-3 space-y-2";
 
-      /* intestazione 1..7 */
+      /* intestazione colonna settimana + giorni 1..7 */
       const hdr = document.createElement("div");
       hdr.className = "grid-week";
       hdr.innerHTML = `
-        <div></div>
+        <div class="daynum text-right pr-1">Settimana</div>
         ${[1,2,3,4,5,6,7].map(n=>`<div class="daynum text-center">${n}</div>`).join("")}
       `;
       body.appendChild(hdr);
@@ -492,7 +499,7 @@
 
         const wlab = document.createElement("div");
         wlab.className="weeklabel";
-        wlab.textContent = `Settimana ${w}`;
+        wlab.textContent = `${w}`;  // solo numero settimana
         row.appendChild(wlab);
 
         for (let dow=0; dow<7; dow++){
@@ -510,10 +517,11 @@
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type);
             chip.textContent = eventTitle(ev);
+            chip.title = eventTitle(ev); // tooltip testo completo
             stack.appendChild(chip);
           });
 
-          /* Finestra ± (chip chiari) → SOLO tipo evento (niente titolo) */
+          /* Finestra (chip chiari) → solo colore, nessuna scritta */
           (windows.get(dayIndex) || []).forEach(ev=>{
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type) + " chip-win";
@@ -541,7 +549,8 @@
         evOneShot.checked = true;
         toggleMode();
         evAtDay.value = _selectedDay;
-        evWindowAfter.focus();   // o evWindowBefore.focus()
+        const focusField = evWindowAfter || evWindowBefore;
+        if (focusField) focusField.focus();
       });
     });
   }
@@ -630,7 +639,7 @@
       payload.at_day = atDay;
       payload.window_before_days = evWindowBefore.value ? parseInt(evWindowBefore.value,10) : null;
       payload.window_after_days  = evWindowAfter.value  ? parseInt(evWindowAfter.value,10)  : null;
-      payload.window_days = null; // (legacy, lasciamo null)
+      payload.window_days = null; // (legacy)
 
       // azzera i campi ricorrenti
       payload.repeat_every_days = null;
@@ -654,8 +663,8 @@
       }
       payload.at_day = null;
       payload.repeat_every_days = every;
-      payload.start_day = startD - 1;                 // <<< 1-based → 0-based
-      payload.stop_day = stopD != null ? stopD - 1 : null; // <<< 1-based → 0-based
+      payload.start_day = startD - 1;                 // 1-based → 0-based
+      payload.stop_day = stopD != null ? stopD - 1 : null; // 1-based → 0-based
       payload.window_before_days = evWindowBeforeR.value ? parseInt(evWindowBeforeR.value,10) : null;
       payload.window_after_days  = evWindowAfterR.value  ? parseInt(evWindowAfterR.value,10)  : null;
       payload.window_days = null; // (legacy)
@@ -737,7 +746,8 @@
       evOneShot.checked = true;
       toggleMode();
       evAtDay.value = _selectedDay;
-      evWindowAfter.focus();   // o evWindowBefore.focus()
+      const focusField = evWindowAfter || evWindowBefore;
+      if (focusField) focusField.focus();
     }
   });
 
