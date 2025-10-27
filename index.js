@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 /* -------------------- Supabase -------------------- */
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY, // usa la service_role in ambiente server
+  process.env.SUPABASE_KEY, // service_role in ambiente server
 );
 
 /* -------------------- Middleware -------------------- */
@@ -37,10 +37,7 @@ function toBool(v) {
   return v === true || v === "true" || v === 1 || v === "1";
 }
 
-/**
- * Normalizza il payload che arriva dal form della timeline.
- * Ora solo campi a giorni (Supabase schema).
- */
+/** Normalizza il payload che arriva dal form della timeline (solo campi “a giorni”). */
 function sanitizeEvent(body, studyId) {
   const one_shot = toBool(body.one_shot);
 
@@ -80,7 +77,7 @@ app.get("/api/studies", async (_req, res) => {
   const { data, error } = await supabase
     .from("studies")
     .select("*")
-    .order("id", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Errore GET /api/studies:", error);
@@ -115,7 +112,7 @@ app.delete("/api/studies/:id", async (req, res) => {
   res.sendStatus(204);
 });
 
-// Leggi uno studio (serve cycle_weeks)
+// Leggi uno studio (serve cycle_weeks). Se non esiste → 404 (gestito dal frontend)
 app.get("/api/studies/:id", async (req, res) => {
   const { data, error } = await supabase
     .from("studies")
@@ -124,7 +121,7 @@ app.get("/api/studies/:id", async (req, res) => {
     .single();
 
   if (error) {
-    // Se non esiste, restituiamo 404 (il frontend sa gestirlo e poi farà PATCH per crearlo)
+    // PGRST116 = no rows returned (PostgREST/Supabase)
     if (error.code === "PGRST116") return res.status(404).send("Not found");
     console.error("Errore GET /api/studies/:id:", error);
     return res.status(500).send("Errore recupero studio");
@@ -132,7 +129,7 @@ app.get("/api/studies/:id", async (req, res) => {
   res.json(data || null);
 });
 
-// Aggiorna settimane per ciclo (create-or-update)
+// Aggiorna settimane per ciclo (create-or-update con upsert)
 app.patch("/api/studies/:id", async (req, res) => {
   const id = req.params.id;
   const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
@@ -142,15 +139,21 @@ app.patch("/api/studies/:id", async (req, res) => {
   }
 
   try {
+    // upsert più robusta: passa un ARRAY e specifica onConflict sull'id (PK)
     const { data, error, status } = await supabase
       .from("studies")
-      .upsert({ id, cycle_weeks }, { onConflict: "id" }) // crea se non esiste, aggiorna se c'è
+      .upsert([{ id, cycle_weeks }], { onConflict: "id" })
       .select()
       .single();
 
     if (error) {
-      console.error("PATCH /api/studies/:id supabase error:", { status, error });
-      return res.status(500).send(error.message || "Errore aggiornamento/creazione studio");
+      console.error("PATCH /api/studies/:id supabase error:", {
+        status,
+        error,
+      });
+      return res
+        .status(500)
+        .send(error.message || "Errore aggiornamento/creazione studio");
     }
 
     return res.json(data);
@@ -158,38 +161,6 @@ app.patch("/api/studies/:id", async (req, res) => {
     console.error("PATCH /api/studies/:id exception:", e);
     return res.status(500).send("Errore interno");
   }
-});
-
-
-  // 1) Prova a fare update
-  const { data: upd, error: updErr } = await supabase
-    .from("studies")
-    .update({ cycle_weeks })
-    .eq("id", id)
-    .select();
-
-  if (updErr) {
-    console.error("Errore UPDATE studies:", updErr);
-    return res.status(500).send("Errore aggiornamento studio");
-  }
-
-  if (upd && upd.length > 0) {
-    return res.json(upd[0]);
-  }
-
-  // 2) Se non esiste, crea la riga (upsert manuale)
-  const { data: ins, error: insErr } = await supabase
-    .from("studies")
-    .insert([{ id, cycle_weeks }])
-    .select()
-    .single();
-
-  if (insErr) {
-    console.error("Errore INSERT studies:", insErr);
-    return res.status(500).send("Errore creazione studio");
-  }
-
-  return res.json(ins);
 });
 
 /* -------------------- API TIMELINE -------------------- */

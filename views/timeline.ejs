@@ -626,14 +626,21 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cycle_weeks: newCycleWeeks }),
     });
+
     if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error("PATCH /api/studies failed:", res.status, txt);
       alert("Errore salvataggio settimane/ciclo");
       return false;
     }
-    const updated = await res.json();
-    _cycleWeeksDb = updated.cycle_weeks; // aggiorna cache locale
+
+    const updated = await res.json().catch(() => null);
+    if (updated && typeof updated.cycle_weeks === "number") {
+      _cycleWeeksDb = updated.cycle_weeks;
+    }
     return true;
   }
+
 
 
   /* -------------- UI: toggle modalità (singolo/ricorrente) -------------- */
