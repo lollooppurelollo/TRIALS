@@ -796,7 +796,24 @@
   });
 
   /* -------------- Altri handler -------------- */
-  tlRefreshBtn.addEventListener("click", renderTimeline);
+  tlRefreshBtn.addEventListener("click", async () => {
+    // Se sei in modalità modifica, salva anche su DB
+    if (_editMode) {
+      const current = parseInt(tlCycleWeeks.value || "4", 10);
+      const ok = await saveStudySettings(current); // PATCH /api/studies/:id
+      if (!ok) return;            // se fallisce, non ridisegnare
+      _cycleWeeksDb = current;    // aggiorna cache locale
+    }
+    renderTimeline();             // ridisegna la griglia
+  });
+
+  tlCycleWeeks.addEventListener("change", async () => {
+    if (!_editMode) return;                 // salviamo solo in edit mode
+    const current = parseInt(tlCycleWeeks.value || "4", 10);
+    const ok = await saveStudySettings(current);
+    if (ok) _cycleWeeksDb = current;
+  });
+
 
   // Selezione giorno sulla griglia → precompila evento singolo
   tlTimeline.addEventListener("click", (e) => {
