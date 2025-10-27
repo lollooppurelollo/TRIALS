@@ -129,37 +129,50 @@ app.get("/api/studies/:id", async (req, res) => {
   res.json(data || null);
 });
 
-// Aggiorna settimane per ciclo (create-or-update con upsert)
+// Assicurati in alto nel file: app.use(express.json()); (una sola volta)
+
+// PATCH: aggiorna solo le settimane per ciclo se lo studio ESISTE
 app.patch("/api/studies/:id", async (req, res) => {
-  const id = req.params.id;
-  const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
-
-  if (!cycle_weeks || cycle_weeks < 1 || cycle_weeks > 12) {
-    return res.status(400).send("cycle_weeks non valido");
-  }
-
   try {
-    // upsert più robusta: passa un ARRAY e specifica onConflict sull'id (PK)
-    const { data, error, status } = await supabase
-      .from("studies")
-      .upsert([{ id, cycle_weeks }], { onConflict: "id" })
-      .select()
-      .single();
+    const id = req.params.id;
 
-    if (error) {
-      console.error("PATCH /api/studies/:id supabase error:", {
-        status,
-        error,
-      });
-      return res
-        .status(500)
-        .send(error.message || "Errore aggiornamento/creazione studio");
+    // usa la tua helper se esiste, altrimenti parseInt
+    const cycle_weeks =
+      typeof toIntOrNull === "function"
+        ? toIntOrNull(req.body.cycle_weeks)
+        : Number.parseInt(req.body.cycle_weeks, 10);
+
+    // validazione (range 1–12, modifica se vuoi)
+    if (!Number.isInteger(cycle_weeks) || cycle_weeks < 1 || cycle_weeks > 12) {
+      return res.status(400).json({ error: "cycle_weeks non valido" });
     }
 
-    return res.json(data);
+    // 1) verifica che lo studio esista
+    const { data: existing, error: selErr } = await supabase
+      .from("studies")
+      .select("id")
+      .eq("id", id)
+      .single();
+
+    if (selErr || !existing) {
+      return res.status(404).json({ error: "Studio non trovato" });
+    }
+
+    // 2) UPDATE pulito (niente upsert → evita errore su title NOT NULL)
+    const { error: updErr } = await supabase
+      .from("studies")
+      .update({ cycle_weeks })
+      .eq("id", id);
+
+    if (updErr) {
+      console.error("Supabase UPDATE error:", updErr);
+      return res.status(400).json({ error: updErr.message });
+    }
+
+    return res.status(200).json({ ok: true });
   } catch (e) {
     console.error("PATCH /api/studies/:id exception:", e);
-    return res.status(500).send("Errore interno");
+    return res.status(500).json({ error: "Errore interno" });
   }
 });
 
