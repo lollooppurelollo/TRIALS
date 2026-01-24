@@ -705,20 +705,6 @@
       block.appendChild(body);
       tlTimeline.appendChild(block);
     }
-
-    /* click = seleziona giorno e precompila evento singolo */
-    tlTimeline.querySelectorAll(".daycell").forEach(c=>{
-      c.addEventListener("click", ()=>{
-        tlTimeline.querySelectorAll(".daycell.selected").forEach(s=>s.classList.remove("selected"));
-        c.classList.add("selected");
-        _selectedDay = parseInt(c.dataset.dayIndex,10);
-        evOneShot.checked = true;
-        toggleMode();
-        evAtDay.value = _selectedDay;
-        const focusField = evWindowAfter || evWindowBefore;
-        if (focusField) focusField.focus();
-      });
-    });
   }
 
   /* -------------- Fetch -------------- */
