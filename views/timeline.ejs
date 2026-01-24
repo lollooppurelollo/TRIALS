@@ -118,24 +118,137 @@
   </div>
 </div>
 
-<!-- Layout 2 colonne -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <!-- Timeline -->
-  <section class="bg-white p-4 rounded-xl shadow-md">
-    <h2 class="text-lg font-bold text-dark-gray mb-3">Timeline</h2>
-    <div id="tlTimeline" class="space-y-4"></div>
-  </section>
+  <!-- Layout: Calendario grande + pannello laterale collassabile -->
+  <div id="tlMainGrid" class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
 
-  <!-- Piano Eventi + Form -->
-  <section class="space-y-6">
-    <!-- Piano eventi -->
-    <div class="bg-white p-4 rounded-xl shadow-md">
+    <!-- Timeline (calendario) -->
+    <section class="bg-white p-4 rounded-xl shadow-md">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold text-dark-gray">Piano eventi</h2>
-        <span id="tlNoEventsMsg" class="text-sm text-gray-500 hidden">Nessun evento salvato.</span>
+        <h2 class="text-lg font-bold text-dark-gray">Timeline</h2>
+
+        <!-- Bottone apri/chiudi pannello destro (visibile bene su desktop) -->
+        <button id="tlToggleSideBtn"
+                class="hidden lg:inline-flex items-center gap-2 bg-white border border-gray-300 text-dark-gray font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 shadow-sm">
+          <span id="tlToggleSideIcon">📋</span>
+          <span id="tlToggleSideLabel">Chiudi piano eventi</span>
+        </button>
       </div>
-      <div id="tlEventsList" class="space-y-3"></div>
-    </div>
+
+      <div id="tlTimeline" class="space-y-4"></div>
+    </section>
+
+    <!-- Pannello laterale (Piano eventi + Form) -->
+    <aside id="tlSidePanel"
+           class="space-y-6 transition-all duration-200 w-full lg:w-[380px]">
+
+      <!-- Piano eventi -->
+      <div class="bg-white p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold text-dark-gray">Piano eventi</h2>
+          <span id="tlNoEventsMsg" class="text-sm text-gray-500 hidden">Nessun evento salvato.</span>
+        </div>
+        <div id="tlEventsList" class="space-y-3"></div>
+      </div>
+
+      <!-- Form nuovo/modifica evento (visibile solo in modalità modifica) -->
+      <div id="evFormWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
+        <h2 id="evFormTitle" class="text-lg font-bold text-dark-gray mb-3">Aggiungi evento</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-dark-gray">Tipo di evento</label>
+            <select id="evType" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <option value="oncological_visit">Visita oncologica</option>
+              <option value="blood_test">Esami ematici</option>
+              <option value="radiology">Esami radiologici</option>
+              <option value="therapy">Terapia</option>
+              <option value="custom">Evento personalizzato</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-dark-gray">Titolo (opzionale)</label>
+            <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-dark-gray">Note (opzionale)</label>
+            <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-dark-gray">Indicazioni (opzionale)</label>
+            <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
+          </div>
+
+          <!-- toggle -->
+          <div class="md:col-span-2 flex items-center gap-2">
+            <input id="evOneShot" type="checkbox" class="rounded">
+            <label for="evOneShot" class="text-sm text-dark-gray">Evento singolo</label>
+            <span class="text-xs text-gray-400">(se non spuntato: evento ricorrente)</span>
+          </div>
+
+          <!-- singolo -->
+          <div id="evSingleWrap" class="md:col-span-2 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div>
+                <label class="block text-sm font-medium text-dark-gray">Giorno (da inizio studio)</label>
+                <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <p class="text-xs text-gray-500 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
+                <input id="evWindowBefore" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
+                <input id="evWindowAfter" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+            </div>
+          </div>
+
+          <!-- ricorrente -->
+          <div id="evRecurringWrap" class="md:col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+              <div>
+                <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
+                <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-dark-gray">Da giorno</label>
+                <input id="evStartDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-dark-gray">A giorno (opz.)</label>
+                <input id="evStopDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
+                <input id="evWindowBeforeR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
+                <input id="evWindowAfterR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottoni del form -->
+        <div class="flex gap-2 mt-4">
+          <button id="evSaveBtn"
+                  class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-xl hover:bg-dark-sage transition-colors shadow-md">
+            Salva evento
+          </button>
+          <button id="evCancelEditBtn"
+                  class="hidden px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
+            Annulla modifica
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
 
     <!-- Form nuovo/modifica evento (visibile solo in modalità modifica) -->
     <div id="evFormWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
@@ -314,6 +427,11 @@
 
   const evSingleWrap = document.getElementById("evSingleWrap");
   const evRecurringWrap = document.getElementById("evRecurringWrap");
+  const tlToggleSideBtn = document.getElementById("tlToggleSideBtn");
+  const tlSidePanel = document.getElementById("tlSidePanel");
+  const tlToggleSideLabel = document.getElementById("tlToggleSideLabel");
+  let _sideOpen = true;
+  
 
   /* -------------- Stato -------------- */
   let _events = [];
@@ -375,6 +493,36 @@
     if (!_editMode) showPwdModal({ type: "enter-edit" });
     else showPwdModal({ type: "exit-edit" });
   });
+  /* --------- UI: pannello laterale apri/chiudi (desktop) --------- */
+  function setSidePanel(open) {
+    _sideOpen = open;
+
+    if (!_editMode) {
+      // ok anche fuori edit mode: è solo UI
+    }
+
+    if (open) {
+      tlSidePanel.classList.remove("lg:w-[44px]");
+      tlSidePanel.classList.add("lg:w-[380px]");
+      // mostra contenuto
+      tlSidePanel.querySelectorAll(":scope > div").forEach(el => el.classList.remove("hidden"));
+      if (tlToggleSideLabel) tlToggleSideLabel.textContent = "Chiudi piano eventi";
+    } else {
+      tlSidePanel.classList.remove("lg:w-[380px]");
+      tlSidePanel.classList.add("lg:w-[44px]");
+      // nasconde contenuto
+      tlSidePanel.querySelectorAll(":scope > div").forEach(el => el.classList.add("hidden"));
+      if (tlToggleSideLabel) tlToggleSideLabel.textContent = "Apri piano eventi";
+    }
+
+    // ridisegna per sfruttare lo spazio (opzionale ma utile)
+    renderTimeline();
+  }
+
+  if (tlToggleSideBtn && tlSidePanel) {
+    tlToggleSideBtn.addEventListener("click", () => setSidePanel(!_sideOpen));
+  }
+
 
   /* -------------- Lista eventi (card) -------------- */
   function formatSummary(ev) {
