@@ -169,7 +169,7 @@ app.patch("/api/studies/:id", async (req, res) => {
       return res.status(400).json({ error: updErr.message });
     }
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, cycle_weeks });
   } catch (e) {
     console.error("PATCH /api/studies/:id exception:", e);
     return res.status(500).json({ error: "Errore interno" });
