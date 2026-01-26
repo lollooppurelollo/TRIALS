@@ -555,9 +555,13 @@ document.addEventListener("DOMContentLoaded", () => {
         modalSubtitle.textContent = study.subtitle;
 
         if (modalClinicalAreas)
-            modalClinicalAreas.textContent = (study.clinical_areas || []).join(", ");
+            modalClinicalAreas.textContent = (study.clinical_areas || []).join(
+                ", ",
+            );
         if (modalSpecificClinicalAreas)
-            modalSpecificClinicalAreas.textContent = (study.specific_clinical_areas || []).join(", ");
+            modalSpecificClinicalAreas.textContent = (
+                study.specific_clinical_areas || []
+            ).join(", ");
         if (modalTreatmentSetting)
             modalTreatmentSetting.textContent = study.treatment_setting || "";
 
@@ -574,7 +578,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (eligibilityResultDiv) {
             eligibilityResultDiv.classList.add("hidden");
             eligibilityResultDiv.textContent = "";
-            eligibilityResultDiv.classList.remove("text-green-600", "text-red-600");
+            eligibilityResultDiv.classList.remove(
+                "text-green-600",
+                "text-red-600",
+            );
         }
 
         renderCriteriaInModal(study, page === "patient");
@@ -584,7 +591,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (checkEligibilityBtn) {
         checkEligibilityBtn.addEventListener("click", () => {
-            const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
+            const toggles =
+                criteriaContainer.querySelectorAll(".criteria-toggle");
 
             let hasMissingInclusion = false;
             let hasPositiveExclusion = false;
@@ -593,16 +601,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 const kind = t.dataset.kind;
                 const val = t.checked;
 
-                if (kind === "inclusion" && val === false) hasMissingInclusion = true;
-                if (kind === "exclusion" && val === true) hasPositiveExclusion = true;
+                if (kind === "inclusion" && val === false)
+                    hasMissingInclusion = true;
+                if (kind === "exclusion" && val === true)
+                    hasPositiveExclusion = true;
             });
 
             const eligible = !(hasMissingInclusion || hasPositiveExclusion);
 
             eligibilityResultDiv.classList.remove("hidden");
-            eligibilityResultDiv.textContent = eligible ? "✅ Elegibile" : "❌ Non elegibile";
-            eligibilityResultDiv.classList.remove("text-green-600", "text-red-600");
-            eligibilityResultDiv.classList.add(eligible ? "text-green-600" : "text-red-600");
+            eligibilityResultDiv.textContent = eligible
+                ? "✅ Elegibile"
+                : "❌ Non elegibile";
+            eligibilityResultDiv.classList.remove(
+                "text-green-600",
+                "text-red-600",
+            );
+            eligibilityResultDiv.classList.add(
+                eligible ? "text-green-600" : "text-red-600",
+            );
         });
     }
 
@@ -627,3 +644,4 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
+});
