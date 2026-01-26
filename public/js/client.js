@@ -477,137 +477,134 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderCriteriaInModal(study, isPatientPage) {
-        function renderCriteriaInModal(study, isPatientPage) {
-            criteriaContainer.innerHTML = "";
+        if (!criteriaContainer) return;
+        criteriaContainer.innerHTML = "";
 
-            const inclusioni = study.criteria.filter((c) => c.type === "inclusion");
-            const esclusioni = study.criteria.filter((c) => c.type === "exclusion");
+        const criteri = Array.isArray(study.criteria) ? study.criteria : [];
+        const inclusioni = criteri.filter((c) => c.type === "inclusion");
+        const esclusioni = criteri.filter((c) => c.type === "exclusion");
 
-            // helper: crea una riga criterio (con toggle solo su pagina paziente)
-            function makeRow(c, kind) {
-                const row = document.createElement("div");
-                row.className = "flex items-center justify-between gap-3 p-2 rounded-lg border border-gray-100";
+        function makeRow(c, kind) {
+            const row = document.createElement("div");
+            row.className =
+                "flex items-center justify-between gap-3 p-2 rounded-lg border border-gray-100";
 
-                const left = document.createElement("div");
-                left.className = "text-sm text-dark-gray";
-                left.textContent = c.text;
+            const left = document.createElement("div");
+            left.className = "text-sm text-dark-gray";
+            left.textContent = c.text || "";
 
-                row.appendChild(left);
+            row.appendChild(left);
 
-                // Se NON siamo in pagina paziente: solo testo
-                if (!isPatientPage) return row;
+            // In Trial page: solo testo
+            if (!isPatientPage) return row;
 
-                // default: inclusione = SI (true), esclusione = NO (false)
-                const defaultValue = kind === "inclusion" ? true : false;
+            // default: inclusione=SI (true), esclusione=NO (false)
+            const defaultValue = kind === "inclusion";
 
-                const right = document.createElement("div");
-                right.className = "flex items-center gap-2";
+            const right = document.createElement("div");
+            right.className = "flex items-center gap-2";
 
-                const labelNo = document.createElement("span");
-                labelNo.className = "text-xs text-gray-500";
-                labelNo.textContent = "No";
+            const labelNo = document.createElement("span");
+            labelNo.className = "text-xs text-gray-500";
+            labelNo.textContent = "No";
 
-                const input = document.createElement("input");
-                input.type = "checkbox";
-                input.className = "criteria-toggle";
-                input.checked = defaultValue;
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.className = "criteria-toggle";
+            input.checked = defaultValue;
+            input.dataset.kind = kind;
 
-                // salva metadati per il check
-                input.dataset.kind = kind; // inclusion / exclusion
-                input.dataset.text = c.text;
+            const labelSi = document.createElement("span");
+            labelSi.className = "text-xs text-gray-500";
+            labelSi.textContent = "Sì";
 
-                const labelSi = document.createElement("span");
-                labelSi.className = "text-xs text-gray-500";
-                labelSi.textContent = "Sì";
+            right.appendChild(labelNo);
+            right.appendChild(input);
+            right.appendChild(labelSi);
+            row.appendChild(right);
 
-                right.appendChild(labelNo);
-                right.appendChild(input);
-                right.appendChild(labelSi);
-                row.appendChild(right);
+            return row;
+        }
 
-                return row;
-            }
+        if (inclusioni.length > 0) {
+            const h = document.createElement("h5");
+            h.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
+            h.textContent = "Criteri di Inclusione";
+            criteriaContainer.appendChild(h);
 
-            if (inclusioni.length > 0) {
-                const h = document.createElement("h5");
-                h.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
-                h.textContent = "Criteri di Inclusione";
-                criteriaContainer.appendChild(h);
+            inclusioni.forEach((c) =>
+                criteriaContainer.appendChild(makeRow(c, "inclusion")),
+            );
+        }
 
-                inclusioni.forEach((c) => criteriaContainer.appendChild(makeRow(c, "inclusion")));
-            }
+        if (esclusioni.length > 0) {
+            const h = document.createElement("h5");
+            h.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
+            h.textContent = "Criteri di Esclusione";
+            criteriaContainer.appendChild(h);
 
-            if (esclusioni.length > 0) {
-                const h = document.createElement("h5");
-                h.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
-                h.textContent = "Criteri di Esclusione";
-                criteriaContainer.appendChild(h);
+            esclusioni.forEach((c) =>
+                criteriaContainer.appendChild(makeRow(c, "exclusion")),
+            );
+        }
+    }
 
-                esclusioni.forEach((c) => criteriaContainer.appendChild(makeRow(c, "exclusion")));
+    function showStudyDetails(study, page) {
+        studyDetailModal.dataset.studyId = study.id;
+        modalTitle.textContent = study.title;
+        modalSubtitle.textContent = study.subtitle;
+
+        if (modalClinicalAreas)
+            modalClinicalAreas.textContent = (study.clinical_areas || []).join(", ");
+        if (modalSpecificClinicalAreas)
+            modalSpecificClinicalAreas.textContent = (study.specific_clinical_areas || []).join(", ");
+        if (modalTreatmentSetting)
+            modalTreatmentSetting.textContent = study.treatment_setting || "";
+
+        if (modalTreatmentLineContainer) {
+            if (study.treatment_setting === "Metastatico") {
+                modalTreatmentLineContainer.classList.remove("hidden");
+                modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
+            } else {
+                modalTreatmentLineContainer.classList.add("hidden");
             }
         }
 
-
-        function showStudyDetails(study, page) {
-            studyDetailModal.dataset.studyId = study.id;
-            modalTitle.textContent = study.title;
-            modalSubtitle.textContent = study.subtitle;
-
-            if (modalClinicalAreas)
-                modalClinicalAreas.textContent = study.clinical_areas.join(", ");
-            if (modalSpecificClinicalAreas)
-                modalSpecificClinicalAreas.textContent =
-                    study.specific_clinical_areas.join(", ");
-            if (modalTreatmentSetting)
-                modalTreatmentSetting.textContent = study.treatment_setting;
-
-            if (modalTreatmentLineContainer) {
-                if (study.treatment_setting === "Metastatico") {
-                    modalTreatmentLineContainer.classList.remove("hidden");
-                    modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
-                } else {
-                    modalTreatmentLineContainer.classList.add("hidden");
-                }
-            }
-
-            // ✅ RESET risultato eleggibilità ogni volta che apri un nuovo studio
-            if (eligibilityResultDiv) {
-                eligibilityResultDiv.classList.add("hidden");
-                eligibilityResultDiv.textContent = "";
-                eligibilityResultDiv.classList.remove("text-green-600", "text-red-600");
-            }
-
-            renderCriteriaInModal(study, page === "patient");
-            studyDetailModal.classList.remove("hidden");
-            studyDetailModal.style.display = "flex";
+        // reset risultato eleggibilità
+        if (eligibilityResultDiv) {
+            eligibilityResultDiv.classList.add("hidden");
+            eligibilityResultDiv.textContent = "";
+            eligibilityResultDiv.classList.remove("text-green-600", "text-red-600");
         }
 
-        if (checkEligibilityBtn) {
-            checkEligibilityBtn.addEventListener("click", () => {
-                // legge tutti i toggle creati nel modale
-                const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
+        renderCriteriaInModal(study, page === "patient");
+        studyDetailModal.classList.remove("hidden");
+        studyDetailModal.style.display = "flex";
+    }
 
-                let hasMissingInclusion = false; // inclusione = NO
-                let hasPositiveExclusion = false; // esclusione = SI
+    if (checkEligibilityBtn) {
+        checkEligibilityBtn.addEventListener("click", () => {
+            const toggles = criteriaContainer.querySelectorAll(".criteria-toggle");
 
-                toggles.forEach((t) => {
-                    const kind = t.dataset.kind; // inclusion/exclusion
-                    const val = t.checked;
+            let hasMissingInclusion = false;
+            let hasPositiveExclusion = false;
 
-                    if (kind === "inclusion" && val === false) hasMissingInclusion = true;
-                    if (kind === "exclusion" && val === true) hasPositiveExclusion = true;
-                });
+            toggles.forEach((t) => {
+                const kind = t.dataset.kind;
+                const val = t.checked;
 
-                const eligible = !(hasMissingInclusion || hasPositiveExclusion);
-
-                eligibilityResultDiv.classList.remove("hidden");
-                eligibilityResultDiv.textContent = eligible ? "✅ Elegibile" : "❌ Non elegibile";
-
-                // colore feedback
-                eligibilityResultDiv.classList.remove("text-green-600", "text-red-600");
-                eligibilityResultDiv.classList.add(eligible ? "text-green-600" : "text-red-600");
+                if (kind === "inclusion" && val === false) hasMissingInclusion = true;
+                if (kind === "exclusion" && val === true) hasPositiveExclusion = true;
             });
-        }
+
+            const eligible = !(hasMissingInclusion || hasPositiveExclusion);
+
+            eligibilityResultDiv.classList.remove("hidden");
+            eligibilityResultDiv.textContent = eligible ? "✅ Elegibile" : "❌ Non elegibile";
+            eligibilityResultDiv.classList.remove("text-green-600", "text-red-600");
+            eligibilityResultDiv.classList.add(eligible ? "text-green-600" : "text-red-600");
+        });
+    }
 
     if (closeModalBtn) {
         closeModalBtn.addEventListener("click", () => {
