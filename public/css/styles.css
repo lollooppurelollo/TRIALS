@@ -11,7 +11,6 @@ select[multiple] {
 
 /* Modal centrato e responsive */
 #studyDetailModal {
-    display: flex;
     align-items: center;
     justify-content: center;
     position: fixed;
