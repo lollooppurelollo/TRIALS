@@ -630,4 +630,3 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
-});
