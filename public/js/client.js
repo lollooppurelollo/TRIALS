@@ -504,9 +504,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const right = document.createElement("div");
             right.className = "flex items-center gap-2";
 
-            const labelNo = document.createElement("span");
-            labelNo.className = "text-xs text-gray-500";
-            labelNo.textContent = "No";
+            const switchWrapper = document.createElement("label");
+            switchWrapper.className = "criteria-switch";
 
             const input = document.createElement("input");
             input.type = "checkbox";
@@ -514,13 +513,13 @@ document.addEventListener("DOMContentLoaded", () => {
             input.checked = defaultValue;
             input.dataset.kind = kind;
 
-            const labelSi = document.createElement("span");
-            labelSi.className = "text-xs text-gray-500";
-            labelSi.textContent = "Sì";
+            const slider = document.createElement("span");
+            slider.className = "criteria-slider";
 
-            right.appendChild(labelNo);
-            right.appendChild(input);
-            right.appendChild(labelSi);
+            switchWrapper.appendChild(input);
+            switchWrapper.appendChild(slider);
+
+            right.appendChild(switchWrapper);
             row.appendChild(right);
 
             return row;

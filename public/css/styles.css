@@ -68,3 +68,46 @@ select[multiple] {
 .criteria-toggle:not(:checked) + div.peer-checked\:after\:translate-x-full:after {
     transform: translateX(0);
 }
+/* ===== Slider SI / NO criteri ===== */
+.criteria-switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+}
+
+.criteria-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.criteria-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #e5e7eb; /* grigio */
+  border-radius: 999px;
+  transition: background-color 0.25s;
+}
+
+.criteria-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* stato SÌ */
+.criteria-switch input:checked + .criteria-slider {
+  background-color: var(--color-sage);
+}
+
+.criteria-switch input:checked + .criteria-slider::before {
+  transform: translateX(22px);
+}
