@@ -101,19 +101,13 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div>
       <label class="block text-sm font-medium text-dark-gray">Settimane totali</label>
-      <input id="tlTotalWeeks" type="number" min="4" max="104" value="24"
+      <input id="tlTotalWeeks" type="number" min="4" max="104" value="24" disabled
              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
     </div>
     <div>
       <label class="block text-sm font-medium text-dark-gray">Settimane per ciclo</label>
       <input id="tlCycleWeeks" type="number" min="1" max="12" value="4" disabled
              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-    </div>
-    <div class="flex items-end">
-      <button id="tlRefreshBtn"
-              class="w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
-        Aggiorna
-      </button>
     </div>
   </div>
 </div>
@@ -248,108 +242,6 @@
       </div>
     </aside>
   </div>
-
-
-    <!-- Form nuovo/modifica evento (visibile solo in modalità modifica) -->
-    <div id="evFormWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
-      <h2 id="evFormTitle" class="text-lg font-bold text-dark-gray mb-3">Aggiungi evento</h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Tipo di evento</label>
-          <select id="evType" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            <option value="oncological_visit">Visita oncologica</option>
-            <option value="blood_test">Esami ematici</option>
-            <option value="radiology">Esami radiologici</option>
-            <option value="therapy">Terapia</option>
-            <option value="custom">Evento personalizzato</option>
-          </select>
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Titolo (opzionale)</label>
-          <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Note (opzionale)</label>
-          <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-dark-gray">Indicazioni (opzionale)</label>
-          <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
-        </div>
-
-        <!-- toggle -->
-        <div class="md:col-span-2 flex items-center gap-2">
-          <input id="evOneShot" type="checkbox" class="rounded">
-          <label for="evOneShot" class="text-sm text-dark-gray">Evento singolo</label>
-          <span class="text-xs text-gray-400">(se non spuntato: evento ricorrente)</span>
-        </div>
-
-        <!-- singolo -->
-        <div id="evSingleWrap" class="md:col-span-2 hidden">
-          <!-- allineamento: inputs in basso -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-            <div>
-              <label class="block text-sm font-medium text-dark-gray">Giorno (da inizio studio)</label>
-              <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-              <p class="text-xs text-gray-500 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
-              <input id="evWindowBefore" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
-              <input id="evWindowAfter" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-          </div>
-        </div>
-
-        <!-- ricorrente -->
-        <div id="evRecurringWrap" class="md:col-span-2">
-          <!-- allineamento: 5 colonne + items-end -->
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-            <div>
-              <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
-              <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-dark-gray">Da giorno</label>
-              <!-- Input 1 -> indice 0 interno -->
-              <input id="evStartDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-dark-gray">A giorno (opz.)</label>
-              <!-- 1-based per coerenza con "Da giorno" -->
-              <input id="evStopDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
-              <input id="evWindowBeforeR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
-              <input id="evWindowAfterR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bottoni del form -->
-      <div class="flex gap-2 mt-4">
-        <button id="evSaveBtn"
-                class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-xl hover:bg-dark-sage transition-colors shadow-md">
-          Salva evento
-        </button>
-        <button id="evCancelEditBtn"
-                class="hidden px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
-          Annulla modifica
-        </button>
-      </div>
-    </div> <!-- /#evFormWrap -->
   </section>
 </div>
 
@@ -395,7 +287,6 @@
   const tlTimeline = document.getElementById("tlTimeline");
   const tlEventsList = document.getElementById("tlEventsList");
   const tlNoEventsMsg = document.getElementById("tlNoEventsMsg");
-  const tlRefreshBtn = document.getElementById("tlRefreshBtn");
   const tlEditToggleBtn = document.getElementById("tlEditToggleBtn");
   const tlTotalWeeks = document.getElementById("tlTotalWeeks");
   const tlCycleWeeks = document.getElementById("tlCycleWeeks");
@@ -440,7 +331,7 @@
   let _selectedDay = null;
   let _editingEvent = null; // se non null → siamo in modifica (DELETE+POST)
   let _cycleWeeksDb = null; // valore cycle_weeks letto dal DB
-
+  let _totalWeeksDb = null;
   /* -------------- Password: solo ingresso/uscita edit mode -------------- */
   function showPwdModal(action) {
     _pendingAction = action;
@@ -458,28 +349,39 @@
       _editMode = true;
       evFormWrap.classList.remove("hidden");
       tlEditToggleBtn.textContent = "Esci e salva modifiche";
-      tlCycleWeeks.disabled = false; 
+      tlCycleWeeks.disabled = false;
+      tlTotalWeeks.disabled = false;
     }
+
     if (action.type === "exit-edit") {
       _editMode = false;
       evFormWrap.classList.add("hidden");
       tlEditToggleBtn.textContent = "Entra in modalità modifica";
-      // se il valore è cambiato, salva su DB
-        const current = parseInt(tlCycleWeeks.value || "4", 10);
-        if (_cycleWeeksDb == null || current !== _cycleWeeksDb) {
-          saveStudySettings(current).then((ok) => {
-            if (ok) {
-              renderTimeline(); // ridisegna con il nuovo ciclo
-            }
-          });
-        }
 
-        resetForm();
-        tlCycleWeeks.disabled = true;
+      // 🔒 blocca i campi fuori dalla modalità modifica
+      tlCycleWeeks.disabled = true;
+      tlTotalWeeks.disabled = true;
+
+      // 💾 salva SE cambiati (cycle_weeks + total_weeks)
+      const currentCycle = parseInt(tlCycleWeeks.value || "4", 10);
+      const currentTotal = parseInt(tlTotalWeeks.value || "24", 10);
+
+      const cycleChanged = (_cycleWeeksDb == null || currentCycle !== _cycleWeeksDb);
+      const totalChanged = (_totalWeeksDb == null || currentTotal !== _totalWeeksDb);
+
+      if (cycleChanged || totalChanged) {
+        saveStudySettings(currentCycle, currentTotal).then((ok) => {
+          if (ok) renderTimeline();
+        });
       }
+
+      resetForm();
+    }
+
     _pendingAction = null;
     renderEventsList();
   }
+
   tlCancelPwdBtn.addEventListener("click", hidePwdModal);
   tlConfirmPwdBtn.addEventListener("click", () => {
     if (tlPwdInput.value === "TRIAL") {
@@ -734,11 +636,12 @@
   }
   async function loadStudySettings() {
     if (!STUDY_ID) return;
+
     const res = await fetch(`/api/studies/${STUDY_ID}`);
     if (!res.ok) {
       if (res.status === 404) {
-        // Studio non presente: non è un errore fatale.
         _cycleWeeksDb = null;
+        _totalWeeksDb = null;
         console.warn("Studio non trovato (404). Verrà creato al primo salvataggio.");
         return;
       }
@@ -746,34 +649,48 @@
       console.error("Errore loadStudySettings:", res.status, txt);
       return;
     }
+
     const study = await res.json();
+
     if (study && typeof study.cycle_weeks === "number") {
       _cycleWeeksDb = study.cycle_weeks;
       tlCycleWeeks.value = String(study.cycle_weeks);
     }
+
+    if (study && typeof study.total_weeks === "number") {
+      _totalWeeksDb = study.total_weeks;
+      tlTotalWeeks.value = String(study.total_weeks);
+    }
   }
 
-  async function saveStudySettings(newCycleWeeks) {
+
+  async function saveStudySettings(newCycleWeeks, newTotalWeeks) {
     if (!STUDY_ID) return true;
+
+    const body = {};
+    if (Number.isInteger(newCycleWeeks)) body.cycle_weeks = newCycleWeeks;
+    if (Number.isInteger(newTotalWeeks)) body.total_weeks = newTotalWeeks;
+
     const res = await fetch(`/api/studies/${STUDY_ID}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cycle_weeks: newCycleWeeks }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       console.error("PATCH /api/studies failed:", res.status, txt);
-      alert("Errore salvataggio settimane/ciclo");
+      alert("Errore salvataggio impostazioni studio");
       return false;
     }
 
     const updated = await res.json().catch(() => null);
-    if (updated && typeof updated.cycle_weeks === "number") {
-      _cycleWeeksDb = updated.cycle_weeks;
-    }
+    if (updated && typeof updated.cycle_weeks === "number") _cycleWeeksDb = updated.cycle_weeks;
+    if (updated && typeof updated.total_weeks === "number") _totalWeeksDb = updated.total_weeks;
+
     return true;
   }
+
 
 
 
@@ -927,24 +844,6 @@
         evWindowAfterR.value  = wa ?? "";
       }
     }
-  });
-
-  /* -------------- Altri handler -------------- */
-  tlRefreshBtn.addEventListener("click", async () => {
-    // Se sei in modalità modifica, salva anche su DB
-    if (_editMode) {
-      const current = Number.parseInt(tlCycleWeeks.value, 10);
-
-      // se il valore non è un numero valido → avviso e stop
-      if (isNaN(current) || current <= 0) {
-        alert("⚠️ Bisogna inserire un numero valido per le settimane per ciclo.");
-        return;
-      }
-      const ok = await saveStudySettings(current); // PATCH /api/studies/:id
-      if (!ok) return;            // se fallisce, non ridisegnare
-      _cycleWeeksDb = current;    // aggiorna cache locale
-    }
-    renderTimeline();             // ridisegna la griglia
   });
 
   tlCycleWeeks.addEventListener("change", async () => {

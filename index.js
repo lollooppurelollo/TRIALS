@@ -136,15 +136,26 @@ app.patch("/api/studies/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    // usa la tua helper se esiste, altrimenti parseInt
-    const cycle_weeks =
-      typeof toIntOrNull === "function"
-        ? toIntOrNull(req.body.cycle_weeks)
-        : Number.parseInt(req.body.cycle_weeks, 10);
+    const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
+    const total_weeks = toIntOrNull(req.body.total_weeks);
 
-    // validazione (range 1–12, modifica se vuoi)
-    if (!Number.isInteger(cycle_weeks) || cycle_weeks < 1 || cycle_weeks > 12) {
+    // deve arrivare almeno uno dei due
+    if (cycle_weeks === null && total_weeks === null) {
+      return res.status(400).json({ error: "Niente da aggiornare" });
+    }
+
+    // validazioni
+    if (
+      cycle_weeks !== null &&
+      (!Number.isInteger(cycle_weeks) || cycle_weeks < 1 || cycle_weeks > 12)
+    ) {
       return res.status(400).json({ error: "cycle_weeks non valido" });
+    }
+    if (
+      total_weeks !== null &&
+      (!Number.isInteger(total_weeks) || total_weeks < 4 || total_weeks > 104)
+    ) {
+      return res.status(400).json({ error: "total_weeks non valido" });
     }
 
     // 1) verifica che lo studio esista
@@ -158,18 +169,25 @@ app.patch("/api/studies/:id", async (req, res) => {
       return res.status(404).json({ error: "Studio non trovato" });
     }
 
-    // 2) UPDATE pulito (niente upsert → evita errore su title NOT NULL)
-    const { error: updErr } = await supabase
+    // 2) update solo dei campi presenti
+    const patch = {};
+    if (cycle_weeks !== null) patch.cycle_weeks = cycle_weeks;
+    if (total_weeks !== null) patch.total_weeks = total_weeks;
+
+    const { data, error: updErr } = await supabase
       .from("studies")
-      .update({ cycle_weeks })
-      .eq("id", id);
+      .update(patch)
+      .eq("id", id)
+      .select("cycle_weeks,total_weeks")
+      .single();
 
     if (updErr) {
       console.error("Supabase UPDATE error:", updErr);
       return res.status(400).json({ error: updErr.message });
     }
 
-    return res.status(200).json({ ok: true, cycle_weeks });
+    // ritorna i valori aggiornati
+    return res.status(200).json(data);
   } catch (e) {
     console.error("PATCH /api/studies/:id exception:", e);
     return res.status(500).json({ error: "Errore interno" });
