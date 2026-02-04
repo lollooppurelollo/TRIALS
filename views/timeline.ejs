@@ -793,18 +793,23 @@
 
 
           /* Finestra (chip chiari) → solo colore, nessuna scritta */
-          (windows.get(dayIndex) || []).forEach(ev=>{
+          (windows.get(dayIndex) || []).forEach(ev => {
+            const ov = findOverride(ev.id, dayIndex);
+
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type) + " chip-win";
             chip.textContent = ""; // niente testo (solo colore)
-            // Anche qui tooltip utile
+
+            const title = effectiveField(ev, ov, "title") || eventTitle(ev);
             const notes = effectiveField(ev, ov, "notes");
 
             chip.title = notes && notes.trim()
               ? `${title}\nNote: ${notes}`
               : title;
+
             stack.appendChild(chip);
           });
+
 
           cell.appendChild(stack);
           row.appendChild(cell);
