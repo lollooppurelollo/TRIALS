@@ -36,6 +36,18 @@ function toIntOrNull(v) {
 function toBool(v) {
   return v === true || v === "true" || v === 1 || v === "1";
 }
+function toBillingOrNull(v) {
+  const s = String(v ?? "")
+    .trim()
+    .toUpperCase();
+  if (s === "SSN") return "SSN";
+  if (s === "SP") return "SP";
+  return null;
+}
+function toStrOrNull(v) {
+  const s = String(v ?? "").trim();
+  return s.length ? s : null;
+}
 
 /** Normalizza il payload che arriva dal form della timeline (solo campi “a giorni”). */
 function sanitizeEvent(body, studyId) {
@@ -44,9 +56,11 @@ function sanitizeEvent(body, studyId) {
   return {
     study_id: studyId,
     event_type: body.event_type || "custom",
-    title: (body.title ?? "").trim() || null,
-    notes: (body.notes ?? "").trim() || null,
-    indications: (body.indications ?? "").trim() || null,
+    title: toStrOrNull(body.title),
+    notes: toStrOrNull(body.notes),
+    indications: toStrOrNull(body.indications),
+
+    billing: toBillingOrNull(body.billing),
 
     one_shot,
 
@@ -229,6 +243,76 @@ app.post("/api/timeline/:studyId", async (req, res) => {
   }
   res.json(data?.[0] || null);
 });
+// PATCH: aggiorna un evento esistente (niente più DELETE+POST)
+app.patch("/api/timeline/:eventId", async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+
+    // Costruiamo patch solo con campi permessi
+    const patch = {
+      event_type: req.body.event_type ?? undefined,
+      title: toStrOrNull(req.body.title),
+      notes: toStrOrNull(req.body.notes),
+      indications: toStrOrNull(req.body.indications),
+      billing: toBillingOrNull(req.body.billing),
+
+      one_shot:
+        req.body.one_shot != null ? toBool(req.body.one_shot) : undefined,
+
+      at_day:
+        req.body.at_day != null ? toIntOrNull(req.body.at_day) : undefined,
+      repeat_every_days:
+        req.body.repeat_every_days != null
+          ? toIntOrNull(req.body.repeat_every_days)
+          : undefined,
+      start_day:
+        req.body.start_day != null
+          ? toIntOrNull(req.body.start_day)
+          : undefined,
+      stop_day:
+        req.body.stop_day != null ? toIntOrNull(req.body.stop_day) : undefined,
+
+      window_before_days:
+        req.body.window_before_days != null
+          ? toIntOrNull(req.body.window_before_days)
+          : undefined,
+      window_after_days:
+        req.body.window_after_days != null
+          ? toIntOrNull(req.body.window_after_days)
+          : undefined,
+      window_days:
+        req.body.window_days != null
+          ? toIntOrNull(req.body.window_days)
+          : undefined,
+    };
+
+    // Rimuovi undefined (Supabase update non deve riceverli)
+    Object.keys(patch).forEach(
+      (k) => patch[k] === undefined && delete patch[k],
+    );
+
+    if (Object.keys(patch).length === 0) {
+      return res.status(400).json({ error: "Niente da aggiornare" });
+    }
+
+    const { data, error } = await supabase
+      .from("study_events")
+      .update(patch)
+      .eq("id", eventId)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("Errore PATCH /api/timeline/:eventId:", error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json(data);
+  } catch (e) {
+    console.error("PATCH /api/timeline/:eventId exception:", e);
+    return res.status(500).json({ error: "Errore interno" });
+  }
+});
 
 app.delete("/api/timeline/:eventId", async (req, res) => {
   const { error } = await supabase
@@ -239,6 +323,93 @@ app.delete("/api/timeline/:eventId", async (req, res) => {
   if (error) {
     console.error("Errore DELETE /api/timeline:", error);
     return res.status(500).send("Errore eliminazione evento");
+  }
+  res.sendStatus(204);
+});
+
+/* -------------------- API TIMELINE OVERRIDES -------------------- */
+
+// Lista override per studio
+app.get("/api/timeline-overrides/:studyId", async (req, res) => {
+  const { data, error } = await supabase
+    .from("study_event_overrides")
+    .select("*")
+    .eq("study_id", req.params.studyId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Errore GET /api/timeline-overrides:", error);
+    return res.status(500).send("Errore recupero overrides");
+  }
+  res.json(data || []);
+});
+
+// Crea o aggiorna override per (event_id, day_index)
+app.post("/api/timeline-overrides/:studyId", async (req, res) => {
+  try {
+    const studyId = req.params.studyId;
+
+    const event_id = req.body.event_id;
+    const day_index = toIntOrNull(req.body.day_index);
+
+    if (!event_id) return res.status(400).json({ error: "event_id mancante" });
+    if (!Number.isInteger(day_index) || day_index < 0) {
+      return res.status(400).json({ error: "day_index non valido" });
+    }
+
+    // campi overridabili: tutti opzionali
+    const patch = {
+      study_id: studyId,
+      event_id,
+      day_index,
+      billing: toBillingOrNull(req.body.billing),
+      title: toStrOrNull(req.body.title),
+      notes: toStrOrNull(req.body.notes),
+      indications: toStrOrNull(req.body.indications),
+    };
+
+    // Se tutti null (nessun override reale) → meglio rifiutare
+    const hasSomething =
+      patch.billing !== null ||
+      patch.title !== null ||
+      patch.notes !== null ||
+      patch.indications !== null;
+
+    if (!hasSomething) {
+      return res
+        .status(400)
+        .json({ error: "Override vuoto: niente da salvare" });
+    }
+
+    // UPSERT su (event_id, day_index)
+    const { data, error } = await supabase
+      .from("study_event_overrides")
+      .upsert([patch], { onConflict: "event_id,day_index" })
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("Errore POST /api/timeline-overrides:", error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(200).json(data);
+  } catch (e) {
+    console.error("POST /api/timeline-overrides exception:", e);
+    return res.status(500).json({ error: "Errore interno" });
+  }
+});
+
+// Cancella override per id
+app.delete("/api/timeline-overrides/:overrideId", async (req, res) => {
+  const { error } = await supabase
+    .from("study_event_overrides")
+    .delete()
+    .eq("id", req.params.overrideId);
+
+  if (error) {
+    console.error("Errore DELETE /api/timeline-overrides:", error);
+    return res.status(500).send("Errore eliminazione override");
   }
   res.sendStatus(204);
 });

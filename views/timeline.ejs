@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -38,6 +39,17 @@
     .chip-custom{background:var(--color-gray); color:var(--color-dark-gray)}
     /* chip “finestra ± giorni” (stesso colore, più chiaro) */
     .chip-win{opacity:0.4}
+    /* badge neutro SSN/SP sopra al chip */
+    .chip-billing{
+      font-size:.62rem;
+      line-height:1;
+      padding:.05rem .25rem;
+      border-radius:.25rem;
+      border:1px solid #d1d5db;
+      background:#ffffffcc;
+      color:#374151;
+      margin-left:.25rem;
+    }
 
     /* GRID settimana: prima colonna fissa + 7 giorni */
     .grid-week{
@@ -200,6 +212,16 @@
             <label class="block text-sm font-medium text-dark-gray">Indicazioni (opzionale)</label>
             <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
           </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-dark-gray">Solvenza (opzionale)</label>
+            <select id="evBilling"
+                    class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+              <option value="">Neutro</option>
+              <option value="SSN">SSN</option>
+              <option value="SP">Sponsor (SP)</option>
+            </select>
+            <p class="text-xs text-gray-400 mt-1">Se non selezioni nulla, rimane neutro.</p>
+          </div>
 
           <!-- toggle -->
           <div class="md:col-span-2 flex items-center gap-2">
@@ -308,6 +330,20 @@
   function eventTitle(ev) {
     return ev.title?.trim() ? ev.title : titleByType(ev.event_type);
   }
+  function findOverride(eventId, dayIndex) {
+    return (_overrides || []).find(o => o.event_id === eventId && o.day_index === dayIndex) || null;
+  }
+
+  function effectiveField(ev, ov, key) {
+    // se override ha quel campo (non null) usa override, altrimenti base event
+    if (ov && ov[key] != null && ov[key] !== "") return ov[key];
+    return ev[key];
+  }
+
+  function effectiveBilling(ev, ov) {
+    return (ov && ov.billing) ? ov.billing : (ev.billing || null);
+  }
+
   /* -------------- Import helpers -------------- */
   function showImportMsg(text, ok = true) {
     if (!tlImportMsg) return;
@@ -360,6 +396,10 @@
       return `Evento #${idx+1}: window_before_days non valido`;
     if (ev.window_after_days != null && (!Number.isInteger(ev.window_after_days) || ev.window_after_days < 0))
       return `Evento #${idx+1}: window_after_days non valido`;
+    if (ev.billing != null) {
+      const b = String(ev.billing).trim().toUpperCase();
+      if (b !== "SSN" && b !== "SP") return `Evento #${idx+1}: billing non valido (usa SSN o SP)`;
+    }
 
     return null;
   }
@@ -377,6 +417,7 @@
         event_type: ev.event_type,
         title: ev.title ?? "",
         notes: ev.notes ?? "",
+        billing: ev.billing ? String(ev.billing).trim().toUpperCase() : null,
         indications: ev.indications ?? "",
         one_shot: ev.one_shot === true,
 
@@ -428,6 +469,7 @@
   const evTitle = document.getElementById("evTitle");
   const evNotes = document.getElementById("evNotes");
   const evIndications = document.getElementById("evIndications");
+  const evBilling = document.getElementById("evBilling");
   const evWindowBefore  = document.getElementById("evWindowBefore");
   const evWindowAfter   = document.getElementById("evWindowAfter");
   const evWindowBeforeR = document.getElementById("evWindowBeforeR");
@@ -467,6 +509,7 @@
   let _editingEvent = null; // se non null → siamo in modifica (DELETE+POST)
   let _cycleWeeksDb = null; // valore cycle_weeks letto dal DB
   let _totalWeeksDb = null;
+  let _overrides = [];
   /* -------------- Password: solo ingresso/uscita edit mode -------------- */
   function showPwdModal(action) {
     _pendingAction = action;
@@ -600,7 +643,15 @@
       card.innerHTML = `
         <div class="flex justify-between gap-3">
           <div>
-            <div class="font-bold text-dark-gray">${eventTitle(ev)}</div>
+             <div class="flex items-center gap-2">
+              <div class="font-bold text-dark-gray">${eventTitle(ev)}</div>
+              ${
+                ev.billing
+                  ? `<span class="text-[10px] px-2 py-[2px] rounded-full border border-gray-300 text-gray-700 bg-white">${ev.billing}</span>`
+                  : ``
+              }
+            </div>
+
             <div class="text-sm text-gray-600">${formatSummary(ev)}</div>
           </div>
           ${
@@ -709,17 +760,37 @@
           const stack = document.createElement("div");
           stack.className="daycell-stack";
 
-          /* Eventi del giorno (chip pieni) → titolo se presente */
           (byDay.get(dayIndex) || []).forEach(ev=>{
+
+          const ov = findOverride(ev.id, dayIndex);
+          const billing = effectiveBilling(ev, ov);
+          const title = effectiveField(ev, ov, "title") || eventTitle(ev);
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type);
-            chip.textContent = eventTitle(ev);
-            // Tooltip completo (titolo + note su nuova riga se presenti)
-            chip.title = ev.notes && ev.notes.trim()
-              ? `${eventTitle(ev)}\nNote: ${ev.notes}`
-              : eventTitle(ev);
+
+            // contenitore interno
+            const label = document.createElement("span");
+            label.textContent = title;
+
+
+            chip.appendChild(label);
+
+            // 🔹 BADGE BILLING (SSN / SP)
+            if (billing === "SSN" || billing === "SP"){
+              const badge = document.createElement("span");
+              badge.className = "chip-billing";
+              badge.textContent = billing;
+              chip.appendChild(badge);
+            }
+            const notes = effectiveField(ev, ov, "notes");
+
+            chip.title = notes && notes.trim()
+              ? `${title}\nNote: ${notes}`
+              : title;
+
             stack.appendChild(chip);
           });
+
 
           /* Finestra (chip chiari) → solo colore, nessuna scritta */
           (windows.get(dayIndex) || []).forEach(ev=>{
@@ -727,9 +798,11 @@
             chip.className = chipClass(ev.event_type) + " chip-win";
             chip.textContent = ""; // niente testo (solo colore)
             // Anche qui tooltip utile
-            chip.title = ev.notes && ev.notes.trim()
-              ? `${eventTitle(ev)}\nNote: ${ev.notes}`
-              : eventTitle(ev);
+            const notes = effectiveField(ev, ov, "notes");
+
+            chip.title = notes && notes.trim()
+              ? `${title}\nNote: ${notes}`
+              : title;
             stack.appendChild(chip);
           });
 
@@ -753,6 +826,12 @@
     _events = await res.json();
     renderEventsList();
     renderTimeline();
+  }
+  async function loadOverrides() {
+    if (!STUDY_ID) return;
+    const res = await fetch(`/api/timeline-overrides/${STUDY_ID}`);
+    if (!res.ok) { console.error("Errore loadOverrides:", res.status); return; }
+    _overrides = await res.json();
   }
 
   async function createEvent(ev) {
@@ -854,6 +933,7 @@
     evTitle.value = "";
     evNotes.value = "";
     evIndications.value = "";
+    if (evBilling) evBilling.value = "";
     evOneShot.checked = false;
     evAtDay.value = "";
     evRepeatEveryDays.value = "";
@@ -876,6 +956,7 @@
       title: evTitle.value,
       notes: evNotes.value,
       indications: evIndications.value,
+      billing: evBilling ? (evBilling.value || null) : null,
       one_shot: evOneShot.checked,
     };
 
@@ -961,6 +1042,7 @@
       evTitle.value = ev.title || "";
       evNotes.value = ev.notes || "";
       evIndications.value = ev.indications || "";
+      if (evBilling) evBilling.value = ev.billing || "";
       evOneShot.checked = !!ev.one_shot;
       toggleMode();
 
@@ -1051,11 +1133,17 @@
     });
   }
 
-  
+
   /* -------------- Start -------------- */
   syncImportVisibility();
   if (STUDY_ID) {
-  loadStudySettings().then(loadEvents);
+    loadStudySettings()
+      .then(async () => {
+        await loadEvents();
+        await loadOverrides();
+        renderEventsList();
+        renderTimeline();
+      });
   }
 })();
 </script>
