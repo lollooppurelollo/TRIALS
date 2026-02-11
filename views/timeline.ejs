@@ -200,33 +200,7 @@
             </select>
             <p class="text-xs text-gray-400 mt-1">Se non selezioni nulla, rimane neutro.</p>
           </div>
-          <!-- Import Timeline (JSON) -->
-          <div id="tlImportWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
-            <div class="flex items-center justify-between mb-2">
-              <h2 class="text-lg font-bold text-dark-gray">Importa timeline</h2>
-              <button id="tlImportClearBtn"
-                      class="text-sm px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50">
-                Pulisci
-              </button>
-            </div>
-
-            <p class="text-sm text-gray-600">
-              Incolla il JSON generato da ChatGPT. Verranno creati gli eventi, poi puoi modificarli/eliminarli.
-              <br><span class="text-xs text-gray-400">Nota: i giorni sono 0-based (Day 0 = C1D1).</span>
-            </p>
-
-            <textarea id="tlImportTextarea" rows="8"
-                      class="mt-3 w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-light-sage"
-                      placeholder='{"events":[{"event_type":"radiology","title":"TC","one_shot":true,"at_day":56,"window_before_days":7,"window_after_days":7}]}'></textarea>
-
-            <div id="tlImportMsg" class="mt-2 text-sm hidden"></div>
-
-            <button id="tlImportBtn"
-                    class="mt-3 w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
-              Importa eventi
-            </button>
-          </div>
-
+          
           <!-- toggle -->
           <div class="md:col-span-2 flex items-center gap-2">
             <input id="evOneShot" type="checkbox" class="rounded">
@@ -283,16 +257,45 @@
         <!-- Bottoni del form -->
         <div class="flex gap-2 mt-4">
           <button id="evSaveBtn"
-                  class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-xl hover:bg-dark-sage transition-colors shadow-md">
+                  class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
             Salva evento
           </button>
+
           <button id="evCancelEditBtn"
                   class="hidden px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
             Annulla modifica
           </button>
         </div>
-      </div>
-    </aside>
+        </div> <!-- FINE evFormWrap -->
+
+        <!-- Import Timeline (JSON) (visibile solo in modalità modifica) -->
+        <div id="tlImportWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-lg font-bold text-dark-gray">Importa timeline</h2>
+          <button id="tlImportClearBtn"
+                  class="text-sm px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50">
+            Pulisci
+          </button>
+        </div>
+
+        <p class="text-sm text-gray-600">
+          Incolla il JSON generato da ChatGPT. Verranno creati gli eventi, poi puoi modificarli/eliminarli.
+          <br><span class="text-xs text-gray-400">Nota: i giorni sono 0-based (Day 0 = C1D1).</span>
+        </p>
+
+        <textarea id="tlImportTextarea" rows="8"
+                  class="mt-3 w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-light-sage"
+                  placeholder='{"events":[{"event_type":"radiology","title":"TC","one_shot":true,"at_day":56,"window_before_days":7,"window_after_days":7}]}'></textarea>
+
+        <div id="tlImportMsg" class="mt-2 text-sm hidden"></div>
+
+        <button id="tlImportBtn"
+                class="mt-3 w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+          Importa eventi
+        </button>
+        </div>
+        </aside>
+
   </div>
   </section>
 </div>
