@@ -149,32 +149,6 @@
     <!-- Pannello laterale (Piano eventi + Form) -->
     <aside id="tlSidePanel"
            class="space-y-6 transition-all duration-200 w-full lg:w-[380px]">
-      <!-- Import Timeline (JSON) -->
-      <div id="tlImportWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-lg font-bold text-dark-gray">Importa timeline</h2>
-          <button id="tlImportClearBtn"
-                  class="text-sm px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50">
-            Pulisci
-          </button>
-        </div>
-
-        <p class="text-sm text-gray-600">
-          Incolla il JSON generato da ChatGPT. Verranno creati gli eventi, poi puoi modificarli/eliminarli.
-          <br><span class="text-xs text-gray-400">Nota: i giorni sono 0-based (Day 0 = C1D1).</span>
-        </p>
-
-        <textarea id="tlImportTextarea" rows="8"
-                  class="mt-3 w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-light-sage"
-                  placeholder='{"events":[{"event_type":"radiology","title":"TC","one_shot":true,"at_day":56,"window_before_days":7,"window_after_days":7}]}'></textarea>
-
-        <div id="tlImportMsg" class="mt-2 text-sm hidden"></div>
-
-        <button id="tlImportBtn"
-                class="mt-3 w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
-          Importa eventi
-        </button>
-      </div>
 
       <!-- Piano eventi -->
       <div class="bg-white p-4 rounded-xl shadow-md">
@@ -184,6 +158,7 @@
         </div>
         <div id="tlEventsList" class="space-y-3"></div>
       </div>
+      
 
       <!-- Form nuovo/modifica evento (visibile solo in modalità modifica) -->
       <div id="evFormWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
@@ -296,6 +271,33 @@
   </section>
 </div>
 
+  <!-- Import Timeline (JSON) -->
+  <div id="tlImportWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-lg font-bold text-dark-gray">Importa timeline</h2>
+      <button id="tlImportClearBtn"
+              class="text-sm px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50">
+        Pulisci
+      </button>
+    </div>
+
+    <p class="text-sm text-gray-600">
+      Incolla il JSON generato da ChatGPT. Verranno creati gli eventi, poi puoi modificarli/eliminarli.
+      <br><span class="text-xs text-gray-400">Nota: i giorni sono 0-based (Day 0 = C1D1).</span>
+    </p>
+
+    <textarea id="tlImportTextarea" rows="8"
+              class="mt-3 w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-light-sage"
+              placeholder='{"events":[{"event_type":"radiology","title":"TC","one_shot":true,"at_day":56,"window_before_days":7,"window_after_days":7}]}'></textarea>
+
+    <div id="tlImportMsg" class="mt-2 text-sm hidden"></div>
+
+    <button id="tlImportBtn"
+            class="mt-3 w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+      Importa eventi
+    </button>
+  </div>
+
 <!-- Modale password (usata solo per entrare/uscire dalla modalità modifica) -->
 <div id="tlPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
   <div class="bg-white p-6 rounded-lg shadow-xl w-80">
@@ -383,9 +385,23 @@
 
     _detailContext = { event_id: ev.id, day_index: dayIndex };
 
+    // ✅ BLOCCO PERMESSI: modificabile solo in modalità modifica
+    if (!_editMode) {
+      evDetailBilling.disabled = true;
+      evDetailSaveBtn.disabled = true;
+      evDetailSaveBtn.classList.add("opacity-50", "cursor-not-allowed");
+      evDetailSaveBtn.title = "Entra in modalità modifica per salvare";
+    } else {
+      evDetailBilling.disabled = false;
+      evDetailSaveBtn.disabled = false;
+      evDetailSaveBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      evDetailSaveBtn.title = "";
+    }
+
     evDetailModal.classList.remove("hidden");
     evDetailModal.classList.add("flex");
   }
+
   
 
   /* -------------- Import helpers -------------- */
@@ -582,22 +598,21 @@
 
     return true;
   }
-  evDetailSaveBtn.addEventListener("click", async () => {
+  evDetailSaveBtn.addEventListener("click", () => {
+    if (!_editMode) {
+      alert("Entra in modalità modifica per modificare la solvenza.");
+      return;
+    }
     if (!_detailContext) return;
 
     const { event_id, day_index } = _detailContext;
     const newBilling = evDetailBilling.value; // "" SSN SP
 
-    const ok = await saveOverrideBilling(event_id, day_index, newBilling);
-    if (!ok) return;
-
-    await loadOverrides();
-    renderTimeline();
-
-    evDetailModal.classList.add("hidden");
-    evDetailModal.classList.remove("flex");
-    _detailContext = null;
+    // Salviamo i dati in attesa e chiediamo password
+    _pendingOverrideSave = { event_id, day_index, billing: newBilling };
+    showPwdModal({ type: "save-override-billing" });
   });
+
 
   /* -------------- Stato -------------- */
   let _events = [];
@@ -608,6 +623,9 @@
   let _cycleWeeksDb = null; // valore cycle_weeks letto dal DB
   let _totalWeeksDb = null;
   let _overrides = [];
+  let _pendingImportRaw = null;
+  let _pendingOverrideSave = null; // { event_id, day_index, billing }
+
   /* -------------- Password: solo ingresso/uscita edit mode -------------- */
   function showPwdModal(action) {
     _pendingAction = action;
@@ -652,6 +670,65 @@
       }
 
       resetForm();
+    }
+    if (action.type === "import-events") {
+      (async () => {
+        try {
+          if (!_pendingImportRaw) return;
+
+          const obj = parseImportJson(_pendingImportRaw);
+
+          if (!obj.events.length) {
+            showImportMsg("Nessun evento in 'events'.", false);
+            _pendingImportRaw = null;
+            return;
+          }
+
+          // ✅ Messaggio “import in corso”
+          showImportMsg(`Import in corso... (${obj.events.length} eventi)`, true);
+
+          const { created, errors } = await importEvents(obj.events);
+
+          await loadEvents(); // aggiorna lista+calendario
+
+          // ✅ Messaggi finali come prima
+          if (errors.length === 0) {
+            showImportMsg(`✅ Import completato: creati ${created} eventi.`, true);
+          } else {
+            showImportMsg(
+              `⚠️ Import parziale: creati ${created}. Errori: ${errors.length} (vedi console).`,
+              false
+            );
+            console.log("Import errors:", errors);
+          }
+        } catch (e) {
+          showImportMsg(`❌ ${e.message}`, false);
+        } finally {
+          _pendingImportRaw = null;
+        }
+      })();
+    }
+    if (action.type === "save-override-billing") {
+      (async () => {
+        try {
+          if (!_pendingOverrideSave) return;
+
+          const { event_id, day_index, billing } = _pendingOverrideSave;
+
+          const ok = await saveOverrideBilling(event_id, day_index, billing);
+          if (!ok) return;
+
+          await loadOverrides();
+          renderTimeline();
+
+          // chiudi modale
+          evDetailModal.classList.add("hidden");
+          evDetailModal.classList.remove("flex");
+          _detailContext = null;
+        } finally {
+          _pendingOverrideSave = null;
+        }
+      })();
     }
 
     _pendingAction = null;
@@ -1206,44 +1283,32 @@
   });
 
   /* -------------- Import wiring -------------- */
-  if (tlImportClearBtn && tlImportTextarea) {
-    tlImportClearBtn.addEventListener("click", () => {
-      tlImportTextarea.value = "";
-      showImportMsg("Pulito.", true);
-    });
-  }
-
   if (tlImportBtn && tlImportTextarea) {
-    tlImportBtn.addEventListener("click", async () => {
+    tlImportBtn.addEventListener("click", () => {
+      // 1) deve essere in modalità modifica
       if (!_editMode) {
         showImportMsg("Entra in modalità modifica per importare eventi.", false);
         return;
       }
-      try {
-        const obj = parseImportJson(tlImportTextarea.value);
 
-        if (!obj.events.length) {
-          showImportMsg("Nessun evento in 'events'.", false);
-          return;
-        }
-
-        showImportMsg(`Import in corso... (${obj.events.length} eventi)`, true);
-
-        const { created, errors } = await importEvents(obj.events);
-
-        await loadEvents(); // aggiorna lista+calendario
-
-        if (errors.length === 0) {
-          showImportMsg(`✅ Import completato: creati ${created} eventi.`, true);
-        } else {
-          showImportMsg(`⚠️ Import parziale: creati ${created}. Errori: ${errors.length} (vedi console).`, false);
-          console.log("Import errors:", errors);
-        }
-      } catch (e) {
-        showImportMsg(`❌ ${e.message}`, false);
+      // 2) deve esserci del testo
+      const raw = (tlImportTextarea.value || "").trim();
+      if (!raw) {
+        showImportMsg("Incolla un JSON prima di importare.", false);
+        return;
       }
+
+      // 3) chiedi password per l’import
+      _pendingImportRaw = raw;
+
+      // ✅ Messaggio utile: stiamo chiedendo la password
+      showImportMsg("🔒 Inserisci la password per confermare l’import.", true);
+
+      showPwdModal({ type: "import-events" });
     });
   }
+
+
 
 
   /* -------------- Start -------------- */
