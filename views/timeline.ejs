@@ -577,10 +577,38 @@
     _detailContext = null;
   });
   async function saveOverrideBilling(eventId, dayIndex, billingValue) {
+    // normalizzo: "" -> null
+    const b = (billingValue || "").trim().toUpperCase();
+    const normalized = (b === "SSN" || b === "SP") ? b : null;
+
+    // Se metti "Neutro" (normalized=null) dobbiamo CANCELLARE l’override (se esiste)
+    if (normalized === null) {
+      const existing = (_overrides || []).find(
+        (o) => o.event_id === eventId && o.day_index === dayIndex
+      );
+
+      // se non c'è override, non c'è niente da salvare: ok
+      if (!existing) return true;
+
+      const delRes = await fetch(`/api/timeline-overrides/${existing.id}`, {
+        method: "DELETE",
+      });
+
+      if (!delRes.ok) {
+        const txt = await delRes.text().catch(() => "");
+        console.error("delete override failed", delRes.status, txt);
+        alert("Errore salvataggio solvenza (DELETE override)");
+        return false;
+      }
+
+      return true;
+    }
+
+    // Altrimenti (SSN/SP) → crea/aggiorna override
     const payload = {
       event_id: eventId,
       day_index: dayIndex,
-      billing: billingValue || null,
+      billing: normalized,
     };
 
     const res = await fetch(`/api/timeline-overrides/${STUDY_ID}`, {
@@ -592,12 +620,13 @@
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       console.error("saveOverrideBilling failed", res.status, txt);
-      alert("Errore salvataggio solvenza");
+      alert("Errore salvataggio solvenza (POST override)");
       return false;
     }
 
     return true;
   }
+
   evDetailSaveBtn.addEventListener("click", () => {
     if (!_editMode) {
       alert("Entra in modalità modifica per modificare la solvenza.");
