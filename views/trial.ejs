@@ -60,6 +60,35 @@
     </button>
   </form>
 </div>
+<!-- Import Studio (JSON da ChatGPT) -->
+<div class="bg-white p-8 rounded-xl shadow-md mb-8">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-xl font-bold text-dark-sage">Importa studio (JSON)</h2>
+    <button id="studyImportClearBtn"
+            type="button"
+            class="text-sm px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50">
+      Pulisci
+    </button>
+  </div>
+
+  <p class="text-gray-600 mb-4">
+    Incolla qui il JSON generato da ChatGPT dall’analisi del protocollo.
+    Verranno <b>precompilati</b> i campi del form sopra: poi puoi correggere a mano e salvare con “Salva Studio”.
+  </p>
+
+  <textarea id="studyImportTextarea" rows="10"
+            class="w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-light-sage"
+            placeholder='{"study":{"title":"...","subtitle":"...","clinical_areas":["Polmone"],"specific_clinical_areas":["NSCLC"],"treatment_setting":"Metastatico","min_treatment_line":1,"max_treatment_line":1,"criteria":[{"type":"inclusion","text":"..."},{"type":"exclusion","text":"..."}]}}'></textarea>
+
+  <div id="studyImportMsg" class="mt-2 text-sm hidden"></div>
+
+  <button id="studyImportBtn"
+          type="button"
+          class="mt-3 w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+    Precompila il form
+  </button>
+</div>
+
 
 <div id="trialListSection" class="mt-8">
   <h2 class="text-xl font-bold text-sage mb-4">Studi Attivi</h2>

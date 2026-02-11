@@ -68,6 +68,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const doctorTrialListDiv = document.querySelector(
         "#trialListSection #trialList",
     );
+    // ----- Import Studio (JSON) -----
+    const studyImportTextarea = document.getElementById("studyImportTextarea");
+    const studyImportBtn = document.getElementById("studyImportBtn");
+    const studyImportClearBtn = document.getElementById("studyImportClearBtn");
+    const studyImportMsg = document.getElementById("studyImportMsg");
 
     // Filtri per la pagina Trial
     const filterClinicalAreaSelect =
@@ -145,6 +150,202 @@ document.addEventListener("DOMContentLoaded", () => {
             passwordError.classList.remove("hidden");
         }
     });
+    // =====================================================
+    // IMPORT STUDIO (JSON da ChatGPT) -> PRECOMPILA IL FORM
+    // =====================================================
+
+    function showStudyImportMsg(text, ok = true) {
+        if (!studyImportMsg) return;
+        studyImportMsg.classList.remove("hidden");
+        studyImportMsg.classList.remove("text-green-700", "text-red-600");
+        studyImportMsg.classList.add(ok ? "text-green-700" : "text-red-600");
+        studyImportMsg.textContent = text;
+    }
+
+    function normalizeTreatmentSetting(v) {
+        const s = String(v ?? "").trim();
+        const allowed = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+        return allowed.includes(s) ? s : "";
+    }
+
+    function normalizeClinicalAreas(arr) {
+        const allowed = [
+            "Mammella",
+            "Polmone",
+            "Gastro-Intestinale",
+            "Ginecologico",
+            "Prostata e Vie Urinarie",
+            "Melanoma e Cute",
+            "Testa-Collo",
+            "Fase 1",
+            "Altro",
+        ];
+
+        const input = Array.isArray(arr) ? arr : arr ? [arr] : [];
+        const cleaned = input
+            .map((x) => String(x ?? "").trim())
+            .filter((x) => allowed.includes(x));
+
+        return Array.from(new Set(cleaned)); // dedup
+    }
+
+    function normalizeSpecificAreas(arr) {
+        const input = Array.isArray(arr) ? arr : arr ? [arr] : [];
+        const cleaned = input.map((x) => String(x ?? "").trim()).filter(Boolean);
+        return Array.from(new Set(cleaned));
+    }
+
+    function parseStudyImportJson(raw) {
+        let obj;
+        try {
+            obj = JSON.parse(raw);
+        } catch {
+            throw new Error("JSON non valido: controlla virgole, parentesi e virgolette.");
+        }
+
+        // accetto sia {study:{...}} sia {...}
+        const study = obj?.study || obj;
+        if (!study || typeof study !== "object") {
+            throw new Error("JSON valido, ma manca l'oggetto 'study'.");
+        }
+
+        const title = String(study.title ?? "").trim();
+        if (!title) throw new Error("Manca 'title'.");
+
+        const subtitle = String(study.subtitle ?? "").trim();
+
+        const clinical_areas = normalizeClinicalAreas(study.clinical_areas);
+        if (clinical_areas.length === 0) {
+            throw new Error(
+                "Manca o non è valida 'clinical_areas' (deve usare le opzioni della tua lista).",
+            );
+        }
+
+        const treatment_setting = normalizeTreatmentSetting(study.treatment_setting);
+        if (!treatment_setting) {
+            throw new Error(
+                "Manca o non è valido 'treatment_setting' (Metastatico/Adiuvante/Neo-adiuvante).",
+            );
+        }
+
+        const specific_clinical_areas = normalizeSpecificAreas(
+            study.specific_clinical_areas,
+        );
+
+        const min_treatment_line =
+            treatment_setting === "Metastatico"
+                ? study.min_treatment_line === null ||
+                  study.min_treatment_line === undefined ||
+                  study.min_treatment_line === ""
+                    ? null
+                    : parseInt(study.min_treatment_line, 10)
+                : null;
+
+        const max_treatment_line =
+            treatment_setting === "Metastatico"
+                ? study.max_treatment_line === null ||
+                  study.max_treatment_line === undefined ||
+                  study.max_treatment_line === ""
+                    ? null
+                    : parseInt(study.max_treatment_line, 10)
+                : null;
+
+        const criteriaArr = Array.isArray(study.criteria) ? study.criteria : [];
+        const criteria = criteriaArr
+            .map((c) => ({
+                type: String(c?.type ?? "").trim(),
+                text: String(c?.text ?? "").trim(),
+            }))
+            .filter(
+                (c) =>
+                    (c.type === "inclusion" || c.type === "exclusion") &&
+                    c.text.length > 0,
+            );
+
+        return {
+            title,
+            subtitle,
+            clinical_areas,
+            specific_clinical_areas,
+            treatment_setting,
+            min_treatment_line: Number.isNaN(min_treatment_line)
+                ? null
+                : min_treatment_line,
+            max_treatment_line: Number.isNaN(max_treatment_line)
+                ? null
+                : max_treatment_line,
+            criteria,
+        };
+    }
+
+    function setMultiSelectValues(selectEl, values) {
+        if (!selectEl) return;
+        const set = new Set(values || []);
+        Array.from(selectEl.options).forEach((opt) => {
+            opt.selected = set.has(opt.value);
+        });
+    }
+
+    function applyStudyImportToForm(study) {
+        // Titolo & sottotitolo
+        if (studyTitleInput) studyTitleInput.value = study.title || "";
+        if (studySubtitleInput) studySubtitleInput.value = study.subtitle || "";
+
+        // Aree cliniche (multi)
+        setMultiSelectValues(studyClinicalAreasSelect, study.clinical_areas || []);
+
+        // aggiorna dropdown specifiche in base alle aree selezionate
+        if (studyClinicalAreasSelect) {
+            const selectedOptions = Array.from(
+                studyClinicalAreasSelect.selectedOptions,
+            ).map((o) => o.value);
+
+            updateSpecificAreasDropdown(
+                selectedOptions,
+                studySpecificClinicalAreasSelect,
+                studySpecificClinicalAreaContainer,
+            );
+        }
+
+        // Specifiche (multi)
+        setMultiSelectValues(
+            studySpecificClinicalAreasSelect,
+            study.specific_clinical_areas || [],
+        );
+
+        // Setting
+        if (studyTreatmentSettingSelect)
+            studyTreatmentSettingSelect.value = study.treatment_setting || "";
+
+        // Linee
+        if (study.treatment_setting === "Metastatico") {
+            if (studyTreatmentLineContainer)
+                studyTreatmentLineContainer.classList.remove("hidden");
+
+            if (minTreatmentLineInput)
+                minTreatmentLineInput.value =
+                    study.min_treatment_line === null ? "" : String(study.min_treatment_line);
+
+            if (maxTreatmentLineInput)
+                maxTreatmentLineInput.value =
+                    study.max_treatment_line === null ? "" : String(study.max_treatment_line);
+        } else {
+            if (studyTreatmentLineContainer)
+                studyTreatmentLineContainer.classList.add("hidden");
+            if (minTreatmentLineInput) minTreatmentLineInput.value = "";
+            if (maxTreatmentLineInput) maxTreatmentLineInput.value = "";
+        }
+
+        // Criteri: svuota e ricrea
+        if (criteriaListDiv) criteriaListDiv.innerHTML = "";
+
+        if (study.criteria && study.criteria.length > 0) {
+            study.criteria.forEach((c) => addCriteriaRow(c.text, c.type));
+        } else {
+            // almeno una riga vuota
+            addCriteriaRow();
+        }
+    }
 
     // =====================================================
     // Da qui in giù rimane la logica precedente invariata:
@@ -283,6 +484,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (addCriteriaBtn)
         addCriteriaBtn.addEventListener("click", () => addCriteriaRow());
+    // ======================
+    // LISTENER IMPORT STUDIO
+    // ======================
+
+    if (studyImportClearBtn && studyImportTextarea) {
+        studyImportClearBtn.addEventListener("click", () => {
+            studyImportTextarea.value = "";
+            if (studyImportMsg) studyImportMsg.classList.add("hidden");
+        });
+    }
+
+    if (studyImportBtn && studyImportTextarea) {
+        studyImportBtn.addEventListener("click", () => {
+            try {
+                const raw = (studyImportTextarea.value || "").trim();
+                if (!raw) {
+                    showStudyImportMsg("Incolla un JSON prima di precompilare.", false);
+                    return;
+                }
+
+                const study = parseStudyImportJson(raw);
+                applyStudyImportToForm(study);
+
+                if (!study.criteria || study.criteria.length === 0) {
+                    showStudyImportMsg(
+                        "Precompilazione OK. Nota: nessun criterio trovato nel JSON, inseriscili a mano.",
+                        true,
+                    );
+                } else {
+                    showStudyImportMsg(
+                        `Precompilazione OK: caricati ${study.criteria.length} criteri. Controlla e poi salva.`,
+                        true,
+                    );
+                }
+            } catch (e) {
+                showStudyImportMsg(`❌ ${e.message}`, false);
+            }
+        });
+    }
 
     if (studyForm) {
         studyForm.addEventListener("submit", async (e) => {
