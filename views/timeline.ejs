@@ -386,49 +386,7 @@
     evDetailModal.classList.remove("hidden");
     evDetailModal.classList.add("flex");
   }
-  evDetailCloseBtn.addEventListener("click", () => {
-    evDetailModal.classList.add("hidden");
-    evDetailModal.classList.remove("flex");
-    _detailContext = null;
-  });
-  async function saveOverrideBilling(eventId, dayIndex, billingValue) {
-    const payload = {
-      event_id: eventId,
-      day_index: dayIndex,
-      billing: billingValue || null,
-    };
-
-    const res = await fetch(`/api/timeline-overrides/${STUDY_ID}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.error("saveOverrideBilling failed", res.status, txt);
-      alert("Errore salvataggio solvenza");
-      return false;
-    }
-
-    return true;
-  }
-  evDetailSaveBtn.addEventListener("click", async () => {
-    if (!_detailContext) return;
-
-    const { event_id, day_index } = _detailContext;
-    const newBilling = evDetailBilling.value; // "" SSN SP
-
-    const ok = await saveOverrideBilling(event_id, day_index, newBilling);
-    if (!ok) return;
-
-    await loadOverrides();
-    renderTimeline();
-
-    evDetailModal.classList.add("hidden");
-    evDetailModal.classList.remove("flex");
-    _detailContext = null;
-  });
+  
 
   /* -------------- Import helpers -------------- */
   function showImportMsg(text, ok = true) {
@@ -597,7 +555,49 @@
 
   let _detailContext = null; // { event_id, day_index }
 
+  evDetailCloseBtn.addEventListener("click", () => {
+    evDetailModal.classList.add("hidden");
+    evDetailModal.classList.remove("flex");
+    _detailContext = null;
+  });
+  async function saveOverrideBilling(eventId, dayIndex, billingValue) {
+    const payload = {
+      event_id: eventId,
+      day_index: dayIndex,
+      billing: billingValue || null,
+    };
 
+    const res = await fetch(`/api/timeline-overrides/${STUDY_ID}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error("saveOverrideBilling failed", res.status, txt);
+      alert("Errore salvataggio solvenza");
+      return false;
+    }
+
+    return true;
+  }
+  evDetailSaveBtn.addEventListener("click", async () => {
+    if (!_detailContext) return;
+
+    const { event_id, day_index } = _detailContext;
+    const newBilling = evDetailBilling.value; // "" SSN SP
+
+    const ok = await saveOverrideBilling(event_id, day_index, newBilling);
+    if (!ok) return;
+
+    await loadOverrides();
+    renderTimeline();
+
+    evDetailModal.classList.add("hidden");
+    evDetailModal.classList.remove("flex");
+    _detailContext = null;
+  });
 
   /* -------------- Stato -------------- */
   let _events = [];
@@ -856,62 +856,59 @@
           cell.dataset.dayIndex = String(dayIndex);
 
           const stack = document.createElement("div");
-          stack.className="daycell-stack";
+          stack.className = "daycell-stack";
 
-          (byDay.get(dayIndex) || []).forEach(ev=>{
+          /* EVENTI (chip pieni) */
+          (byDay.get(dayIndex) || []).forEach(ev => {
+            const ov = findOverride(ev.id, dayIndex);
+            const billing = effectiveBilling(ev, ov);
+            const title = effectiveField(ev, ov, "title") || eventTitle(ev);
+            const notes = effectiveField(ev, ov, "notes");
 
-            (byDay.get(dayIndex) || []).forEach(ev => {
-              const ov = findOverride(ev.id, dayIndex);
-              const billing = effectiveBilling(ev, ov);
-              const title = effectiveField(ev, ov, "title") || eventTitle(ev);
-              const notes = effectiveField(ev, ov, "notes");
+            const chip = document.createElement("span");
+            chip.className = chipClass(ev.event_type);
+            chip.style.cursor = "pointer";
+            chip.dataset.eventId = ev.id;
+            chip.dataset.dayIndex = String(dayIndex);
 
-              const chip = document.createElement("span");
-              chip.className = chipClass(ev.event_type);
-              chip.style.cursor = "pointer";
-              chip.dataset.eventId = ev.id;
-              chip.dataset.dayIndex = String(dayIndex);
-
-              // click sul chip = dettagli evento (e NON click sulla cella)
-              chip.addEventListener("click", (evt) => {
-                evt.stopPropagation();
-                openEventDetails(ev, ov, dayIndex);
-              });
-
-              // testo (titolo)
-              const label = document.createElement("span");
-              label.textContent = title;
-              chip.appendChild(label);
-
-              // badge SSN/SP (attenzione: usa billing, non ev.billing)
-              if (billing === "SSN" || billing === "SP") {
-                const badge = document.createElement("span");
-                badge.className = "chip-billing";
-                badge.textContent = billing;
-                chip.appendChild(badge);
-              }
-
-              // tooltip
-              chip.title = notes && notes.trim()
-                ? `${title}\nNote: ${notes}`
-                : title;
-
-              stack.appendChild(chip);
+            chip.addEventListener("click", (evt) => {
+              evt.stopPropagation();
+              openEventDetails(ev, ov, dayIndex);
             });
 
+            const label = document.createElement("span");
+            label.textContent = title;
+            chip.appendChild(label);
 
-          
+            if (billing === "SSN" || billing === "SP") {
+              const badge = document.createElement("span");
+              badge.className = "chip-billing";
+              badge.textContent = billing;
+              chip.appendChild(badge);
+            }
 
-          /* Finestra (chip chiari) → solo colore, nessuna scritta */
-          (windows.get(dayIndex) || []).forEach(ev => {
+            chip.title = notes && notes.trim()
+              ? `${title}\nNote: ${notes}`
+              : title;
+
+            stack.appendChild(chip);
+          });
+
+          /* FINESTRA (chip sfumati) - deduplicata per event_id */
+          const winArr = (windows.get(dayIndex) || []);
+          const seenWin = new Set();
+
+          winArr.forEach(ev => {
+            if (seenWin.has(ev.id)) return; // evita doppioni dello stesso evento nello stesso giorno
+            seenWin.add(ev.id);
+
             const ov = findOverride(ev.id, dayIndex);
+            const title = effectiveField(ev, ov, "title") || eventTitle(ev);
+            const notes = effectiveField(ev, ov, "notes");
 
             const chip = document.createElement("span");
             chip.className = chipClass(ev.event_type) + " chip-win";
-            chip.textContent = ""; // niente testo (solo colore)
-
-            const title = effectiveField(ev, ov, "title") || eventTitle(ev);
-            const notes = effectiveField(ev, ov, "notes");
+            chip.textContent = ""; // solo colore
 
             chip.title = notes && notes.trim()
               ? `${title}\nNote: ${notes}`
