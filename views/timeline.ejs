@@ -111,21 +111,45 @@
   </div>
 </div>
 
-<!-- Controlli timeline -->
-<div class="bg-white p-4 rounded-xl shadow-md mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div>
-      <label class="block text-sm font-medium text-dark-gray">Settimane totali</label>
-      <input id="tlTotalWeeks" type="number" min="4" max="104" value="24" disabled
-             class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+  <!-- Controlli timeline -->
+  <div class="bg-white p-4 rounded-xl shadow-md mb-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-dark-gray">Settimane totali</label>
+        <input id="tlTotalWeeks" type="number" min="4" max="104" value="24" disabled
+               class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-dark-gray">Settimane per ciclo</label>
+        <input id="tlCycleWeeks" type="number" min="1" max="12" value="4" disabled
+               class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+      </div>
     </div>
-    <div>
-      <label class="block text-sm font-medium text-dark-gray">Settimane per ciclo</label>
-      <input id="tlCycleWeeks" type="number" min="1" max="12" value="4" disabled
-             class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+
+    <!-- 🔥 INSERISCI QUI IL CENTRO DI COSTO -->
+    <div class="mt-4">
+      <label class="block text-sm font-medium text-dark-gray">
+        Centro di costo dello studio
+      </label>
+
+      <div class="flex gap-2 mt-1">
+        <input id="tlCostCenter"
+               type="text"
+               disabled
+               placeholder="Es. SSN / Sponsor / Centro interno..."
+               class="p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+
+        <button id="tlSaveCostCenterBtn"
+                disabled
+                class="px-4 py-2 rounded-lg bg-sage text-white font-semibold opacity-50 cursor-not-allowed">
+          Salva
+        </button>
+      </div>
     </div>
+
   </div>
-</div>
 
   <!-- Layout: Calendario grande + pannello laterale collassabile -->
   <div id="tlMainGrid" class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
@@ -573,6 +597,9 @@
   const evDetailCloseBtn = document.getElementById("evDetailCloseBtn");
   const evDetailSaveBtn = document.getElementById("evDetailSaveBtn");
 
+  const tlCostCenter = document.getElementById("tlCostCenter");
+  const tlSaveCostCenterBtn = document.getElementById("tlSaveCostCenterBtn");
+
   let _detailContext = null; // { event_id, day_index }
 
   evDetailCloseBtn.addEventListener("click", () => {
@@ -678,6 +705,11 @@
       tlEditToggleBtn.textContent = "Esci e salva modifiche";
       tlCycleWeeks.disabled = false;
       tlTotalWeeks.disabled = false;
+      if (tlCostCenter) tlCostCenter.disabled = false;
+      if (tlSaveCostCenterBtn){
+        tlSaveCostCenterBtn.disabled = false;
+        tlSaveCostCenterBtn.classList.remove("opacity-50","cursor-not-allowed");
+      }
     }
 
     if (action.type === "exit-edit") {
@@ -688,7 +720,11 @@
       // 🔒 blocca i campi fuori dalla modalità modifica
       tlCycleWeeks.disabled = true;
       tlTotalWeeks.disabled = true;
-
+      if (tlCostCenter) tlCostCenter.disabled = true;
+      if (tlSaveCostCenterBtn){
+        tlSaveCostCenterBtn.disabled = true;
+        tlSaveCostCenterBtn.classList.add("opacity-50","cursor-not-allowed");
+      }
       // 💾 salva SE cambiati (cycle_weeks + total_weeks)
       const currentCycle = parseInt(tlCycleWeeks.value || "4", 10);
       const currentTotal = parseInt(tlTotalWeeks.value || "24", 10);
@@ -763,7 +799,11 @@
         }
       })();
     }
-
+    if (action.type === "save-cost-center") {
+      (async () => {
+        await saveCostCenter();
+      })();
+    }
     _pendingAction = null;
     syncImportVisibility();
     renderEventsList();
@@ -1088,7 +1128,9 @@
     }
 
     const study = await res.json();
-
+    if (study && tlCostCenter) {
+      tlCostCenter.value = study.cost_center || "";
+    }
     if (study && typeof study.cycle_weeks === "number") {
       _cycleWeeksDb = study.cycle_weeks;
       tlCycleWeeks.value = String(study.cycle_weeks);
@@ -1127,7 +1169,27 @@
 
     return true;
   }
+  async function saveCostCenter() {
+    if (!STUDY_ID) return true;
 
+    const value = (tlCostCenter?.value || "").trim();
+
+    const res = await fetch(`/api/studies/${STUDY_ID}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cost_center: value }),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error("PATCH /api/studies (cost_center) failed:", res.status, txt);
+      alert("Errore salvataggio Centro di costo");
+      return false;
+    }
+
+    alert("Centro di costo salvato ✅");
+    return true;
+  }
 
 
 
@@ -1341,7 +1403,15 @@
     });
   }
 
-
+  if (tlSaveCostCenterBtn) {
+    tlSaveCostCenterBtn.addEventListener("click", () => {
+      if (!_editMode) {
+        alert("Entra in modalità modifica.");
+        return;
+      }
+      showPwdModal({ type: "save-cost-center" });
+    });
+  }
 
 
   /* -------------- Start -------------- */

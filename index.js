@@ -152,10 +152,11 @@ app.patch("/api/studies/:id", async (req, res) => {
 
     const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
     const total_weeks = toIntOrNull(req.body.total_weeks);
-
+    const cost_center = toStrOrNull(req.body.cost_center);
     // deve arrivare almeno uno dei due
-    if (cycle_weeks === null && total_weeks === null) {
+    if (cycle_weeks === null && total_weeks === null && cost_center === null) {
       return res.status(400).json({ error: "Niente da aggiornare" });
+    }
     }
 
     // validazioni
@@ -187,12 +188,13 @@ app.patch("/api/studies/:id", async (req, res) => {
     const patch = {};
     if (cycle_weeks !== null) patch.cycle_weeks = cycle_weeks;
     if (total_weeks !== null) patch.total_weeks = total_weeks;
+    if (cost_center !== null) patch.cost_center = cost_center;
 
     const { data, error: updErr } = await supabase
       .from("studies")
       .update(patch)
       .eq("id", id)
-      .select("cycle_weeks,total_weeks")
+      .select("cycle_weeks,total_weeks,cost_center")
       .single();
 
     if (updErr) {
