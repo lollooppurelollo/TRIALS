@@ -157,7 +157,6 @@ app.patch("/api/studies/:id", async (req, res) => {
     if (cycle_weeks === null && total_weeks === null && cost_center === null) {
       return res.status(400).json({ error: "Niente da aggiornare" });
     }
-    }
 
     // validazioni
     if (
