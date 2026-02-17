@@ -52,10 +52,11 @@
 </div>
 
 <!-- Modal Dettagli Studio -->
-<div id="studyDetailModal" 
-     class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-start"
-    style="padding-bottom: 100px;">
-    <div class="relative w-11/12 md:w-3/4 lg:w-1/2 max-h-[90vh] bg-white rounded-xl shadow-lg flex flex-col overflow-hidden">
+<div id="studyDetailModal"
+     class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 hidden flex items-start justify-center"
+     style="padding: 4px 4px 76px 4px;">
+    <div class="relative bg-white rounded-xl shadow-lg flex flex-col overflow-hidden"
+         style="width: min(1600px, 100%); height: calc(100vh - 80px);">
         <div class="modal-content overflow-y-auto p-5">
             <div class="text-center">
                 <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>

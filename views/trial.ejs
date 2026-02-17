@@ -130,8 +130,12 @@
 </div>
 
 <!-- Modal Dettagli Studio -->
-<div id="studyDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-  <div class="relative w-11/12 md:w-3/4 lg:w-1/2 bg-white rounded-xl shadow-lg flex flex-col max-h-[80vh]">
+<div id="studyDetailModal"
+   class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 flex items-start justify-center hidden"
+   style="padding: 4px 4px 76px 4px;">
+  <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col"
+     style="width: min(1600px, 100%);
+            height: calc(100vh - 80px);">
     <div class="p-6 flex-shrink-0">
       <h3 class="text-lg leading-6 font-bold text-dark-gray" id="modalTitle"></h3>
       <p class="text-sm text-gray-500 mb-4" id="modalSubtitle"></p>

@@ -62,7 +62,17 @@
     }
 
     /* celle calendario */
-    .daycell{min-height:60px; border-radius:.5rem; border:1px solid #e5e7eb; display:flex; align-items:center; justify-content:center; padding:.20rem; cursor:pointer}
+    .daycell{
+      min-height:60px;
+      border-radius:.5rem;
+      border:1px solid #e5e7eb;
+      display:flex;
+      align-items:flex-start;     /* prima era center */
+      justify-content:flex-start; /* prima era center */
+      padding:.35rem;
+      cursor:pointer;
+    }
+
     .daycell:hover{outline:2px solid var(--color-light-sage)}
     .daycell.selected{outline:3px solid var(--color-sage)}
     .daycell-stack{display:flex; gap:.25rem; flex-wrap:wrap; justify-content:center; width:100%}
@@ -80,6 +90,42 @@
     .event-left-radiology{border-left-color:var(--color-blue)}
     .event-left-therapy{border-left-color:var(--color-orange)}
     .event-left-custom{border-left-color:var(--color-gray)}
+    /* ===== TIMELINE: lanes per allineare evento + finestra ===== */
+    .daylanes{
+      display:flex;
+      flex-direction:column;
+      gap:.2rem;
+      width:100%;
+      align-items:stretch;
+    }
+
+    .lane{
+      height:16px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      padding:0 .35rem;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      font-size:.68rem;
+      line-height:1;
+    }
+
+    .lane-main{
+      color:#111827;
+    }
+
+    .lane-win{
+      border:1px dashed rgba(0,0,0,.25);
+      opacity:.55;
+    }
+
+    .lane-empty{
+      background:transparent;
+      border:1px solid transparent;
+    }
+
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -117,7 +163,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="block text-sm font-medium text-dark-gray">Settimane totali</label>
-        <input id="tlTotalWeeks" type="number" min="4" max="104" value="24" disabled
+        <input id="tlTotalWeeks" type="number" min="4" max="504" value="120" disabled
                class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
       </div>
 
@@ -918,11 +964,12 @@
     });
   }
 
-  /* -------------- Pianificazione per giorni (timeline) -------------- */
   function makeSchedule(events, totalWeeks){
     const totalDays = totalWeeks*7;
-    const byDay = new Map();   // dayIndex -> [events]
-    const windows = new Map(); // dayIndex -> [events] (per chip sfumati)
+
+    // dayIndex -> array di { ev, occDay, occKey, kind: "main"|"win" }
+    const byDay = new Map();
+    const windows = new Map();
 
     const push = (map, key, value) => {
       if (key < 0 || key >= totalDays) return;
@@ -932,31 +979,35 @@
     };
 
     events.forEach(ev => {
-      // Fallback: se esiste solo window_days (legacy) lo usiamo per entrambi
-      const winBefore = parseInt(ev.window_before_days ?? ev.window_days ?? 0, 10) || 0; // indietro
-      const winAfter  = parseInt(ev.window_after_days  ?? ev.window_days ?? 0, 10) || 0; // avanti
+      const winBefore = parseInt(ev.window_before_days ?? ev.window_days ?? 0, 10) || 0;
+      const winAfter  = parseInt(ev.window_after_days  ?? ev.window_days ?? 0, 10) || 0;
+
+      const addOccurrence = (occDay) => {
+        const occKey = `${ev.id}:${occDay}`;
+
+        // main day
+        push(byDay, occDay, { ev, occDay, occKey, kind: "main" });
+
+        // window days linked to this specific occurrence
+        for (let k = 1; k <= winBefore; k++) push(windows, occDay - k, { ev, occDay, occKey, kind: "win" });
+        for (let k = 1; k <= winAfter;  k++) push(windows, occDay + k, { ev, occDay, occKey, kind: "win" });
+      };
 
       if (ev.one_shot) {
         const d = Number.isInteger(ev.at_day) ? ev.at_day : null;
-        if (d != null) {
-          push(byDay, d, ev);
-          for (let k = 1; k <= winBefore; k++) push(windows, d - k, ev);
-          for (let k = 1; k <= winAfter;  k++) push(windows, d + k, ev);
-        }
+        if (d != null) addOccurrence(d);
       } else {
         const startDay = Number.isInteger(ev.start_day) ? ev.start_day : 0;
         const stopDay  = Number.isInteger(ev.stop_day)  ? ev.stop_day  : (totalDays - 1);
         const step = Math.max(1, parseInt(ev.repeat_every_days || 1, 10));
-        for (let d = startDay; d <= stopDay; d += step) {
-          push(byDay, d, ev);
-          for (let k = 1; k <= winBefore; k++) push(windows, d - k, ev);
-          for (let k = 1; k <= winAfter;  k++) push(windows, d + k, ev);
-        }
+
+        for (let d = startDay; d <= stopDay; d += step) addOccurrence(d);
       }
     });
 
-    return {byDay, windows};
+    return { byDay, windows };
   }
+
 
   function renderTimeline() {
     const total = Math.max(1, parseInt(tlTotalWeeks.value || "24", 10));
@@ -964,6 +1015,13 @@
     const {byDay, windows} = makeSchedule(_events, total);
 
     tlTimeline.innerHTML = "";
+    const colorByType = (t) => ({
+      oncological_visit: "var(--color-dark-sage)",
+      blood_test: "var(--color-light-red)",
+      radiology: "var(--color-blue)",
+      therapy: "var(--color-orange)",
+      custom: "var(--color-gray)",
+    }[t] || "var(--color-gray)");
 
     for (let startW = 0, cycleIdx = 1; startW < total; startW += cycleWeeks, cycleIdx++) {
       const endW = Math.min(total - 1, startW + cycleWeeks - 1);
@@ -998,6 +1056,33 @@
         wlab.textContent = `${w}`;  // solo numero settimana
         row.appendChild(wlab);
 
+        // 1) Calcolo ordine “lane” per QUESTA settimana (w)
+        const weekStartDay = w * 7;
+        const weekEndDay = weekStartDay + 6;
+
+        // raccoglie tutte le occorrenze che toccano questa settimana (main o window)
+        const weekEntries = [];
+        for (let d = weekStartDay; d <= weekEndDay; d++) {
+          (byDay.get(d) || []).forEach(x => weekEntries.push({ day: d, ...x }));
+          (windows.get(d) || []).forEach(x => weekEntries.push({ day: d, ...x }));
+        }
+
+        // mappa univoca per occKey (eventoId:occDay)
+        const laneMap = new Map();
+        weekEntries.forEach(x => {
+          if (!laneMap.has(x.occKey)) laneMap.set(x.occKey, { ev: x.ev, occDay: x.occDay, occKey: x.occKey });
+        });
+
+        // ordine stabile: prima per giorno occorrenza, poi per tipo, poi per titolo
+        const laneOrder = Array.from(laneMap.values()).sort((a,b) => {
+          if (a.occDay !== b.occDay) return a.occDay - b.occDay;
+          const ta = (a.ev.event_type || ""), tb = (b.ev.event_type || "");
+          if (ta !== tb) return ta.localeCompare(tb);
+          const na = (a.ev.title || ""), nb = (b.ev.title || "");
+          return na.localeCompare(nb);
+        });
+
+        // 2) Disegno le 7 celle: ognuna contiene TUTTE le lane in quell’ordine
         for (let dow=0; dow<7; dow++){
           const dayIndex = w*7 + dow;
 
@@ -1005,72 +1090,56 @@
           cell.className = "daycell";
           cell.dataset.dayIndex = String(dayIndex);
 
-          const stack = document.createElement("div");
-          stack.className = "daycell-stack";
+          const lanesWrap = document.createElement("div");
+          lanesWrap.className = "daylanes";
 
-          /* EVENTI (chip pieni) */
-          (byDay.get(dayIndex) || []).forEach(ev => {
-            const ov = findOverride(ev.id, dayIndex);
-            const billing = effectiveBilling(ev, ov);
-            const title = effectiveField(ev, ov, "title") || eventTitle(ev);
-            const notes = effectiveField(ev, ov, "notes");
+          // cosa c’è oggi per ciascuna lane
+          const todays = new Map();
+          (windows.get(dayIndex) || []).forEach(x => {
+            if (!todays.has(x.occKey)) todays.set(x.occKey, x); // win
+          });
+          (byDay.get(dayIndex) || []).forEach(x => {
+            todays.set(x.occKey, x); // main (priorità)
+          });
 
-            const chip = document.createElement("span");
-            chip.className = chipClass(ev.event_type);
-            chip.style.cursor = "pointer";
-            chip.dataset.eventId = ev.id;
-            chip.dataset.dayIndex = String(dayIndex);
+          laneOrder.forEach(l => {
+            const hit = todays.get(l.occKey);
 
-            chip.addEventListener("click", (evt) => {
-              evt.stopPropagation();
-              openEventDetails(ev, ov, dayIndex);
-            });
+            const bar = document.createElement("div");
+            bar.className = "lane " + (hit ? (hit.kind === "main" ? "lane-main" : "lane-win") : "lane-empty");
 
-            const label = document.createElement("span");
-            label.textContent = title;
-            chip.appendChild(label);
+            const c = colorByType(l.ev.event_type);
 
-            if (billing === "SSN" || billing === "SP") {
-              const badge = document.createElement("span");
-              badge.className = "chip-billing";
-              badge.textContent = billing;
-              chip.appendChild(badge);
+            if (hit) {
+              bar.style.background = c;
+              if (hit.kind === "win") {
+                bar.style.opacity = "0.45";
+              }
             }
 
-            chip.title = notes && notes.trim()
-              ? `${title}\nNote: ${notes}`
-              : title;
+            // testo e click SOLO nel giorno dell’evento (main)
+            if (hit && hit.kind === "main") {
+              const ov = findOverride(l.ev.id, dayIndex);
+              const title = effectiveField(l.ev, ov, "title") || eventTitle(l.ev);
+              const notes = effectiveField(l.ev, ov, "notes") || "";
 
-            stack.appendChild(chip);
+              bar.textContent = title;
+              bar.title = notes ? `${title}\nNote: ${notes}` : title;
+
+              bar.style.cursor = "pointer";
+              bar.addEventListener("click", (evt) => {
+                evt.stopPropagation();
+                openEventDetails(l.ev, ov, dayIndex);
+              });
+            }
+
+            lanesWrap.appendChild(bar);
           });
 
-          /* FINESTRA (chip sfumati) - deduplicata per event_id */
-          const winArr = (windows.get(dayIndex) || []);
-          const seenWin = new Set();
-
-          winArr.forEach(ev => {
-            if (seenWin.has(ev.id)) return; // evita doppioni dello stesso evento nello stesso giorno
-            seenWin.add(ev.id);
-
-            const ov = findOverride(ev.id, dayIndex);
-            const title = effectiveField(ev, ov, "title") || eventTitle(ev);
-            const notes = effectiveField(ev, ov, "notes");
-
-            const chip = document.createElement("span");
-            chip.className = chipClass(ev.event_type) + " chip-win";
-            chip.textContent = ""; // solo colore
-
-            chip.title = notes && notes.trim()
-              ? `${title}\nNote: ${notes}`
-              : title;
-
-            stack.appendChild(chip);
-          });
-
-
-          cell.appendChild(stack);
+          cell.appendChild(lanesWrap);
           row.appendChild(cell);
         }
+
 
         body.appendChild(row);
       }
