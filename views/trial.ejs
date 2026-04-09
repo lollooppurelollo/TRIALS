@@ -47,6 +47,27 @@
         </div>
       </div>
     </div>
+    <!-- Numero bracci -->
+    <div>
+      <label for="studyArmsCount" class="block text-sm font-medium text-dark-gray">
+        Numero Bracci
+      </label>
+      <select id="studyArmsCount"
+              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+        <option value="1" selected>1 (Studio a braccio singolo)</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+    </div>
+
+    <!-- Container dinamico bracci -->
+    <div id="studyArmsContainer" class="md:col-span-2 hidden">
+      <label class="block text-sm font-medium text-dark-gray mb-2">
+        Configurazione Bracci
+      </label>
+      <div id="armsList" class="space-y-2"></div>
+    </div>
 
     <h3 class="text-lg font-bold text-dark-gray mt-6 mb-2">Criteri di Inclusione/Esclusione</h3>
     <div id="criteriaList" class="space-y-2 mb-4"></div>
@@ -72,7 +93,7 @@
   </div>
 
   <p class="text-gray-600 mb-4">
-    Incolla qui il JSON generato da ChatGPT dall’analisi del protocollo.
+    Incolla qui il JSON generato dall’analisi del protocollo.
     Verranno <b>precompilati</b> i campi del form sopra: poi puoi correggere a mano e salvare con “Salva Studio”.
   </p>
 

@@ -173,6 +173,14 @@
                class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
       </div>
     </div>
+    <div class="mt-3">
+      <label class="block text-sm font-medium text-dark-gray">Filtro braccio</label>
+      <select id="tlArmFilter"
+              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+        <option value="ALL">Tutti i bracci</option>
+      </select>
+      <p class="text-xs text-gray-400 mt-1">Mostra tutti gli eventi o solo quelli di un braccio.</p>
+    </div>
 
     <!-- 🔥 INSERISCI QUI IL CENTRO DI COSTO -->
     <div class="mt-4">
@@ -270,7 +278,14 @@
             </select>
             <p class="text-xs text-gray-400 mt-1">Se non selezioni nulla, rimane neutro.</p>
           </div>
-          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-dark-gray">Braccio/i (opzionale)</label>
+            <div id="evArmsWrap" class="mt-2 flex flex-col gap-2 text-sm text-dark-gray">
+              <!-- verrà popolato via JS -->
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Se non selezioni nulla → evento valido per tutti i bracci.</p>
+          </div>
+
           <!-- toggle -->
           <div class="md:col-span-2 flex items-center gap-2">
             <input id="evOneShot" type="checkbox" class="rounded">
@@ -554,6 +569,7 @@
         billing: ev.billing ? String(ev.billing).trim().toUpperCase() : null,
         indications: ev.indications ?? "",
         one_shot: ev.one_shot === true,
+        arm_codes: Array.isArray(ev.arm_codes) && ev.arm_codes.length ? ev.arm_codes : ["ALL"],
 
         at_day: null,
         repeat_every_days: null,
@@ -594,6 +610,8 @@
   const tlEditToggleBtn = document.getElementById("tlEditToggleBtn");
   const tlTotalWeeks = document.getElementById("tlTotalWeeks");
   const tlCycleWeeks = document.getElementById("tlCycleWeeks");
+  const tlArmFilter = document.getElementById("tlArmFilter");
+  const evArmsWrap = document.getElementById("evArmsWrap");
 
   const evFormWrap = document.getElementById("evFormWrap");
   const evFormTitle = document.getElementById("evFormTitle");
@@ -647,6 +665,14 @@
   const tlSaveCostCenterBtn = document.getElementById("tlSaveCostCenterBtn");
 
   let _detailContext = null; // { event_id, day_index }
+
+  if (tlArmFilter) {
+    tlArmFilter.addEventListener("change", () => {
+      _selectedArm = tlArmFilter.value || "ALL";
+      renderEventsList();
+      renderTimeline();
+    });
+  }
 
   evDetailCloseBtn.addEventListener("click", () => {
     evDetailModal.classList.add("hidden");
@@ -719,6 +745,54 @@
     showPwdModal({ type: "save-override-billing" });
   });
 
+  let _arms = [];                 // [{arm_code, arm_label, ...}]
+  let _selectedArm = "ALL";       // filtro corrente
+
+  function eventVisibleForArm(ev) {
+    if (_selectedArm === "ALL") return true;
+
+    const codes = Array.isArray(ev.arm_codes) ? ev.arm_codes : ["ALL"];
+    if (codes.includes("ALL")) return true;          // evento comune
+    return codes.includes(_selectedArm);             // evento specifico
+  }
+
+  function getSelectedArmCodesFromForm() {
+    if (!evArmsWrap) return ["ALL"];
+
+    const checked = Array.from(
+      evArmsWrap.querySelectorAll('input[type="checkbox"][data-arm-code]:checked')
+    ).map(x => x.getAttribute("data-arm-code"));
+
+    return checked.length ? checked : ["ALL"];
+  }
+
+  async function loadArms() {
+    if (!STUDY_ID) return;
+
+    const res = await fetch(`/api/studies/${STUDY_ID}/arms`);
+    if (!res.ok) { console.error("Errore loadArms:", res.status); _arms = []; return; }
+
+    _arms = await res.json();
+
+    // 1) Dropdown filtro
+    if (tlArmFilter) {
+      tlArmFilter.innerHTML = `<option value="ALL">Tutti i bracci</option>` +
+        _arms.map(a => `<option value="${a.arm_code}">${a.arm_label}</option>`).join("");
+
+      tlArmFilter.value = _selectedArm || "ALL";
+    }
+
+    // 2) Checkboxes nel form evento
+    if (evArmsWrap) {
+      // Checkbox "ALL" non serve: se niente selezionato => ALL.
+      evArmsWrap.innerHTML = _arms.map(a => `
+        <label class="inline-flex items-center gap-2">
+          <input type="checkbox" class="rounded" data-arm-code="${a.arm_code}">
+          <span>${a.arm_label}</span>
+        </label>
+      `).join("");
+    }
+  }
 
   /* -------------- Stato -------------- */
   let _events = [];
@@ -930,8 +1004,8 @@
       return;
     }
     tlNoEventsMsg.classList.add("hidden");
-
-    _events.forEach(ev => {
+    const visibleEvents = _events.filter(eventVisibleForArm);
+    visibleEvents.forEach(ev => {
       const card = document.createElement("div");
       card.className = `event-card event-left-${ev.event_type}`;
       card.innerHTML = `
@@ -1012,7 +1086,8 @@
   function renderTimeline() {
     const total = Math.max(1, parseInt(tlTotalWeeks.value || "24", 10));
     const cycleWeeks = Math.max(1, parseInt(tlCycleWeeks.value || "4", 10));
-    const {byDay, windows} = makeSchedule(_events, total);
+    const visibleEvents = _events.filter(eventVisibleForArm);
+    const {byDay, windows} = makeSchedule(visibleEvents, total);
 
     tlTimeline.innerHTML = "";
     const colorByType = (t) => ({
@@ -1311,7 +1386,9 @@
       indications: evIndications.value,
       billing: evBilling ? (evBilling.value || null) : null,
       one_shot: evOneShot.checked,
+      arm_codes: getSelectedArmCodesFromForm(),
     };
+    payload.arm_codes = getSelectedArmCodesFromForm();
 
     if (evOneShot.checked){
       const atDay = parseInt(evAtDay.value ?? "",10);
@@ -1398,6 +1475,23 @@
       if (evBilling) evBilling.value = ev.billing || "";
       evOneShot.checked = !!ev.one_shot;
       toggleMode();
+      // ✅ Pre-seleziona i bracci nel form
+      if (evArmsWrap) {
+        // reset
+        evArmsWrap.querySelectorAll('input[type="checkbox"][data-arm-code]').forEach(cb => {
+          cb.checked = false;
+        });
+
+        const codes = Array.isArray(ev.arm_codes) ? ev.arm_codes : ["ALL"];
+
+        // se ALL → non selezioniamo nulla (vuoto = ALL)
+        if (!codes.includes("ALL")) {
+          codes.forEach(code => {
+            const cb = evArmsWrap.querySelector(`input[data-arm-code="${code}"]`);
+            if (cb) cb.checked = true;
+          });
+        }
+      }
 
       // fallback: se il record ha solo window_days (legacy), lo usiamo per entrambi
       const wb = ev.window_before_days ?? ev.window_days ?? "";
@@ -1488,6 +1582,7 @@
   if (STUDY_ID) {
     loadStudySettings()
       .then(async () => {
+        await loadArms(); 
         await loadOverrides();
         await loadEvents();
         renderEventsList();

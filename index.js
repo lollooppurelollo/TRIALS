@@ -53,6 +53,12 @@ function toStrOrNull(v) {
 function sanitizeEvent(body, studyId) {
   const one_shot = toBool(body.one_shot);
 
+  // arm_codes: se non arriva nulla → ALL
+  let arm_codes = ["ALL"];
+  if (Array.isArray(body.arm_codes) && body.arm_codes.length > 0) {
+    arm_codes = body.arm_codes;
+  }
+
   return {
     study_id: studyId,
     event_type: body.event_type || "custom",
@@ -62,20 +68,21 @@ function sanitizeEvent(body, studyId) {
 
     billing: toBillingOrNull(body.billing),
 
+    arm_codes,
+
     one_shot,
 
-    // campi a giorni
     at_day: one_shot ? toIntOrNull(body.at_day) : null,
     repeat_every_days: !one_shot ? toIntOrNull(body.repeat_every_days) : null,
     start_day: !one_shot ? toIntOrNull(body.start_day) : null,
     stop_day: !one_shot ? toIntOrNull(body.stop_day) : null,
 
-    // finestre (nuove) + compat legacy
     window_before_days: toIntOrNull(body.window_before_days),
     window_after_days: toIntOrNull(body.window_after_days),
-    window_days: toIntOrNull(body.window_days), // legacy; il nuovo form lo manda null
+    window_days: toIntOrNull(body.window_days),
   };
 }
+
 
 /* -------------------- Pagine (EJS) -------------------- */
 app.get("/", (_req, res) => res.render("patient"));
@@ -101,17 +108,46 @@ app.get("/api/studies", async (_req, res) => {
 });
 
 app.post("/api/studies", async (req, res) => {
-  const { data, error } = await supabase
-    .from("studies")
-    .insert([req.body])
-    .select();
+  try {
+    const { arms, ...studyData } = req.body;
 
-  if (error) {
-    console.error("Errore POST /api/studies:", error);
-    return res.status(500).send("Errore creazione studio");
+    // 1) Crea studio
+    const { data: study, error } = await supabase
+      .from("studies")
+      .insert([studyData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Errore POST /api/studies:", error);
+      return res.status(500).send("Errore creazione studio");
+    }
+
+    // 2) Se sono stati inviati bracci → inseriscili
+    if (Array.isArray(arms) && arms.length > 0) {
+      const armsToInsert = arms.map((a, index) => ({
+        study_id: study.id,
+        arm_code: a.arm_code,
+        arm_label: a.arm_label,
+        sort_order: index + 1,
+      }));
+
+      const { error: armsError } = await supabase
+        .from("study_arms")
+        .insert(armsToInsert);
+
+      if (armsError) {
+        console.error("Errore inserimento bracci:", armsError);
+      }
+    }
+
+    res.json(study);
+  } catch (e) {
+    console.error("POST /api/studies exception:", e);
+    res.status(500).send("Errore interno");
   }
-  res.json(data?.[0] || null);
 });
+
 
 app.delete("/api/studies/:id", async (req, res) => {
   const { error } = await supabase
@@ -141,6 +177,21 @@ app.get("/api/studies/:id", async (req, res) => {
     return res.status(500).send("Errore recupero studio");
   }
   res.json(data || null);
+});
+// Lista bracci di uno studio
+app.get("/api/studies/:id/arms", async (req, res) => {
+  const { data, error } = await supabase
+    .from("study_arms")
+    .select("*")
+    .eq("study_id", req.params.id)
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("Errore GET /api/studies/:id/arms:", error);
+    return res.status(500).send("Errore recupero bracci");
+  }
+
+  res.json(data || []);
 });
 
 // Assicurati in alto nel file: app.use(express.json()); (una sola volta)
@@ -256,6 +307,12 @@ app.patch("/api/timeline/:eventId", async (req, res) => {
       notes: toStrOrNull(req.body.notes),
       indications: toStrOrNull(req.body.indications),
       billing: toBillingOrNull(req.body.billing),
+      
+      arm_codes:
+      Array.isArray(req.body.arm_codes) && req.body.arm_codes.length > 0
+        ? req.body.arm_codes
+        : undefined,
+
 
       one_shot:
         req.body.one_shot != null ? toBool(req.body.one_shot) : undefined,

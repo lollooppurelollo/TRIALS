@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const patientTrialListDiv = document.querySelector(
         "#searchResults #trialList",
     );
+    
 
     // ----- Selettori per la Pagina Trial -----
     const studyForm = document.getElementById("studyForm");
@@ -108,6 +109,46 @@ document.addEventListener("DOMContentLoaded", () => {
         "modalTreatmentLineContainer",
     );
     const modalTreatmentLine = document.getElementById("modalTreatmentLine");
+    const studyArmsCount = document.getElementById("studyArmsCount");
+    const studyArmsContainer = document.getElementById("studyArmsContainer");
+    const armsList = document.getElementById("armsList");
+    
+    if (studyArmsCount) {
+      studyArmsCount.addEventListener("change", () => {
+        const count = parseInt(studyArmsCount.value, 10);
+
+        if (count <= 1) {
+          studyArmsContainer.classList.add("hidden");
+          armsList.innerHTML = "";
+          return;
+        }
+
+        studyArmsContainer.classList.remove("hidden");
+        armsList.innerHTML = "";
+
+        const defaultCodes = ["A", "B", "C", "D"];
+
+        for (let i = 0; i < count; i++) {
+          const code = defaultCodes[i] || `ARM${i+1}`;
+
+          const div = document.createElement("div");
+          div.className = "flex space-x-2";
+
+          div.innerHTML = `
+            <input type="text"
+                   class="arm-code p-2 w-1/4 border border-gray-300 rounded-lg"
+                   value="${code}"
+                   readonly>
+
+            <input type="text"
+                   class="arm-label p-2 w-3/4 border border-gray-300 rounded-lg"
+                   placeholder="Nome braccio (es: Sperimentale)">
+          `;
+
+          armsList.appendChild(div);
+        }
+      });
+    }
 
     // ----- Modale Password -----
     const passwordModal = document.createElement("div");
@@ -545,22 +586,41 @@ document.addEventListener("DOMContentLoaded", () => {
                 const selectedSpecificClinicalAreas = Array.from(
                     studySpecificClinicalAreasSelect.selectedOptions,
                 ).map((o) => o.value);
+                const arms = [];
+
+                if (studyArmsCount && parseInt(studyArmsCount.value, 10) > 1) {
+                  document.querySelectorAll("#armsList > div").forEach(div => {
+                    const code = div.querySelector(".arm-code")?.value;
+                    const label = div.querySelector(".arm-label")?.value;
+
+                    if (code && label && label.trim()) {
+                      arms.push({
+                        arm_code: code,
+                        arm_label: label.trim()
+                      });
+                    }
+                  });
+                }
+
                 const newStudy = {
-                    title: studyTitleInput.value,
-                    subtitle: studySubtitleInput.value,
-                    clinical_areas: selectedClinicalAreas,
-                    specific_clinical_areas: selectedSpecificClinicalAreas,
-                    treatment_setting: studyTreatmentSettingSelect.value,
-                    min_treatment_line:
-                        studyTreatmentSettingSelect.value === "Metastatico"
-                            ? parseInt(minTreatmentLineInput.value)
-                            : null,
-                    max_treatment_line:
-                        studyTreatmentSettingSelect.value === "Metastatico"
-                            ? parseInt(maxTreatmentLineInput.value)
-                            : null,
-                    criteria,
+                  title: studyTitleInput.value,
+                  subtitle: studySubtitleInput.value,
+                  clinical_areas: selectedClinicalAreas,
+                  specific_clinical_areas: selectedSpecificClinicalAreas,
+                  treatment_setting: studyTreatmentSettingSelect.value,
+                  min_treatment_line:
+                    studyTreatmentSettingSelect.value === "Metastatico"
+                      ? parseInt(minTreatmentLineInput.value)
+                      : null,
+                  max_treatment_line:
+                    studyTreatmentSettingSelect.value === "Metastatico"
+                      ? parseInt(maxTreatmentLineInput.value)
+                      : null,
+                  criteria,
+                  arms
                 };
+
+
                 await fetch("/api/studies", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
