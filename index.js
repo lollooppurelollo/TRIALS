@@ -114,8 +114,14 @@ app.post("/api/studies", async (req, res) => {
     await client.query("BEGIN");
 
     // 1) Crea studio
+    // NOTA: "criteria" è una colonna JSONB ma arriva come array di oggetti
+    // ({text, type}). La libreria pg converte automaticamente gli array JS
+    // in array Postgres (formato {a,b,c}), NON in JSON: va serializzato a
+    // mano con JSON.stringify prima dell'insert, altrimenti l'insert fallisce.
     const columns = Object.keys(studyData);
-    const values = Object.values(studyData);
+    const values = columns.map((c) =>
+      c === "criteria" ? JSON.stringify(studyData[c] ?? []) : studyData[c],
+    );
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
 
     const insertStudySQL = columns.length
