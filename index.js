@@ -1,12 +1,14 @@
 // index.js
 import express from "express";
 import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
+import pkg from "pg";
 import expressLayouts from "express-ejs-layouts";
 import path from "path";
 import { fileURLToPath } from "url";
 
 dotenv.config();
+
+const { Pool } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,11 +16,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/* -------------------- Supabase -------------------- */
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY, // service_role in ambiente server
-);
+/* -------------------- PostgreSQL -------------------- */
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 /* -------------------- Middleware -------------------- */
 app.set("view engine", "ejs");
@@ -49,7 +50,7 @@ function toStrOrNull(v) {
   return s.length ? s : null;
 }
 
-/** Normalizza il payload che arriva dal form della timeline (solo campi “a giorni”). */
+/** Normalizza il payload che arriva dal form della timeline (solo campi "a giorni"). */
 function sanitizeEvent(body, studyId) {
   const one_shot = toBool(body.one_shot);
 
@@ -83,7 +84,6 @@ function sanitizeEvent(body, studyId) {
   };
 }
 
-
 /* -------------------- Pagine (EJS) -------------------- */
 app.get("/", (_req, res) => res.render("patient"));
 app.get("/trial", (_req, res) => res.render("trial"));
@@ -95,106 +95,95 @@ app.get("/timeline", (req, res) => {
 
 /* -------------------- API STUDIES -------------------- */
 app.get("/api/studies", async (_req, res) => {
-  const { data, error } = await supabase
-    .from("studies")
-    .select("*")
-    .order("created_at", { ascending: true });
-
-  if (error) {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM studies ORDER BY created_at ASC",
+    );
+    res.json(rows || []);
+  } catch (error) {
     console.error("Errore GET /api/studies:", error);
-    return res.status(500).send("Errore recupero studi");
+    res.status(500).send("Errore recupero studi");
   }
-  res.json(data || []);
 });
 
 app.post("/api/studies", async (req, res) => {
+  const client = await pool.connect();
   try {
     const { arms, ...studyData } = req.body;
 
-    // 1) Crea studio
-    const { data: study, error } = await supabase
-      .from("studies")
-      .insert([studyData])
-      .select()
-      .single();
+    await client.query("BEGIN");
 
-    if (error) {
-      console.error("Errore POST /api/studies:", error);
-      return res.status(500).send("Errore creazione studio");
-    }
+    // 1) Crea studio
+    const columns = Object.keys(studyData);
+    const values = Object.values(studyData);
+    const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+
+    const insertStudySQL = columns.length
+      ? `INSERT INTO studies (${columns.join(", ")}) VALUES (${placeholders}) RETURNING *`
+      : `INSERT INTO studies DEFAULT VALUES RETURNING *`;
+
+    const { rows } = await client.query(insertStudySQL, values);
+    const study = rows[0];
 
     // 2) Se sono stati inviati bracci → inseriscili
     if (Array.isArray(arms) && arms.length > 0) {
-      const armsToInsert = arms.map((a, index) => ({
-        study_id: study.id,
-        arm_code: a.arm_code,
-        arm_label: a.arm_label,
-        sort_order: index + 1,
-      }));
-
-      const { error: armsError } = await supabase
-        .from("study_arms")
-        .insert(armsToInsert);
-
-      if (armsError) {
-        console.error("Errore inserimento bracci:", armsError);
+      for (let i = 0; i < arms.length; i++) {
+        const a = arms[i];
+        await client.query(
+          `INSERT INTO study_arms (study_id, arm_code, arm_label, sort_order) VALUES ($1, $2, $3, $4)`,
+          [study.id, a.arm_code, a.arm_label, i + 1],
+        );
       }
     }
 
+    await client.query("COMMIT");
     res.json(study);
   } catch (e) {
+    await client.query("ROLLBACK");
     console.error("POST /api/studies exception:", e);
-    res.status(500).send("Errore interno");
+    res.status(500).send("Errore creazione studio");
+  } finally {
+    client.release();
   }
 });
 
-
 app.delete("/api/studies/:id", async (req, res) => {
-  const { error } = await supabase
-    .from("studies")
-    .delete()
-    .eq("id", req.params.id);
-
-  if (error) {
+  try {
+    await pool.query("DELETE FROM studies WHERE id = $1", [req.params.id]);
+    res.sendStatus(204);
+  } catch (error) {
     console.error("Errore DELETE /api/studies:", error);
-    return res.status(500).send("Errore eliminazione studio");
+    res.status(500).send("Errore eliminazione studio");
   }
-  res.sendStatus(204);
 });
 
 // Leggi uno studio (serve cycle_weeks). Se non esiste → 404 (gestito dal frontend)
 app.get("/api/studies/:id", async (req, res) => {
-  const { data, error } = await supabase
-    .from("studies")
-    .select("*")
-    .eq("id", req.params.id)
-    .single();
-
-  if (error) {
-    // PGRST116 = no rows returned (PostgREST/Supabase)
-    if (error.code === "PGRST116") return res.status(404).send("Not found");
+  try {
+    const { rows } = await pool.query("SELECT * FROM studies WHERE id = $1", [
+      req.params.id,
+    ]);
+    if (rows.length === 0) return res.status(404).send("Not found");
+    res.json(rows[0]);
+  } catch (error) {
     console.error("Errore GET /api/studies/:id:", error);
-    return res.status(500).send("Errore recupero studio");
+    res.status(500).send("Errore recupero studio");
   }
-  res.json(data || null);
 });
+
 // Lista bracci di uno studio
 app.get("/api/studies/:id/arms", async (req, res) => {
-  const { data, error } = await supabase
-    .from("study_arms")
-    .select("*")
-    .eq("study_id", req.params.id)
-    .order("sort_order", { ascending: true });
-
-  if (error) {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM study_arms WHERE study_id = $1 ORDER BY sort_order ASC",
+      [req.params.id],
+    );
+    res.json(rows || []);
+  } catch (error) {
     console.error("Errore GET /api/studies/:id/arms:", error);
-    return res.status(500).send("Errore recupero bracci");
+    res.status(500).send("Errore recupero bracci");
   }
-
-  res.json(data || []);
 });
-
-// Assicurati in alto nel file: app.use(express.json()); (una sola volta)
 
 // PATCH: aggiorna solo le settimane per ciclo se lo studio ESISTE
 app.patch("/api/studies/:id", async (req, res) => {
@@ -224,13 +213,10 @@ app.patch("/api/studies/:id", async (req, res) => {
     }
 
     // 1) verifica che lo studio esista
-    const { data: existing, error: selErr } = await supabase
-      .from("studies")
-      .select("id")
-      .eq("id", id)
-      .single();
-
-    if (selErr || !existing) {
+    const existing = await pool.query("SELECT id FROM studies WHERE id = $1", [
+      id,
+    ]);
+    if (existing.rows.length === 0) {
       return res.status(404).json({ error: "Studio non trovato" });
     }
 
@@ -240,20 +226,18 @@ app.patch("/api/studies/:id", async (req, res) => {
     if (total_weeks !== null) patch.total_weeks = total_weeks;
     if (cost_center !== null) patch.cost_center = cost_center;
 
-    const { data, error: updErr } = await supabase
-      .from("studies")
-      .update(patch)
-      .eq("id", id)
-      .select("cycle_weeks,total_weeks,cost_center")
-      .single();
+    const setCols = Object.keys(patch);
+    const setClause = setCols
+      .map((col, i) => `${col} = $${i + 1}`)
+      .join(", ");
+    const values = setCols.map((col) => patch[col]);
 
-    if (updErr) {
-      console.error("Supabase UPDATE error:", updErr);
-      return res.status(400).json({ error: updErr.message });
-    }
+    const { rows } = await pool.query(
+      `UPDATE studies SET ${setClause} WHERE id = $${setCols.length + 1} RETURNING cycle_weeks, total_weeks, cost_center`,
+      [...values, id],
+    );
 
-    // ritorna i valori aggiornati
-    return res.status(200).json(data);
+    return res.status(200).json(rows[0]);
   } catch (e) {
     console.error("PATCH /api/studies/:id exception:", e);
     return res.status(500).json({ error: "Errore interno" });
@@ -262,57 +246,55 @@ app.patch("/api/studies/:id", async (req, res) => {
 
 /* -------------------- API TIMELINE -------------------- */
 app.get("/api/timeline/:studyId", async (req, res) => {
-  const { data, error } = await supabase
-    .from("study_events")
-    .select("*")
-    .eq("study_id", req.params.studyId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM study_events WHERE study_id = $1 ORDER BY created_at ASC",
+      [req.params.studyId],
+    );
+    res.json(rows || []);
+  } catch (error) {
     console.error("Errore GET /api/timeline:", error);
-    return res.status(500).send("Errore recupero eventi");
+    res.status(500).send("Errore recupero eventi");
   }
-  res.json(data || []);
 });
 
 app.post("/api/timeline/:studyId", async (req, res) => {
-  const event = sanitizeEvent(req.body, req.params.studyId);
+  try {
+    const event = sanitizeEvent(req.body, req.params.studyId);
+    const columns = Object.keys(event);
+    const values = columns.map((c) =>
+      c === "arm_codes" ? event[c] : event[c],
+    );
+    const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
 
-  const { data, error } = await supabase
-    .from("study_events")
-    .insert([event])
-    .select();
+    const { rows } = await pool.query(
+      `INSERT INTO study_events (${columns.join(", ")}) VALUES (${placeholders}) RETURNING *`,
+      values,
+    );
 
-  if (error) {
-    console.error("Errore POST /api/timeline:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-      payload: event,
-    });
-    return res.status(500).send("Errore creazione evento");
+    res.json(rows[0] || null);
+  } catch (error) {
+    console.error("Errore POST /api/timeline:", error);
+    res.status(500).send("Errore creazione evento");
   }
-  res.json(data?.[0] || null);
 });
+
 // PATCH: aggiorna un evento esistente (niente più DELETE+POST)
 app.patch("/api/timeline/:eventId", async (req, res) => {
   try {
     const eventId = req.params.eventId;
 
-    // Costruiamo patch solo con campi permessi
-    const patch = {
+    const rawPatch = {
       event_type: req.body.event_type ?? undefined,
       title: toStrOrNull(req.body.title),
       notes: toStrOrNull(req.body.notes),
       indications: toStrOrNull(req.body.indications),
       billing: toBillingOrNull(req.body.billing),
-      
-      arm_codes:
-      Array.isArray(req.body.arm_codes) && req.body.arm_codes.length > 0
-        ? req.body.arm_codes
-        : undefined,
 
+      arm_codes:
+        Array.isArray(req.body.arm_codes) && req.body.arm_codes.length > 0
+          ? req.body.arm_codes
+          : undefined,
 
       one_shot:
         req.body.one_shot != null ? toBool(req.body.one_shot) : undefined,
@@ -344,28 +326,32 @@ app.patch("/api/timeline/:eventId", async (req, res) => {
           : undefined,
     };
 
-    // Rimuovi undefined (Supabase update non deve riceverli)
-    Object.keys(patch).forEach(
-      (k) => patch[k] === undefined && delete patch[k],
-    );
+    // Rimuovi undefined
+    const patch = {};
+    Object.keys(rawPatch).forEach((k) => {
+      if (rawPatch[k] !== undefined) patch[k] = rawPatch[k];
+    });
 
     if (Object.keys(patch).length === 0) {
       return res.status(400).json({ error: "Niente da aggiornare" });
     }
 
-    const { data, error } = await supabase
-      .from("study_events")
-      .update(patch)
-      .eq("id", eventId)
-      .select("*")
-      .single();
+    const setCols = Object.keys(patch);
+    const setClause = setCols
+      .map((col, i) => `${col} = $${i + 1}`)
+      .join(", ");
+    const values = setCols.map((col) => patch[col]);
 
-    if (error) {
-      console.error("Errore PATCH /api/timeline/:eventId:", error);
-      return res.status(400).json({ error: error.message });
+    const { rows } = await pool.query(
+      `UPDATE study_events SET ${setClause} WHERE id = $${setCols.length + 1} RETURNING *`,
+      [...values, eventId],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Evento non trovato" });
     }
 
-    return res.status(200).json(data);
+    return res.status(200).json(rows[0]);
   } catch (e) {
     console.error("PATCH /api/timeline/:eventId exception:", e);
     return res.status(500).json({ error: "Errore interno" });
@@ -373,33 +359,31 @@ app.patch("/api/timeline/:eventId", async (req, res) => {
 });
 
 app.delete("/api/timeline/:eventId", async (req, res) => {
-  const { error } = await supabase
-    .from("study_events")
-    .delete()
-    .eq("id", req.params.eventId);
-
-  if (error) {
+  try {
+    await pool.query("DELETE FROM study_events WHERE id = $1", [
+      req.params.eventId,
+    ]);
+    res.sendStatus(204);
+  } catch (error) {
     console.error("Errore DELETE /api/timeline:", error);
-    return res.status(500).send("Errore eliminazione evento");
+    res.status(500).send("Errore eliminazione evento");
   }
-  res.sendStatus(204);
 });
 
 /* -------------------- API TIMELINE OVERRIDES -------------------- */
 
 // Lista override per studio
 app.get("/api/timeline-overrides/:studyId", async (req, res) => {
-  const { data, error } = await supabase
-    .from("study_event_overrides")
-    .select("*")
-    .eq("study_id", req.params.studyId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM study_event_overrides WHERE study_id = $1 ORDER BY created_at ASC",
+      [req.params.studyId],
+    );
+    res.json(rows || []);
+  } catch (error) {
     console.error("Errore GET /api/timeline-overrides:", error);
-    return res.status(500).send("Errore recupero overrides");
+    res.status(500).send("Errore recupero overrides");
   }
-  res.json(data || []);
 });
 
 // Crea o aggiorna override per (event_id, day_index)
@@ -439,19 +423,25 @@ app.post("/api/timeline-overrides/:studyId", async (req, res) => {
         .json({ error: "Override vuoto: niente da salvare" });
     }
 
-    // UPSERT su (event_id, day_index)
-    const { data, error } = await supabase
-      .from("study_event_overrides")
-      .upsert([patch], { onConflict: "event_id,day_index" })
-      .select("*")
-      .single();
+    // UPSERT su (event_id, day_index) - richiede un vincolo UNIQUE su quelle colonne
+    const columns = Object.keys(patch);
+    const values = Object.values(patch);
+    const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+    const updateSet = columns
+      .filter((c) => c !== "event_id" && c !== "day_index")
+      .map((c) => `${c} = EXCLUDED.${c}`)
+      .join(", ");
 
-    if (error) {
-      console.error("Errore POST /api/timeline-overrides:", error);
-      return res.status(400).json({ error: error.message });
-    }
+    const { rows } = await pool.query(
+      `INSERT INTO study_event_overrides (${columns.join(", ")})
+       VALUES (${placeholders})
+       ON CONFLICT (event_id, day_index)
+       DO UPDATE SET ${updateSet}
+       RETURNING *`,
+      values,
+    );
 
-    res.status(200).json(data);
+    res.status(200).json(rows[0]);
   } catch (e) {
     console.error("POST /api/timeline-overrides exception:", e);
     return res.status(500).json({ error: "Errore interno" });
@@ -460,16 +450,15 @@ app.post("/api/timeline-overrides/:studyId", async (req, res) => {
 
 // Cancella override per id
 app.delete("/api/timeline-overrides/:overrideId", async (req, res) => {
-  const { error } = await supabase
-    .from("study_event_overrides")
-    .delete()
-    .eq("id", req.params.overrideId);
-
-  if (error) {
+  try {
+    await pool.query("DELETE FROM study_event_overrides WHERE id = $1", [
+      req.params.overrideId,
+    ]);
+    res.sendStatus(204);
+  } catch (error) {
     console.error("Errore DELETE /api/timeline-overrides:", error);
-    return res.status(500).send("Errore eliminazione override");
+    res.status(500).send("Errore eliminazione override");
   }
-  res.sendStatus(204);
 });
 
 /* -------------------- Health & diagnostica -------------------- */
