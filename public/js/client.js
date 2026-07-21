@@ -174,6 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmPasswordBtn = document.getElementById("confirmPasswordBtn");
     let passwordCallback = null;
 
+    // La password NON viene più verificata solo qui nel browser (era
+    // bypassabile da chiunque). Ora viene solo memorizzata e inviata
+    // al server con ogni richiesta di modifica: è il server a deciderne
+    // la validità (vedi authFetch più sotto e requireEditAuth in index.js).
+    window._editPwd = window._editPwd || null;
+
     function showPasswordModal(callback) {
         passwordCallback = callback;
         passwordInput.value = "";
@@ -183,14 +189,54 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelPasswordBtn.addEventListener("click", () =>
         passwordModal.classList.add("hidden"),
     );
-    confirmPasswordBtn.addEventListener("click", () => {
-        if (passwordInput.value === "TRIAL") {
-            passwordModal.classList.add("hidden");
-            if (passwordCallback) passwordCallback();
-        } else {
+    confirmPasswordBtn.addEventListener("click", async () => {
+        const typed = passwordInput.value;
+        try {
+            const res = await fetch("/api/verify-password", {
+                method: "POST",
+                headers: { "x-edit-password": typed },
+            });
+            if (res.ok) {
+                window._editPwd = typed;
+                passwordModal.classList.add("hidden");
+                if (passwordCallback) passwordCallback();
+            } else {
+                passwordError.classList.remove("hidden");
+            }
+        } catch (err) {
+            console.error("Errore verifica password:", err);
             passwordError.classList.remove("hidden");
         }
     });
+
+    // Helper: fetch che allega la password di modifica come header.
+    // Se il server risponde 403 (password sbagliata), mostra di nuovo
+    // il modale invece di far finta che l'operazione sia riuscita.
+    async function authFetch(url, options = {}) {
+        const headers = {
+            ...(options.headers || {}),
+            "x-edit-password": window._editPwd || "",
+        };
+        const res = await fetch(url, { ...options, headers });
+        if (res.status === 403) {
+            window._editPwd = null;
+            alert("Password di modifica errata. Riprova.");
+        }
+        return res;
+    }
+
+    // Escaping HTML di base: usato ovunque un testo inserito da un utente
+    // (titolo studio, nome braccio, ecc.) finisce dentro innerHTML, per
+    // evitare che simboli come < > vengano interpretati come codice.
+    function escapeHtml(str) {
+        return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        })[c]);
+    }
     // =====================================================
     // IMPORT STUDIO (JSON da ChatGPT) -> PRECOMPILA IL FORM
     // =====================================================
@@ -621,11 +667,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
 
-                await fetch("/api/studies", {
+                const response = await authFetch("/api/studies", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newStudy),
                 });
+                if (!response.ok) return; // password errata o altro errore: non resettare il form
                 studyForm.reset();
                 studySpecificClinicalAreaContainer.classList.add("hidden");
                 studyTreatmentLineContainer.classList.add("hidden");
@@ -688,17 +735,23 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className =
             "bg-white p-6 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-200";
         card.dataset.studyId = study.id;
+        // NOTA SICUREZZA: titolo/sottotitolo sono testo inserito da un utente
+        // (chi crea lo studio) e vanno sempre passati da escapeHtml() prima
+        // di finire dentro innerHTML, altrimenti un titolo malevolo potrebbe
+        // eseguire codice nel browser di chi consulta l'app (XSS).
+        const safeTitle = escapeHtml(study.title);
+        const safeSubtitle = escapeHtml(study.subtitle);
         let content = `
             <div>
-                <h4 class="font-bold text-dark-gray">${study.title}</h4>
-                <p class="text-sm text-gray-600">${study.subtitle}</p>
+                <h4 class="font-bold text-dark-gray">${safeTitle}</h4>
+                <p class="text-sm text-gray-600">${safeSubtitle}</p>
             </div>`;
         if (page === "trial") {
             content = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-bold text-dark-gray">${study.title}</h4>
-                        <p class="text-sm text-gray-600">${study.subtitle}</p>
+                        <h4 class="font-bold text-dark-gray">${safeTitle}</h4>
+                        <p class="text-sm text-gray-600">${safeSubtitle}</p>
                     </div>
                     <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors" data-id="${study.id}"><i class="fas fa-trash-alt"></i></button>
                 </div>`;
@@ -716,7 +769,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     e.stopPropagation();
                     const id = e.target.closest(".remove-study-btn").dataset.id;
                     showPasswordModal(async () => {
-                        await fetch(`/api/studies/${id}`, { method: "DELETE" });
+                        await authFetch(`/api/studies/${id}`, { method: "DELETE" });
                         fetchAndRenderTrials();
                     });
                 });
