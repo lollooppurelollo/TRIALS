@@ -2,6 +2,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import pkg from "pg";
+import rateLimit from "express-rate-limit";
 import expressLayouts from "express-ejs-layouts";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -20,6 +21,69 @@ const PORT = process.env.PORT || 3000;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
+
+/* -------------------- Autenticazione modifiche (server-side) --------------
+ * La password non è più verificata solo nel browser (bypassabile da
+ * chiunque ispezioni il JS o chiami le API direttamente). Ogni richiesta
+ * che CREA/MODIFICA/CANCELLA dati deve includere l'header
+ * "x-edit-password" con il valore corretto, verificato qui sul server.
+ * La password si imposta come variabile d'ambiente EDIT_PASSWORD
+ * (su Coolify: Environment Variables), MAI nel codice.
+ */
+const EDIT_PASSWORD = process.env.EDIT_PASSWORD || null;
+
+// Limite tentativi: la password è unica e condivisa, quindi senza un
+// limite qualcuno potrebbe provarla a forza bruta chiamando le API
+// direttamente. Max 20 tentativi ogni 15 minuti per indirizzo IP.
+const editAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Troppi tentativi. Riprova tra qualche minuto." },
+});
+
+function requireEditAuth(req, res, next) {
+  if (!EDIT_PASSWORD) {
+    console.error(
+      "EDIT_PASSWORD non configurata: tutte le operazioni di modifica sono bloccate per sicurezza.",
+    );
+    return res.status(503).json({
+      error:
+        "Modifica non disponibile: password di modifica non configurata sul server.",
+    });
+  }
+  const provided = req.get("x-edit-password");
+  if (provided !== EDIT_PASSWORD) {
+    return res.status(403).json({ error: "Password non valida." });
+  }
+  next();
+}
+
+/* -------------------- Whitelist valori enum (validazione server-side) --------------
+ * Il frontend valida già questi campi, ma un client "onesto" non è l'unico
+ * modo di raggiungere le API: chiunque può chiamarle direttamente. Questi
+ * controlli sono una seconda linea di difesa lato server.
+ */
+const ALLOWED_CLINICAL_AREAS = [
+  "Mammella",
+  "Polmone",
+  "Gastro-Intestinale",
+  "Ginecologico",
+  "Prostata e Vie Urinarie",
+  "Melanoma e Cute",
+  "Testa-Collo",
+  "Fase 1",
+  "Altro",
+];
+const ALLOWED_TREATMENT_SETTINGS = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+const ALLOWED_EVENT_TYPES = [
+  "oncological_visit",
+  "blood_test",
+  "radiology",
+  "therapy",
+  "custom",
+];
 
 /* -------------------- Middleware -------------------- */
 app.set("view engine", "ejs");
@@ -93,6 +157,15 @@ app.get("/timeline", (req, res) => {
   res.render("timeline", { studyId });
 });
 
+/* -------------------- API AUTH -------------------- */
+// Endpoint leggero usato dal modale password: risponde 200 se l'header
+// x-edit-password è corretto, 403 altrimenti. Non modifica nulla, serve
+// solo a dare un feedback immediato ("password errata") come prima,
+// ma verificato davvero sul server invece che nel browser.
+app.post("/api/verify-password", editAuthLimiter, requireEditAuth, (_req, res) => {
+  res.json({ ok: true });
+});
+
 /* -------------------- API STUDIES -------------------- */
 app.get("/api/studies", async (_req, res) => {
   try {
@@ -106,10 +179,33 @@ app.get("/api/studies", async (_req, res) => {
   }
 });
 
-app.post("/api/studies", async (req, res) => {
+app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     const { arms, ...studyData } = req.body;
+
+    // Validazione server-side (seconda linea di difesa oltre al frontend)
+    if (!toStrOrNull(studyData.title)) {
+      client.release();
+      return res.status(400).json({ error: "Il titolo dello studio è obbligatorio." });
+    }
+    if (
+      studyData.clinical_areas !== undefined &&
+      (!Array.isArray(studyData.clinical_areas) ||
+        !studyData.clinical_areas.every((a) => ALLOWED_CLINICAL_AREAS.includes(a)))
+    ) {
+      client.release();
+      return res.status(400).json({ error: "clinical_areas contiene valori non validi." });
+    }
+    if (
+      studyData.treatment_setting !== undefined &&
+      studyData.treatment_setting !== null &&
+      studyData.treatment_setting !== "" &&
+      !ALLOWED_TREATMENT_SETTINGS.includes(studyData.treatment_setting)
+    ) {
+      client.release();
+      return res.status(400).json({ error: "treatment_setting non valido." });
+    }
 
     await client.query("BEGIN");
 
@@ -153,7 +249,7 @@ app.post("/api/studies", async (req, res) => {
   }
 });
 
-app.delete("/api/studies/:id", async (req, res) => {
+app.delete("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     await pool.query("DELETE FROM studies WHERE id = $1", [req.params.id]);
     res.sendStatus(204);
@@ -192,15 +288,23 @@ app.get("/api/studies/:id/arms", async (req, res) => {
 });
 
 // PATCH: aggiorna solo le settimane per ciclo se lo studio ESISTE
-app.patch("/api/studies/:id", async (req, res) => {
+app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const id = req.params.id;
 
     const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
     const total_weeks = toIntOrNull(req.body.total_weeks);
     const cost_center = toStrOrNull(req.body.cost_center);
-    // deve arrivare almeno uno dei due
-    if (cycle_weeks === null && total_weeks === null && cost_center === null) {
+
+    // NOTA: prima si controllava solo "=== null", ma questo impediva di
+    // svuotare volontariamente il centro di costo (cost_center: "" -> null
+    // dopo la sanitizzazione, indistinguibile da "campo non inviato").
+    // Ora controlliamo se il campo era DAVVERO presente nella richiesta.
+    const bodyHasCycle = Object.prototype.hasOwnProperty.call(req.body, "cycle_weeks");
+    const bodyHasTotal = Object.prototype.hasOwnProperty.call(req.body, "total_weeks");
+    const bodyHasCostCenter = Object.prototype.hasOwnProperty.call(req.body, "cost_center");
+
+    if (!bodyHasCycle && !bodyHasTotal && !bodyHasCostCenter) {
       return res.status(400).json({ error: "Niente da aggiornare" });
     }
 
@@ -226,11 +330,12 @@ app.patch("/api/studies/:id", async (req, res) => {
       return res.status(404).json({ error: "Studio non trovato" });
     }
 
-    // 2) update solo dei campi presenti
+    // 2) update solo dei campi presenti nella richiesta originale
+    // (cost_center può legittimamente essere impostato a null/"" per svuotarlo)
     const patch = {};
-    if (cycle_weeks !== null) patch.cycle_weeks = cycle_weeks;
-    if (total_weeks !== null) patch.total_weeks = total_weeks;
-    if (cost_center !== null) patch.cost_center = cost_center;
+    if (bodyHasCycle) patch.cycle_weeks = cycle_weeks;
+    if (bodyHasTotal) patch.total_weeks = total_weeks;
+    if (bodyHasCostCenter) patch.cost_center = cost_center;
 
     const setCols = Object.keys(patch);
     const setClause = setCols
@@ -264,8 +369,11 @@ app.get("/api/timeline/:studyId", async (req, res) => {
   }
 });
 
-app.post("/api/timeline/:studyId", async (req, res) => {
+app.post("/api/timeline/:studyId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
+    if (!ALLOWED_EVENT_TYPES.includes(req.body.event_type)) {
+      return res.status(400).json({ error: "event_type non valido." });
+    }
     const event = sanitizeEvent(req.body, req.params.studyId);
     const columns = Object.keys(event);
     const values = columns.map((c) =>
@@ -286,9 +394,16 @@ app.post("/api/timeline/:studyId", async (req, res) => {
 });
 
 // PATCH: aggiorna un evento esistente (niente più DELETE+POST)
-app.patch("/api/timeline/:eventId", async (req, res) => {
+app.patch("/api/timeline/:eventId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const eventId = req.params.eventId;
+
+    if (
+      req.body.event_type !== undefined &&
+      !ALLOWED_EVENT_TYPES.includes(req.body.event_type)
+    ) {
+      return res.status(400).json({ error: "event_type non valido." });
+    }
 
     const rawPatch = {
       event_type: req.body.event_type ?? undefined,
@@ -364,7 +479,7 @@ app.patch("/api/timeline/:eventId", async (req, res) => {
   }
 });
 
-app.delete("/api/timeline/:eventId", async (req, res) => {
+app.delete("/api/timeline/:eventId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     await pool.query("DELETE FROM study_events WHERE id = $1", [
       req.params.eventId,
@@ -393,7 +508,7 @@ app.get("/api/timeline-overrides/:studyId", async (req, res) => {
 });
 
 // Crea o aggiorna override per (event_id, day_index)
-app.post("/api/timeline-overrides/:studyId", async (req, res) => {
+app.post("/api/timeline-overrides/:studyId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const studyId = req.params.studyId;
 
@@ -455,7 +570,7 @@ app.post("/api/timeline-overrides/:studyId", async (req, res) => {
 });
 
 // Cancella override per id
-app.delete("/api/timeline-overrides/:overrideId", async (req, res) => {
+app.delete("/api/timeline-overrides/:overrideId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     await pool.query("DELETE FROM study_event_overrides WHERE id = $1", [
       req.params.overrideId,
