@@ -174,12 +174,7 @@
       </div>
     </div>
     <div class="mt-3">
-      <label class="block text-sm font-medium text-dark-gray">Filtro braccio</label>
-      <select id="tlArmFilter"
-              class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-        <option value="ALL">Tutti i bracci</option>
-      </select>
-      <p class="text-xs text-gray-400 mt-1">Mostra tutti gli eventi o solo quelli di un braccio.</p>
+      <p class="text-xs text-gray-400">Il filtro per braccio si trova ora accanto al pulsante "Piano eventi", sopra il calendario.</p>
     </div>
 
     <!-- 🔥 INSERISCI QUI IL CENTRO DI COSTO -->
@@ -210,15 +205,25 @@
 
     <!-- Timeline (calendario) -->
     <section class="bg-white p-4 rounded-xl shadow-md">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h2 class="text-lg font-bold text-dark-gray">Timeline</h2>
 
-        <!-- Bottone apri/chiudi pannello destro (visibile bene su desktop) -->
-        <button id="tlToggleSideBtn"
-                class="hidden lg:inline-flex items-center gap-2 bg-white border border-gray-300 text-dark-gray font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 shadow-sm">
-          <span id="tlToggleSideIcon">📋</span>
-          <span id="tlToggleSideLabel">Chiudi piano eventi</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- Filtro braccio: spostato qui, accanto al bottone, per un accesso rapido
+               senza dover scorrere fino al pannello "Controlli timeline" -->
+          <select id="tlArmFilter"
+                  title="Filtra il piano eventi per braccio"
+                  class="text-sm p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+            <option value="ALL">Tutti i bracci</option>
+          </select>
+
+          <!-- Bottone apri/chiudi pannello destro (visibile bene su desktop) -->
+          <button id="tlToggleSideBtn"
+                  class="hidden lg:inline-flex items-center gap-2 bg-white border border-gray-300 text-dark-gray font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 shadow-sm">
+            <span id="tlToggleSideIcon">📋</span>
+            <span id="tlToggleSideLabel">Chiudi piano eventi</span>
+          </button>
+        </div>
       </div>
 
       <div id="tlTimeline" class="space-y-4"></div>
@@ -430,6 +435,40 @@
   const STUDY_ID = "<%= typeof studyId !== 'undefined' ? studyId : '' %>";
 
   /* -------------- Helpers -------------- */
+
+  // Escaping HTML di base: usato ovunque un testo inserito da un utente
+  // (nome braccio, titolo/note evento, ecc.) finisce dentro innerHTML,
+  // per evitare che simboli come < > vengano interpretati come codice
+  // (rischio XSS se non applicato).
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[c]);
+  }
+
+  // Password di modifica: non più verificata solo nel browser (era
+  // bypassabile). Viene memorizzata qui e inviata come header
+  // "x-edit-password" con ogni richiesta di modifica; il server
+  // (requireEditAuth in index.js) decide se è corretta.
+  window._editPwd = window._editPwd || null;
+
+  async function authFetch(url, options = {}) {
+    const headers = {
+      ...(options.headers || {}),
+      "x-edit-password": window._editPwd || "",
+    };
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 403) {
+      window._editPwd = null;
+      alert("Password di modifica errata. Riprova.");
+    }
+    return res;
+  }
+
   const chipClass = (t) => ({
     oncological_visit: "chip chip-oncological_visit",
     blood_test: "chip chip-blood_test",
@@ -693,14 +732,16 @@
       // se non c'è override, non c'è niente da salvare: ok
       if (!existing) return true;
 
-      const delRes = await fetch(`/api/timeline-overrides/${existing.id}`, {
+      const delRes = await authFetch(`/api/timeline-overrides/${existing.id}`, {
         method: "DELETE",
       });
 
       if (!delRes.ok) {
-        const txt = await delRes.text().catch(() => "");
-        console.error("delete override failed", delRes.status, txt);
-        alert("Errore salvataggio solvenza (DELETE override)");
+        if (delRes.status !== 403) {
+          const txt = await delRes.text().catch(() => "");
+          console.error("delete override failed", delRes.status, txt);
+          alert("Errore salvataggio solvenza (DELETE override)");
+        }
         return false;
       }
 
@@ -714,16 +755,18 @@
       billing: normalized,
     };
 
-    const res = await fetch(`/api/timeline-overrides/${STUDY_ID}`, {
+    const res = await authFetch(`/api/timeline-overrides/${STUDY_ID}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.error("saveOverrideBilling failed", res.status, txt);
-      alert("Errore salvataggio solvenza (POST override)");
+      if (res.status !== 403) {
+        const txt = await res.text().catch(() => "");
+        console.error("saveOverrideBilling failed", res.status, txt);
+        alert("Errore salvataggio solvenza (POST override)");
+      }
       return false;
     }
 
@@ -777,7 +820,7 @@
     // 1) Dropdown filtro
     if (tlArmFilter) {
       tlArmFilter.innerHTML = `<option value="ALL">Tutti i bracci</option>` +
-        _arms.map(a => `<option value="${a.arm_code}">${a.arm_label}</option>`).join("");
+        _arms.map(a => `<option value="${escapeHtml(a.arm_code)}">${escapeHtml(a.arm_label)}</option>`).join("");
 
       tlArmFilter.value = _selectedArm || "ALL";
     }
@@ -787,8 +830,8 @@
       // Checkbox "ALL" non serve: se niente selezionato => ALL.
       evArmsWrap.innerHTML = _arms.map(a => `
         <label class="inline-flex items-center gap-2">
-          <input type="checkbox" class="rounded" data-arm-code="${a.arm_code}">
-          <span>${a.arm_label}</span>
+          <input type="checkbox" class="rounded" data-arm-code="${escapeHtml(a.arm_code)}">
+          <span>${escapeHtml(a.arm_label)}</span>
         </label>
       `).join("");
     }
@@ -930,11 +973,22 @@
   }
 
   tlCancelPwdBtn.addEventListener("click", hidePwdModal);
-  tlConfirmPwdBtn.addEventListener("click", () => {
-    if (tlPwdInput.value === "TRIAL") {
-      hidePwdModal();
-      if (_pendingAction) runPendingAction(_pendingAction);
-    } else {
+  tlConfirmPwdBtn.addEventListener("click", async () => {
+    const typed = tlPwdInput.value;
+    try {
+      const res = await fetch("/api/verify-password", {
+        method: "POST",
+        headers: { "x-edit-password": typed },
+      });
+      if (res.ok) {
+        window._editPwd = typed;
+        hidePwdModal();
+        if (_pendingAction) runPendingAction(_pendingAction);
+      } else {
+        tlPwdError.classList.remove("hidden");
+      }
+    } catch (err) {
+      console.error("Errore verifica password:", err);
       tlPwdError.classList.remove("hidden");
     }
   });
@@ -1012,10 +1066,10 @@
         <div class="flex justify-between gap-3">
           <div>
              <div class="flex items-center gap-2">
-              <div class="font-bold text-dark-gray">${eventTitle(ev)}</div>
+              <div class="font-bold text-dark-gray">${escapeHtml(eventTitle(ev))}</div>
               ${
                 ev.billing
-                  ? `<span class="text-[10px] px-2 py-[2px] rounded-full border border-gray-300 text-gray-700 bg-white">${ev.billing}</span>`
+                  ? `<span class="text-[10px] px-2 py-[2px] rounded-full border border-gray-300 text-gray-700 bg-white">${escapeHtml(ev.billing)}</span>`
                   : ``
               }
             </div>
@@ -1031,8 +1085,8 @@
             : ""
           }
         </div>
-        ${ev.notes ? `<div class="mt-1 text-sm text-gray-700">${ev.notes}</div>` : ""}
-        ${ev.indications ? `<div class="mt-1 text-xs text-gray-500"><strong>Indicazioni:</strong> ${ev.indications}</div>` : ""}
+        ${ev.notes ? `<div class="mt-1 text-sm text-gray-700">${escapeHtml(ev.notes)}</div>` : ""}
+        ${ev.indications ? `<div class="mt-1 text-xs text-gray-500"><strong>Indicazioni:</strong> ${escapeHtml(ev.indications)}</div>` : ""}
       `;
       tlEventsList.appendChild(card);
     });
@@ -1241,18 +1295,18 @@
   }
 
   async function createEvent(ev) {
-    const res = await fetch(`/api/timeline/${STUDY_ID}`, {
+    const res = await authFetch(`/api/timeline/${STUDY_ID}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ev),
     });
-    if (!res.ok) { alert("Errore salvataggio"); return false; }
+    if (!res.ok) { if (res.status !== 403) alert("Errore salvataggio"); return false; }
     return true;
   }
 
   async function deleteEvent(id) {
-    const res = await fetch(`/api/timeline/${id}`, { method: "DELETE" });
-    if (!res.ok) { alert("Errore eliminazione"); return false; }
+    const res = await authFetch(`/api/timeline/${id}`, { method: "DELETE" });
+    if (!res.ok) { if (res.status !== 403) alert("Errore eliminazione"); return false; }
     return true;
   }
   async function loadStudySettings() {
@@ -1294,16 +1348,18 @@
     if (Number.isInteger(newCycleWeeks)) body.cycle_weeks = newCycleWeeks;
     if (Number.isInteger(newTotalWeeks)) body.total_weeks = newTotalWeeks;
 
-    const res = await fetch(`/api/studies/${STUDY_ID}`, {
+    const res = await authFetch(`/api/studies/${STUDY_ID}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.error("PATCH /api/studies failed:", res.status, txt);
-      alert("Errore salvataggio impostazioni studio");
+      if (res.status !== 403) {
+        const txt = await res.text().catch(() => "");
+        console.error("PATCH /api/studies failed:", res.status, txt);
+        alert("Errore salvataggio impostazioni studio");
+      }
       return false;
     }
 
@@ -1318,16 +1374,18 @@
 
     const value = (tlCostCenter?.value || "").trim();
 
-    const res = await fetch(`/api/studies/${STUDY_ID}`, {
+    const res = await authFetch(`/api/studies/${STUDY_ID}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cost_center: value }),
     });
 
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.error("PATCH /api/studies (cost_center) failed:", res.status, txt);
-      alert("Errore salvataggio Centro di costo");
+      if (res.status !== 403) {
+        const txt = await res.text().catch(() => "");
+        console.error("PATCH /api/studies (cost_center) failed:", res.status, txt);
+        alert("Errore salvataggio Centro di costo");
+      }
       return false;
     }
 
