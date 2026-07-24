@@ -158,10 +158,6 @@ app.get("/timeline", (req, res) => {
 });
 
 /* -------------------- API AUTH -------------------- */
-// Endpoint leggero usato dal modale password: risponde 200 se l'header
-// x-edit-password è corretto, 403 altrimenti. Non modifica nulla, serve
-// solo a dare un feedback immediato ("password errata") come prima,
-// ma verificato davvero sul server invece che nel browser.
 app.post("/api/verify-password", editAuthLimiter, requireEditAuth, (_req, res) => {
   res.json({ ok: true });
 });
@@ -182,13 +178,29 @@ app.get("/api/studies", async (_req, res) => {
 app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { arms, ...studyData } = req.body;
+    const { arms, study_code, ...studyData } = req.body;
 
-    // Validazione server-side (seconda linea di difesa oltre al frontend)
+    // Validazione server-side
     if (!toStrOrNull(studyData.title)) {
       client.release();
       return res.status(400).json({ error: "Il titolo dello studio è obbligatorio." });
     }
+
+    // Controllo unicità study_code (se inserito)
+    const cleanCode = study_code && study_code.trim() !== '' ? study_code.trim() : null;
+    if (cleanCode) {
+      const checkCode = await client.query(
+        'SELECT id FROM studies WHERE LOWER(study_code) = LOWER($1) AND id != $2',
+        [cleanCode, studyData.id || 0]
+      );
+      if (checkCode.rows.length > 0) {
+        client.release();
+        return res.status(400).json({ 
+          error: `Il codice studio "${cleanCode}" è già in uso su un altro studio.` 
+        });
+      }
+    }
+
     if (
       studyData.clinical_areas !== undefined &&
       (!Array.isArray(studyData.clinical_areas) ||
@@ -209,14 +221,11 @@ app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
 
     await client.query("BEGIN");
 
-    // 1) Crea studio
-    // NOTA: "criteria" è una colonna JSONB ma arriva come array di oggetti
-    // ({text, type}). La libreria pg converte automaticamente gli array JS
-    // in array Postgres (formato {a,b,c}), NON in JSON: va serializzato a
-    // mano con JSON.stringify prima dell'insert, altrimenti l'insert fallisce.
-    const columns = Object.keys(studyData);
+    // Prepara i dati inclusi study_code
+    const fullData = { ...studyData, study_code: cleanCode };
+    const columns = Object.keys(fullData);
     const values = columns.map((c) =>
-      c === "criteria" ? JSON.stringify(studyData[c] ?? []) : studyData[c],
+      c === "criteria" ? JSON.stringify(fullData[c] ?? []) : fullData[c],
     );
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
 
@@ -227,7 +236,7 @@ app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
     const { rows } = await client.query(insertStudySQL, values);
     const study = rows[0];
 
-    // 2) Se sono stati inviati bracci → inseriscili
+    // Se sono stati inviati bracci → inseriscili
     if (Array.isArray(arms) && arms.length > 0) {
       for (let i = 0; i < arms.length; i++) {
         const a = arms[i];
@@ -259,7 +268,7 @@ app.delete("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res
   }
 });
 
-// Leggi uno studio (serve cycle_weeks). Se non esiste → 404 (gestito dal frontend)
+// Leggi uno studio
 app.get("/api/studies/:id", async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT * FROM studies WHERE id = $1", [
@@ -287,7 +296,7 @@ app.get("/api/studies/:id/arms", async (req, res) => {
   }
 });
 
-// PATCH: aggiorna solo le settimane per ciclo se lo studio ESISTE
+// PATCH: aggiorna i dati dello studio
 app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const id = req.params.id;
@@ -296,10 +305,6 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
     const total_weeks = toIntOrNull(req.body.total_weeks);
     const cost_center = toStrOrNull(req.body.cost_center);
 
-    // NOTA: prima si controllava solo "=== null", ma questo impediva di
-    // svuotare volontariamente il centro di costo (cost_center: "" -> null
-    // dopo la sanitizzazione, indistinguibile da "campo non inviato").
-    // Ora controlliamo se il campo era DAVVERO presente nella richiesta.
     const bodyHasCycle = Object.prototype.hasOwnProperty.call(req.body, "cycle_weeks");
     const bodyHasTotal = Object.prototype.hasOwnProperty.call(req.body, "total_weeks");
     const bodyHasCostCenter = Object.prototype.hasOwnProperty.call(req.body, "cost_center");
@@ -308,7 +313,6 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
       return res.status(400).json({ error: "Niente da aggiornare" });
     }
 
-    // validazioni
     if (
       cycle_weeks !== null &&
       (!Number.isInteger(cycle_weeks) || cycle_weeks < 1 || cycle_weeks > 12)
@@ -322,7 +326,6 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
       return res.status(400).json({ error: "total_weeks non valido" });
     }
 
-    // 1) verifica che lo studio esista
     const existing = await pool.query("SELECT id FROM studies WHERE id = $1", [
       id,
     ]);
@@ -330,8 +333,6 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
       return res.status(404).json({ error: "Studio non trovato" });
     }
 
-    // 2) update solo dei campi presenti nella richiesta originale
-    // (cost_center può legittimamente essere impostato a null/"" per svuotarlo)
     const patch = {};
     if (bodyHasCycle) patch.cycle_weeks = cycle_weeks;
     if (bodyHasTotal) patch.total_weeks = total_weeks;
@@ -393,7 +394,6 @@ app.post("/api/timeline/:studyId", editAuthLimiter, requireEditAuth, async (req,
   }
 });
 
-// PATCH: aggiorna un evento esistente (niente più DELETE+POST)
 app.patch("/api/timeline/:eventId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const eventId = req.params.eventId;
@@ -447,7 +447,6 @@ app.patch("/api/timeline/:eventId", editAuthLimiter, requireEditAuth, async (req
           : undefined,
     };
 
-    // Rimuovi undefined
     const patch = {};
     Object.keys(rawPatch).forEach((k) => {
       if (rawPatch[k] !== undefined) patch[k] = rawPatch[k];
@@ -492,8 +491,6 @@ app.delete("/api/timeline/:eventId", editAuthLimiter, requireEditAuth, async (re
 });
 
 /* -------------------- API TIMELINE OVERRIDES -------------------- */
-
-// Lista override per studio
 app.get("/api/timeline-overrides/:studyId", async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -507,7 +504,6 @@ app.get("/api/timeline-overrides/:studyId", async (req, res) => {
   }
 });
 
-// Crea o aggiorna override per (event_id, day_index)
 app.post("/api/timeline-overrides/:studyId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const studyId = req.params.studyId;
@@ -520,7 +516,6 @@ app.post("/api/timeline-overrides/:studyId", editAuthLimiter, requireEditAuth, a
       return res.status(400).json({ error: "day_index non valido" });
     }
 
-    // campi overridabili: tutti opzionali
     const patch = {
       study_id: studyId,
       event_id,
@@ -531,7 +526,6 @@ app.post("/api/timeline-overrides/:studyId", editAuthLimiter, requireEditAuth, a
       indications: toStrOrNull(req.body.indications),
     };
 
-    // Se tutti null (nessun override reale) → meglio rifiutare
     const hasSomething =
       patch.billing !== null ||
       patch.title !== null ||
@@ -544,7 +538,6 @@ app.post("/api/timeline-overrides/:studyId", editAuthLimiter, requireEditAuth, a
         .json({ error: "Override vuoto: niente da salvare" });
     }
 
-    // UPSERT su (event_id, day_index) - richiede un vincolo UNIQUE su quelle colonne
     const columns = Object.keys(patch);
     const values = Object.values(patch);
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
@@ -569,7 +562,6 @@ app.post("/api/timeline-overrides/:studyId", editAuthLimiter, requireEditAuth, a
   }
 });
 
-// Cancella override per id
 app.delete("/api/timeline-overrides/:overrideId", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     await pool.query("DELETE FROM study_event_overrides WHERE id = $1", [
