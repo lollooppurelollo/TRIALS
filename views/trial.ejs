@@ -3,29 +3,44 @@
   <p class="text-gray-600 mb-6">Aggiungi o visualizza gli studi clinici disponibili.</p>
 
   <form id="studyForm" class="space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label for="studyTitle" class="block text-sm font-medium text-dark-gray">Titolo dello studio</label>
-        <input type="text" id="studyTitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-      </div>
-      <div>
-        <label for="studySubtitle" class="block text-sm font-medium text-dark-gray">Sottotitolo/descrizione breve</label>
-        <input type="text" id="studySubtitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-      </div>
-      <div>
-        <label for="studyClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
-        <select id="studyClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
-          <option value="Mammella">Mammella</option>
-          <option value="Polmone">Polmone</option>
-          <option value="Gastro-Intestinale">Gastro-Intestinale</option>
-          <option value="Ginecologico">Ginecologico</option>
-          <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
-          <option value="Melanoma e Cute">Melanoma e Cute</option>
-          <option value="Testa-Collo">Testa-Collo</option>
-          <option value="Fase 1">Fase 1</option>
-          <option value="Altro">Altro</option>
-        </select>
-      </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    
+    <!-- CAMPO CODICE STUDIO AUTOGENERATO/EDITABILE -->
+    <div>
+      <label for="studyCode" class="block text-sm font-medium text-dark-gray">Codice Studio</label>
+      <input type="text" id="studyCode" placeholder="Seleziona un'area clinica..." class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+      <p id="codeError" class="text-xs text-red-500 mt-1 hidden">Attenzione: Questo Codice Studio è già presente nel sistema!</p>
+    </div>
+
+    <!-- TITOLO STUDIO -->
+    <div>
+      <label for="studyTitle" class="block text-sm font-medium text-dark-gray">Titolo dello studio</label>
+      <input type="text" id="studyTitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+    </div>
+    
+    <!-- SOTTOTITOLO -->
+    <div>
+      <label for="studySubtitle" class="block text-sm font-medium text-dark-gray">Sottotitolo/descrizione breve</label>
+      <input type="text" id="studySubtitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+    </div>
+
+    <!-- AREA CLINICA -->
+    <div>
+      <label for="studyClinicalAreas" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
+      <select id="studyClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+        <option value="Mammella">Mammella</option>
+        <option value="Polmone">Polmone</option>
+        <option value="Gastro-Intestinale">Gastro-Intestinale</option>
+        <option value="Ginecologico">Ginecologico</option>
+        <option value="Prostata e Vie Urinarie">Prostata e Vie Urinarie</option>
+        <option value="Melanoma e Cute">Melanoma e Cute</option>
+        <option value="Testa-Collo">Testa-Collo</option>
+        <option value="Fase 1">Fase 1</option>
+        <option value="Altro">Altro</option>
+      </select>
+    </div>
+  </div>
+</form>
       <div id="studySpecificClinicalAreaContainer" class="hidden">
         <label for="studySpecificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
         <select id="studySpecificClinicalAreas" multiple class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage"></select>
