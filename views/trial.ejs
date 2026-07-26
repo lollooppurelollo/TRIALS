@@ -5,13 +5,6 @@
   <form id="studyForm" class="space-y-4">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     
-    <!-- CAMPO CODICE STUDIO AUTOGENERATO/EDITABILE -->
-    <div>
-      <label for="studyCode" class="block text-sm font-medium text-dark-gray">Codice Studio</label>
-      <input type="text" id="studyCode" placeholder="Seleziona un'area clinica..." class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
-      <p id="codeError" class="text-xs text-red-500 mt-1 hidden">Attenzione: Questo Codice Studio è già presente nel sistema!</p>
-    </div>
-
     <!-- TITOLO STUDIO -->
     <div>
       <label for="studyTitle" class="block text-sm font-medium text-dark-gray">Titolo dello studio</label>
@@ -22,6 +15,13 @@
     <div>
       <label for="studySubtitle" class="block text-sm font-medium text-dark-gray">Sottotitolo/descrizione breve</label>
       <input type="text" id="studySubtitle" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+    </div>
+
+    <!-- CAMPO CODICE STUDIO AUTOGENERATO/EDITABILE -->
+    <div class="md:col-span-2">
+      <label for="studyCode" class="block text-sm font-medium text-dark-gray">Codice Studio</label>
+      <input type="text" id="studyCode" placeholder="Seleziona un'area clinica..." class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+      <p id="codeError" class="text-xs text-red-500 mt-1 hidden">Attenzione: Questo Codice Studio è già presente nel sistema!</p>
     </div>
 
     <!-- AREA CLINICA -->
@@ -84,6 +84,19 @@
       <div id="armsList" class="space-y-2"></div>
     </div>
 
+    <!-- Informazioni Interne del Centro -->
+    <h3 class="text-lg font-bold text-dark-gray mt-6 mb-2">Informazioni Interne del Centro</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="studyInternalNotes" class="block text-sm font-medium text-dark-gray">Note Personalizzate</label>
+        <textarea id="studyInternalNotes" rows="3" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Annotazioni e specifiche interne al centro..."></textarea>
+      </div>
+      <div>
+        <label for="studyPiContacts" class="block text-sm font-medium text-dark-gray">Contatti dei Referenti / PI</label>
+        <textarea id="studyPiContacts" rows="3" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Nome, email e recapiti del Principal Investigator..."></textarea>
+      </div>
+    </div>
+
     <h3 class="text-lg font-bold text-dark-gray mt-6 mb-2">Criteri di Inclusione/Esclusione</h3>
     <div id="criteriaList" class="space-y-2 mb-4"></div>
 
@@ -97,7 +110,7 @@
   </form>
 </div>
 <!-- Import Studio (JSON da ChatGPT) -->
-<div class="bg-white p-8 rounded-xl shadow-md mb-8">
+<div class="bg-white p-8 rounded-xl shadow-md mb-8 mt-12">
   <div class="flex items-center justify-between mb-2">
     <h2 class="text-xl font-bold text-dark-sage">Importa studio (JSON)</h2>
     <button id="studyImportClearBtn"
@@ -180,11 +193,18 @@
       <div>
         <h4 class="font-bold text-dark-gray mb-2">Dettagli dello Studio</h4>
         <div class="space-y-2 text-sm text-dark-gray">
+          <div><span class="font-bold">Codice Studio:</span> <span id="modalStudyCode"></span></div>
           <div><span class="font-bold">Area Clinica:</span> <span id="modalClinicalAreas"></span></div>
           <div><span class="font-bold">Specifica Area:</span> <span id="modalSpecificClinicalAreas"></span></div>
           <div><span class="font-bold">Setting:</span> <span id="modalTreatmentSetting"></span></div>
           <div id="modalTreatmentLineContainer" class="hidden">
             <span class="font-bold">Linea di Trattamento:</span> <span id="modalTreatmentLine"></span>
+          </div>
+          <div id="modalInternalNotesContainer" class="hidden">
+            <span class="font-bold">Note Personalizzate:</span> <span id="modalInternalNotes"></span>
+          </div>
+          <div id="modalPiContactsContainer" class="hidden">
+            <span class="font-bold">Contatti dei Referenti / PI:</span> <span id="modalPiContacts"></span>
           </div>
         </div>
       </div>

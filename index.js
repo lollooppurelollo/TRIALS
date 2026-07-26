@@ -22,6 +22,27 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+async function initDbSchema() {
+  try {
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS study_code VARCHAR(255) UNIQUE;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS internal_notes TEXT;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS pi_contacts TEXT;
+    `);
+    console.log("✅ Schema database verificato con successo.");
+  } catch (error) {
+    console.error("❌ Errore durante la verifica dello schema database:", error);
+  }
+}
+initDbSchema();
+
 /* -------------------- Autenticazione modifiche (server-side) --------------
  * La password non è più verificata solo nel browser (bypassabile da
  * chiunque ispezioni il JS o chiami le API direttamente). Ogni richiesta
@@ -296,7 +317,7 @@ app.get("/api/studies/:id/arms", async (req, res) => {
   }
 });
 
-// PATCH: aggiorna i dati dello studio
+// PATCH: aggiorna solo le settimane per ciclo o altri campi dello studio se ESISTE
 app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) => {
   try {
     const id = req.params.id;
@@ -304,28 +325,36 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
     const cycle_weeks = toIntOrNull(req.body.cycle_weeks);
     const total_weeks = toIntOrNull(req.body.total_weeks);
     const cost_center = toStrOrNull(req.body.cost_center);
+    const study_code = toStrOrNull(req.body.study_code);
+    const internal_notes = toStrOrNull(req.body.internal_notes);
+    const pi_contacts = toStrOrNull(req.body.pi_contacts);
 
     const bodyHasCycle = Object.prototype.hasOwnProperty.call(req.body, "cycle_weeks");
     const bodyHasTotal = Object.prototype.hasOwnProperty.call(req.body, "total_weeks");
     const bodyHasCostCenter = Object.prototype.hasOwnProperty.call(req.body, "cost_center");
+    const bodyHasCode = Object.prototype.hasOwnProperty.call(req.body, "study_code");
+    const bodyHasNotes = Object.prototype.hasOwnProperty.call(req.body, "internal_notes");
+    const bodyHasContacts = Object.prototype.hasOwnProperty.call(req.body, "pi_contacts");
 
-    if (!bodyHasCycle && !bodyHasTotal && !bodyHasCostCenter) {
+    if (!bodyHasCycle && !bodyHasTotal && !bodyHasCostCenter && !bodyHasCode && !bodyHasNotes && !bodyHasContacts) {
       return res.status(400).json({ error: "Niente da aggiornare" });
     }
 
+    // validazioni
     if (
-      cycle_weeks !== null &&
+      bodyHasCycle && cycle_weeks !== null &&
       (!Number.isInteger(cycle_weeks) || cycle_weeks < 1 || cycle_weeks > 12)
     ) {
       return res.status(400).json({ error: "cycle_weeks non valido" });
     }
     if (
-      total_weeks !== null &&
+      bodyHasTotal && total_weeks !== null &&
       (!Number.isInteger(total_weeks) || total_weeks < 4 || total_weeks > 104)
     ) {
       return res.status(400).json({ error: "total_weeks non valido" });
     }
 
+    // 1) verifica che lo studio esista
     const existing = await pool.query("SELECT id FROM studies WHERE id = $1", [
       id,
     ]);
@@ -333,10 +362,25 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
       return res.status(404).json({ error: "Studio non trovato" });
     }
 
+    // 2) verifica duplicato codice
+    if (bodyHasCode && study_code) {
+      const dupCheck = await pool.query(
+        "SELECT id FROM studies WHERE LOWER(study_code) = LOWER($1) AND id <> $2",
+        [study_code, id]
+      );
+      if (dupCheck.rows.length > 0) {
+        return res.status(400).json({ error: "Codice studio già esistente." });
+      }
+    }
+
+    // 3) update solo dei campi presenti nella richiesta originale
     const patch = {};
     if (bodyHasCycle) patch.cycle_weeks = cycle_weeks;
     if (bodyHasTotal) patch.total_weeks = total_weeks;
     if (bodyHasCostCenter) patch.cost_center = cost_center;
+    if (bodyHasCode) patch.study_code = study_code;
+    if (bodyHasNotes) patch.internal_notes = internal_notes;
+    if (bodyHasContacts) patch.pi_contacts = pi_contacts;
 
     const setCols = Object.keys(patch);
     const setClause = setCols
@@ -345,14 +389,94 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
     const values = setCols.map((col) => patch[col]);
 
     const { rows } = await pool.query(
-      `UPDATE studies SET ${setClause} WHERE id = $${setCols.length + 1} RETURNING cycle_weeks, total_weeks, cost_center`,
+      `UPDATE studies SET ${setClause} WHERE id = $${setCols.length + 1} RETURNING *`,
       [...values, id],
     );
 
     return res.status(200).json(rows[0]);
   } catch (e) {
     console.error("PATCH /api/studies/:id exception:", e);
+    if (e.code === "23505") {
+      return res.status(400).json({ error: "Codice studio già esistente." });
+    }
     return res.status(500).json({ error: "Errore interno" });
+  }
+});
+
+// PUT: aggiorna interamente lo studio se ESISTE
+app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const id = req.params.id;
+    const { arms, ...studyData } = req.body;
+
+    // 1) verifica esistenza
+    const existing = await client.query("SELECT id FROM studies WHERE id = $1", [id]);
+    if (existing.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: "Studio non trovato" });
+    }
+
+    // 2) validazioni
+    if (studyData.title !== undefined && !toStrOrNull(studyData.title)) {
+      client.release();
+      return res.status(400).json({ error: "Il titolo dello studio è obbligatorio." });
+    }
+
+    const study_code = toStrOrNull(studyData.study_code);
+    if (study_code) {
+      const dupCheck = await client.query(
+        "SELECT id FROM studies WHERE LOWER(study_code) = LOWER($1) AND id <> $2",
+        [study_code, id]
+      );
+      if (dupCheck.rows.length > 0) {
+        client.release();
+        return res.status(400).json({ error: "Codice studio già esistente." });
+      }
+    }
+
+    await client.query("BEGIN");
+
+    // 3) update
+    const columns = Object.keys(studyData);
+    if (columns.length > 0) {
+      const setClause = columns
+        .map((col, i) => `${col} = $${i + 1}`)
+        .join(", ");
+      const values = columns.map((c) =>
+        c === "criteria" ? JSON.stringify(studyData[c] ?? []) : studyData[c]
+      );
+      await client.query(
+        `UPDATE studies SET ${setClause} WHERE id = $${columns.length + 1}`,
+        [...values, id]
+      );
+    }
+
+    // 4) bracci
+    if (Array.isArray(arms)) {
+      await client.query("DELETE FROM study_arms WHERE study_id = $1", [id]);
+      for (let i = 0; i < arms.length; i++) {
+        const a = arms[i];
+        await client.query(
+          `INSERT INTO study_arms (study_id, arm_code, arm_label, sort_order) VALUES ($1, $2, $3, $4)`,
+          [id, a.arm_code, a.arm_label, i + 1]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+
+    const { rows } = await client.query("SELECT * FROM studies WHERE id = $1", [id]);
+    res.json(rows[0]);
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("PUT /api/studies/:id exception:", e);
+    if (e.code === "23505") {
+      return res.status(400).json({ error: "Codice studio già esistente." });
+    }
+    res.status(500).send("Errore aggiornamento studio");
+  } finally {
+    client.release();
   }
 });
 
