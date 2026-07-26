@@ -49,6 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const criteriaListDiv = document.getElementById("criteriaList");
     const addCriteriaBtn = document.getElementById("addCriteriaBtn");
     const studyTitleInput = document.getElementById("studyTitle");
+    const studyCodeInput = document.getElementById("studyCode");
+    const codeErrorMsg = document.getElementById("codeError");
     const studySubtitleInput = document.getElementById("studySubtitle");
     const studyTreatmentSettingSelect = document.getElementById(
         "studyTreatmentSetting",
@@ -109,6 +111,14 @@ document.addEventListener("DOMContentLoaded", () => {
         "modalTreatmentLineContainer",
     );
     const modalTreatmentLine = document.getElementById("modalTreatmentLine");
+    const modalStudyCode = document.getElementById("modalStudyCode");
+    const modalStudyCodeContainer = document.getElementById("modalStudyCodeContainer");
+    const modalInternalNotesContainer = document.getElementById("modalInternalNotesContainer");
+    const modalInternalNotes = document.getElementById("modalInternalNotes");
+    const modalPiContactsContainer = document.getElementById("modalPiContactsContainer");
+    const modalPiContacts = document.getElementById("modalPiContacts");
+    const studyInternalNotesInput = document.getElementById("studyInternalNotes");
+    const studyPiContactsInput = document.getElementById("studyPiContacts");
     const studyArmsCount = document.getElementById("studyArmsCount");
     const studyArmsContainer = document.getElementById("studyArmsContainer");
     const armsList = document.getElementById("armsList");
@@ -296,6 +306,10 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("JSON valido, ma manca l'oggetto 'study'.");
         }
 
+        const study_code = String(study.study_code ?? study.code ?? "").trim();
+        const internal_notes = String(study.internal_notes ?? study.notes ?? "").trim();
+        const pi_contacts = String(study.pi_contacts ?? study.contacts ?? study.pi ?? "").trim();
+
         const title = String(study.title ?? "").trim();
         if (!title) throw new Error("Manca 'title'.");
 
@@ -350,6 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
         return {
+            study_code,
             title,
             subtitle,
             clinical_areas,
@@ -361,6 +376,8 @@ document.addEventListener("DOMContentLoaded", () => {
             max_treatment_line: Number.isNaN(max_treatment_line)
                 ? null
                 : max_treatment_line,
+            internal_notes,
+            pi_contacts,
             criteria,
         };
     }
@@ -378,15 +395,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (studyTitleInput) studyTitleInput.value = study.title || "";
         if (studySubtitleInput) studySubtitleInput.value = study.subtitle || "";
 
-        // Aree cliniche (multi)
+        // Aree cliniche (multi): prima le setto, poi aggiorno il dropdown specifiche
         setMultiSelectValues(studyClinicalAreasSelect, study.clinical_areas || []);
 
-        // aggiorna dropdown specifiche in base alle aree selezionate
+        // Aggiorna dropdown specifiche in base alle aree selezionate
         if (studyClinicalAreasSelect) {
             const selectedOptions = Array.from(
                 studyClinicalAreasSelect.selectedOptions,
             ).map((o) => o.value);
-
             updateSpecificAreasDropdown(
                 selectedOptions,
                 studySpecificClinicalAreasSelect,
@@ -394,11 +410,27 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
 
-        // Specifiche (multi)
+        // Specifiche (multi): le imposto DOPO aver popolato il dropdown
         setMultiSelectValues(
             studySpecificClinicalAreasSelect,
             study.specific_clinical_areas || [],
         );
+
+        // Codice Studio: usa quello del JSON se presente, altrimenti autogenera con area+specifica
+        if (studyCodeInput) {
+            if (study.study_code) {
+                studyCodeInput.value = study.study_code;
+                validateStudyCode();
+            } else {
+                const selectedAreas = studyClinicalAreasSelect
+                    ? Array.from(studyClinicalAreasSelect.selectedOptions).map(o => o.value)
+                    : [];
+                const selectedSpecific = studySpecificClinicalAreasSelect
+                    ? Array.from(studySpecificClinicalAreasSelect.selectedOptions).map(o => o.value)
+                    : [];
+                autoGenerateStudyCode(selectedAreas, selectedSpecific);
+            }
+        }
 
         // Setting
         if (studyTreatmentSettingSelect)
@@ -408,11 +440,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (study.treatment_setting === "Metastatico") {
             if (studyTreatmentLineContainer)
                 studyTreatmentLineContainer.classList.remove("hidden");
-
             if (minTreatmentLineInput)
                 minTreatmentLineInput.value =
                     study.min_treatment_line === null ? "" : String(study.min_treatment_line);
-
             if (maxTreatmentLineInput)
                 maxTreatmentLineInput.value =
                     study.max_treatment_line === null ? "" : String(study.max_treatment_line);
@@ -423,14 +453,108 @@ document.addEventListener("DOMContentLoaded", () => {
             if (maxTreatmentLineInput) maxTreatmentLineInput.value = "";
         }
 
+        // Note interne e contatti PI
+        if (studyInternalNotesInput) studyInternalNotesInput.value = study.internal_notes || "";
+        if (studyPiContactsInput) studyPiContactsInput.value = study.pi_contacts || "";
+
         // Criteri: svuota e ricrea
         if (criteriaListDiv) criteriaListDiv.innerHTML = "";
-
         if (study.criteria && study.criteria.length > 0) {
             study.criteria.forEach((c) => addCriteriaRow(c.text, c.type));
         } else {
-            // almeno una riga vuota
             addCriteriaRow();
+        }
+    }
+
+    const areaPrefixes = {
+        "Mammella": "MA",
+        "Polmone": "PO",
+        "Gastro-Intestinale": "GI",
+        "Ginecologico": "GY",
+        "Prostata e Vie Urinarie": "PR",
+        "Melanoma e Cute": "MC",
+        "Testa-Collo": "TC",
+        "Fase 1": "F1",
+        "Altro": "AL"
+    };
+
+    let isCodeDuplicate = false;
+
+    async function validateStudyCode() {
+        if (!studyCodeInput || !codeErrorMsg) return;
+        const codeValue = studyCodeInput.value.trim();
+        if (!codeValue) {
+            codeErrorMsg.classList.add("hidden");
+            isCodeDuplicate = false;
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/studies");
+            const studies = await response.json();
+
+            const duplicateExists = studies.some(
+                (s) => s.study_code && s.study_code.trim().toLowerCase() === codeValue.toLowerCase()
+            );
+
+            if (duplicateExists) {
+                codeErrorMsg.classList.remove("hidden");
+                isCodeDuplicate = true;
+            } else {
+                codeErrorMsg.classList.add("hidden");
+                isCodeDuplicate = false;
+            }
+        } catch (error) {
+            console.error("Errore durante la validazione del codice studio:", error);
+        }
+    }
+
+    async function autoGenerateStudyCode(selectedAreas, selectedSpecificAreas) {
+        if (!selectedAreas || selectedAreas.length === 0) {
+            if (studyCodeInput) studyCodeInput.value = "";
+            return;
+        }
+
+        const primaryArea = selectedAreas[0];
+        // Prefisso area principale
+        const areaPrefix = areaPrefixes[primaryArea] || primaryArea.substring(0, 2).toUpperCase();
+
+        // Prefisso area specifica (se selezionata)
+        let specPrefix = "GEN";
+        if (selectedSpecificAreas && selectedSpecificAreas.length > 0) {
+            const spec = selectedSpecificAreas[0];
+            // Abbreviazione fino a 3 caratteri, maiuscolo, senza spazi
+            specPrefix = spec.replace(/[^A-Za-z0-9]/g, "").substring(0, 3).toUpperCase();
+            if (!specPrefix) specPrefix = "GEN";
+        }
+
+        try {
+            const response = await fetch("/api/studies");
+            const studies = await response.json();
+
+            // Pattern: AREAPREFIX-SPECPREFIX-NNN
+            const pattern = new RegExp(`^${areaPrefix}-${specPrefix}-(\\d+)$`, 'i');
+            let maxNum = 0;
+
+            studies.forEach((s) => {
+                if (s.study_code) {
+                    const match = s.study_code.match(pattern);
+                    if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxNum) maxNum = num;
+                    }
+                }
+            });
+
+            const nextNum = maxNum + 1;
+            const newCode = `${areaPrefix}-${specPrefix}-${String(nextNum).padStart(3, "0")}`;
+
+            if (studyCodeInput) {
+                studyCodeInput.value = newCode;
+                validateStudyCode();
+            }
+        } catch (error) {
+            console.error("Errore durante l'autogenerazione del codice studio:", error);
         }
     }
 
@@ -479,15 +603,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (studyClinicalAreasSelect) {
         studyClinicalAreasSelect.addEventListener("change", (e) => {
-            const selectedOptions = Array.from(e.target.selectedOptions).map(
-                (o) => o.value,
-            );
+            const selectedAreas = Array.from(e.target.selectedOptions).map((o) => o.value);
             updateSpecificAreasDropdown(
-                selectedOptions,
+                selectedAreas,
                 studySpecificClinicalAreasSelect,
                 studySpecificClinicalAreaContainer,
             );
+            // Rigenera il codice con area + specifica area corrente
+            const selectedSpecific = studySpecificClinicalAreasSelect
+                ? Array.from(studySpecificClinicalAreasSelect.selectedOptions).map((o) => o.value)
+                : [];
+            autoGenerateStudyCode(selectedAreas, selectedSpecific);
         });
+    }
+    // Rigenera il codice anche quando cambia la Specifica Area Clinica
+    if (studySpecificClinicalAreasSelect) {
+        studySpecificClinicalAreasSelect.addEventListener("change", () => {
+            const selectedAreas = studyClinicalAreasSelect
+                ? Array.from(studyClinicalAreasSelect.selectedOptions).map((o) => o.value)
+                : [];
+            const selectedSpecific = Array.from(studySpecificClinicalAreasSelect.selectedOptions).map((o) => o.value);
+            autoGenerateStudyCode(selectedAreas, selectedSpecific);
+        });
+    }
+    if (studyCodeInput) {
+        studyCodeInput.addEventListener("input", validateStudyCode);
+        studyCodeInput.addEventListener("change", validateStudyCode);
     }
     if (filterClinicalAreaSelect) {
         filterClinicalAreaSelect.addEventListener("change", () => {
@@ -614,24 +755,47 @@ document.addEventListener("DOMContentLoaded", () => {
     if (studyForm) {
         studyForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+
+            // Leggi il codice PRIMA di aprire il modale password
+            const codeValue = studyCodeInput ? studyCodeInput.value.trim() : "";
+            if (!codeValue) {
+                if (studyCodeInput) studyCodeInput.focus();
+                alert("Il Codice Studio è obbligatorio. Seleziona un'area clinica per generarlo automaticamente.");
+                return;
+            }
+
+            // Controlla duplicati in tempo reale prima del modale password
+            try {
+                const dupRes = await fetch("/api/studies");
+                const allStudies = await dupRes.json();
+                const isDup = allStudies.some(
+                    (s) => s.study_code && s.study_code.trim().toLowerCase() === codeValue.toLowerCase()
+                );
+                if (isDup) {
+                    if (codeErrorMsg) codeErrorMsg.classList.remove("hidden");
+                    alert("Impossibile salvare: il Codice Studio inserito è già esistente.");
+                    return;
+                }
+                if (codeErrorMsg) codeErrorMsg.classList.add("hidden");
+            } catch (err) {
+                console.warn("Validazione duplicati fallita, si procede comunque:", err);
+            }
+
             showPasswordModal(async () => {
-                const criteriaItems =
-                    document.querySelectorAll(".criteria-item");
+                const criteriaItems = document.querySelectorAll(".criteria-item");
                 const criteria = Array.from(criteriaItems).map((item) => ({
                     text: item.querySelector(".criteria-input").value,
                     type:
-                        item
-                            .querySelector(".type-toggle-btn")
-                            .textContent.trim() === "Esclusione"
+                        item.querySelector(".type-toggle-btn").textContent.trim() === "Esclusione"
                             ? "exclusion"
                             : "inclusion",
                 }));
                 const selectedClinicalAreas = Array.from(
                     studyClinicalAreasSelect.selectedOptions,
                 ).map((o) => o.value);
-                const selectedSpecificClinicalAreas = Array.from(
-                    studySpecificClinicalAreasSelect.selectedOptions,
-                ).map((o) => o.value);
+                const selectedSpecificClinicalAreas = studySpecificClinicalAreasSelect
+                    ? Array.from(studySpecificClinicalAreasSelect.selectedOptions).map((o) => o.value)
+                    : [];
                 const arms = [];
 
                 if (studyArmsCount && parseInt(studyArmsCount.value, 10) > 1) {
@@ -649,6 +813,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 const newStudy = {
+                  study_code: codeValue,
                   title: studyTitleInput.value,
                   subtitle: studySubtitleInput.value,
                   clinical_areas: selectedClinicalAreas,
@@ -662,6 +827,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     studyTreatmentSettingSelect.value === "Metastatico"
                       ? parseInt(maxTreatmentLineInput.value)
                       : null,
+                  internal_notes: studyInternalNotesInput ? studyInternalNotesInput.value.trim() : "",
+                  pi_contacts: studyPiContactsInput ? studyPiContactsInput.value.trim() : "",
                   criteria,
                   arms
                 };
@@ -672,8 +839,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newStudy),
                 });
-                if (!response.ok) return; // password errata o altro errore: non resettare il form
+                if (!response.ok) {
+                    if (response.status !== 403) {
+                        try {
+                            const errData = await response.json();
+                            alert("Errore salvataggio: " + (errData.error || response.statusText));
+                        } catch (_) {
+                            alert("Errore salvataggio: " + response.statusText);
+                        }
+                    }
+                    return;
+                }
                 studyForm.reset();
+                if (codeErrorMsg) codeErrorMsg.classList.add("hidden");
+                isCodeDuplicate = false;
+                if (studyInternalNotesInput) studyInternalNotesInput.value = "";
+                if (studyPiContactsInput) studyPiContactsInput.value = "";
                 studySpecificClinicalAreaContainer.classList.add("hidden");
                 studyTreatmentLineContainer.classList.add("hidden");
                 criteriaListDiv.innerHTML = "";
@@ -741,19 +922,23 @@ document.addEventListener("DOMContentLoaded", () => {
         // eseguire codice nel browser di chi consulta l'app (XSS).
         const safeTitle = escapeHtml(study.title);
         const safeSubtitle = escapeHtml(study.subtitle);
+        const safeCode = escapeHtml(study.study_code || "");
+        const codeBadge = safeCode
+            ? `<span class="inline-block bg-light-sage text-dark-sage text-xs font-semibold px-2 py-0.5 rounded-full mr-2">${safeCode}</span>`
+            : "";
         let content = `
             <div>
-                <h4 class="font-bold text-dark-gray">${safeTitle}</h4>
+                <div class="mb-1">${codeBadge}<h4 class="inline font-bold text-dark-gray">${safeTitle}</h4></div>
                 <p class="text-sm text-gray-600">${safeSubtitle}</p>
             </div>`;
         if (page === "trial") {
             content = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-bold text-dark-gray">${safeTitle}</h4>
+                        <div class="mb-1">${codeBadge}<h4 class="inline font-bold text-dark-gray">${safeTitle}</h4></div>
                         <p class="text-sm text-gray-600">${safeSubtitle}</p>
                     </div>
-                    <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors" data-id="${study.id}"><i class="fas fa-trash-alt"></i></button>
+                    <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors ml-3 flex-shrink-0" data-id="${study.id}"><i class="fas fa-trash-alt"></i></button>
                 </div>`;
         }
         card.innerHTML = content;
@@ -906,10 +1091,23 @@ document.addEventListener("DOMContentLoaded", () => {
         modalTitle.textContent = study.title;
         modalSubtitle.textContent = study.subtitle;
 
+        // Badge Codice Studio
+        if (modalStudyCode) {
+            modalStudyCode.textContent = study.study_code || "";
+            if (modalStudyCodeContainer) {
+                if (study.study_code) {
+                    modalStudyCodeContainer.classList.remove("hidden");
+                } else {
+                    modalStudyCodeContainer.classList.add("hidden");
+                }
+            }
+        }
+        // Anche il campo semplice (nella pagina trial)
+        const simpleCode = document.getElementById("modalStudyCode");
+        if (simpleCode && !modalStudyCodeContainer) simpleCode.textContent = study.study_code || "—";
+
         if (modalClinicalAreas)
-            modalClinicalAreas.textContent = (study.clinical_areas || []).join(
-                ", ",
-            );
+            modalClinicalAreas.textContent = (study.clinical_areas || []).join(", ");
         if (modalSpecificClinicalAreas)
             modalSpecificClinicalAreas.textContent = (
                 study.specific_clinical_areas || []
@@ -923,6 +1121,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
             } else {
                 modalTreatmentLineContainer.classList.add("hidden");
+            }
+        }
+
+        // Note interne
+        if (modalInternalNotesContainer && modalInternalNotes) {
+            if (study.internal_notes) {
+                modalInternalNotes.textContent = study.internal_notes;
+                modalInternalNotesContainer.classList.remove("hidden");
+            } else {
+                modalInternalNotesContainer.classList.add("hidden");
+            }
+        }
+
+        // Contatti PI
+        if (modalPiContactsContainer && modalPiContacts) {
+            if (study.pi_contacts) {
+                modalPiContacts.textContent = study.pi_contacts;
+                modalPiContactsContainer.classList.remove("hidden");
+            } else {
+                modalPiContactsContainer.classList.add("hidden");
             }
         }
 
