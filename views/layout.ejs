@@ -7,31 +7,72 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #4a5568;
-            padding-bottom: 72px; /* Spazio per la navbar inferiore */
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 - testo principale nero */
+            padding-bottom: 72px;
         }
-        
+
+        /* ── Palette Clinical Slate & Emerald ── */
         :root {
-            --color-sage: #9baf93; /* Verde salvia */
-            --color-light-sage: #c7d2c1; /* Verde salvia chiaro */
-            --color-dark-sage: #6c7e63; /* Verde salvia scuro */
-            --color-dark-gray: #4a5568; /* Grigio scuro */
+            /* Primari */
+            --color-emerald:        #10b981; /* emerald-500 */
+            --color-emerald-dark:   #059669; /* emerald-600 */
+            --color-emerald-light:  #d1fae5; /* emerald-100 */
+            --color-emerald-text:   #065f46; /* emerald-800 */
+            /* Navbar / Header */
+            --color-teal-header:    #134e4a; /* teal-900 */
+            --color-teal-hover:     #0f3d39;
+            /* Slate neutri */
+            --color-slate-border:   #e2e8f0; /* slate-200 */
+            --color-slate-text:     #64748b; /* slate-500 */
+            /* Compatibilità con classi precedenti */
+            --color-sage:           #10b981;
+            --color-light-sage:     #d1fae5;
+            --color-dark-sage:      #059669;
+            --color-dark-gray:      #0f172a;
         }
-        .bg-sage { background-color: var(--color-sage); }
-        .bg-light-sage { background-color: var(--color-light-sage); }
-        .text-sage { color: var(--color-sage); }
-        .text-dark-sage { color: var(--color-dark-sage); }
-        .text-dark-gray { color: var(--color-dark-gray); }
-        .hover\:bg-dark-sage:hover { background-color: var(--color-dark-sage); }
-        .focus\:ring-sage:focus { border-color: var(--color-sage); }
-        .focus\:ring-light-sage:focus { border-color: var(--color-light-sage); }
-        .hover\:shadow-lg:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+        /* Classi utility custom */
+        .bg-sage          { background-color: var(--color-emerald); }
+        .bg-light-sage    { background-color: var(--color-emerald-light); }
+        .text-sage        { color: var(--color-emerald); }
+        .text-dark-sage   { color: var(--color-emerald-dark); }
+        .text-dark-gray   { color: var(--color-dark-gray); }
+        .hover\:bg-dark-sage:hover  { background-color: var(--color-emerald-dark); }
+        .focus\:ring-sage:focus      { border-color: var(--color-emerald); box-shadow: 0 0 0 2px rgba(16,185,129,0.3); }
+        .focus\:ring-light-sage:focus { border-color: var(--color-emerald); box-shadow: 0 0 0 2px rgba(16,185,129,0.25); }
+        .hover\:shadow-lg:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04); }
+
+        /* Badge codice studio */
+        .study-code-badge {
+            display: inline-block;
+            background-color: var(--color-emerald-light);
+            color: var(--color-emerald-text);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+        }
+
+        /* Card base */
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--color-slate-border);
+            border-radius: 0.875rem;
+        }
+
+        /* Input / select focus ring */
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--color-emerald) !important;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+        }
     </style>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -40,15 +81,23 @@
         <%- body %>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-50">
+    <!-- Navbar inferiore — Clinical Slate & Emerald -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 shadow-lg" style="background-color: var(--color-teal-header);">
         <div class="container mx-auto flex justify-around items-center h-16">
-            <a href="/" class="flex-1 text-center py-2 transition-colors hover:bg-gray-100">
-                <i class="fas fa-user text-xl mb-1 text-dark-sage"></i>
-                <span class="block text-sm font-medium text-dark-sage">Paziente</span>
+            <a href="/" class="flex-1 flex flex-col items-center justify-center py-2 transition-colors"
+               style="color: #a7f3d0;"
+               onmouseover="this.style.backgroundColor='var(--color-teal-hover)'"
+               onmouseout="this.style.backgroundColor=''">
+                <i class="fas fa-user text-xl mb-1"></i>
+                <span class="block text-xs font-semibold tracking-wide uppercase">Paziente</span>
             </a>
-            <a href="/trials" class="flex-1 text-center py-2 transition-colors hover:bg-gray-100">
-                <i class="fas fa-stethoscope text-xl mb-1 text-dark-sage"></i>
-                <span class="block text-sm font-medium text-dark-sage">Trial</span>
+            <div style="width:1px; height:36px; background:rgba(255,255,255,0.15);"></div>
+            <a href="/trials" class="flex-1 flex flex-col items-center justify-center py-2 transition-colors"
+               style="color: #a7f3d0;"
+               onmouseover="this.style.backgroundColor='var(--color-teal-hover)'"
+               onmouseout="this.style.backgroundColor=''">
+                <i class="fas fa-stethoscope text-xl mb-1"></i>
+                <span class="block text-xs font-semibold tracking-wide uppercase">Trial</span>
             </a>
         </div>
     </nav>

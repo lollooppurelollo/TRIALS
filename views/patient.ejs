@@ -1,11 +1,12 @@
-<div class="bg-white p-8 rounded-xl shadow-md mb-8">
-    <h1 class="text-2xl font-bold text-dark-sage mb-4">Ricerca Studi Clinici</h1>
-    <p class="text-gray-600 mb-6">Inserisci i criteri per trovare gli studi clinici disponibili.</p>
+<div class="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm mb-8">
+    <h1 class="text-2xl font-bold mb-1" style="color:#134e4a;">Ricerca Studi Clinici</h1>
+    <p class="text-slate-500 mb-6 text-sm">Inserisci i criteri per trovare gli studi clinici disponibili.</p>
 
     <form id="searchForm" class="space-y-4">
         <div>
-            <label for="clinicalArea" class="block text-sm font-medium text-dark-gray">Area Clinica di interesse</label>
-            <select id="clinicalArea" name="clinicalArea" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+            <label for="clinicalArea" class="block text-sm font-medium text-slate-700">Area Clinica di interesse</label>
+            <select id="clinicalArea" name="clinicalArea"
+                    class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400" required>
                 <option value="" disabled selected>Seleziona un'area</option>
                 <option value="Mammella">Mammella</option>
                 <option value="Polmone">Polmone</option>
@@ -19,14 +20,16 @@
             </select>
         </div>
         <div id="specificClinicalAreaContainer" class="hidden">
-            <label for="specificClinicalAreas" class="block text-sm font-medium text-dark-gray">Specifica Area Clinica di interesse</label>
-            <select id="specificClinicalAreas" name="specificClinicalAreas" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+            <label for="specificClinicalAreas" class="block text-sm font-medium text-slate-700">Specifica Area Clinica di interesse</label>
+            <select id="specificClinicalAreas" name="specificClinicalAreas"
+                    class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
                 <option value="" disabled selected>Seleziona un'area specifica (opzionale)</option>
             </select>
         </div>
         <div>
-            <label for="treatmentSetting" class="block text-sm font-medium text-dark-gray">Setting del Trattamento</label>
-            <select id="treatmentSetting" name="treatmentSetting" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" required>
+            <label for="treatmentSetting" class="block text-sm font-medium text-slate-700">Setting del Trattamento</label>
+            <select id="treatmentSetting" name="treatmentSetting"
+                    class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400" required>
                 <option value="" disabled selected>Seleziona un setting</option>
                 <option value="Metastatico">Metastatico</option>
                 <option value="Adiuvante">Adiuvante</option>
@@ -34,18 +37,24 @@
             </select>
         </div>
         <div id="treatmentLineContainer" class="hidden">
-            <label for="patientTreatmentLine" class="block text-sm font-medium text-dark-gray">Linea di trattamento del paziente</label>
-            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage" placeholder="Esempio: 2">
+            <label for="patientTreatmentLine" class="block text-sm font-medium text-slate-700">Linea di trattamento del paziente</label>
+            <input type="number" id="patientTreatmentLine" name="patientTreatmentLine"
+                   class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                   placeholder="Esempio: 2">
         </div>
 
-        <button type="submit" class="w-full bg-sage text-white font-bold p-3 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+        <button type="submit"
+                class="w-full text-white font-semibold p-3 rounded-lg transition-colors shadow-sm"
+                style="background-color:#10b981;"
+                onmouseover="this.style.backgroundColor='#059669'"
+                onmouseout="this.style.backgroundColor='#10b981'">
             Cerca
         </button>
     </form>
 </div>
 
 <div id="searchResults" class="mt-8">
-    <h2 class="text-xl font-bold text-dark-sage mb-4">Studi compatibili</h2>
+    <h2 class="text-xl font-bold mb-4" style="color:#134e4a;">Studi compatibili</h2>
     <div id="trialList" class="space-y-4">
         <!-- I risultati verranno iniettati qui -->
     </div>
@@ -53,33 +62,41 @@
 
 <!-- Modal Dettagli Studio -->
 <div id="studyDetailModal"
-     class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 hidden flex items-start justify-center"
-     style="padding: 4px 4px 76px 4px;">
-    <div class="relative bg-white rounded-xl shadow-lg flex flex-col overflow-hidden"
+     class="fixed inset-0 z-50 hidden flex items-start justify-center"
+     style="padding: 4px 4px 76px 4px; background-color: rgba(15,23,42,0.45);">
+    <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
          style="width: min(1600px, 100%); height: calc(100vh - 80px);">
         <div class="modal-content overflow-y-auto p-5">
             <div class="text-center">
-                <h3 class="text-lg leading-6 font-medium text-dark-gray" id="modalTitle"></h3>
-                <p class="text-sm text-gray-500" id="modalSubtitle"></p>
+                <h3 class="text-lg leading-6 font-semibold text-slate-900" id="modalTitle"></h3>
+                <p class="text-sm text-slate-500" id="modalSubtitle"></p>
                 <div class="mt-4">
-                    <h4 class="font-bold text-dark-gray mb-2">Criteri di I/E</h4>
+                    <h4 class="font-bold text-slate-800 mb-2">Criteri di I/E</h4>
                     <div class="flex flex-col space-y-2" id="criteriaContainer">
                         <!-- Criteri iniettati -->
                     </div>
                 </div>
             </div>
         </div>
-        <div class="px-5 py-4 bg-white border-t border-gray-200 space-y-2">
-            <button id="checkEligibilityBtn" class="w-full bg-sage text-white text-base font-medium rounded-lg px-4 py-2 shadow-md hover:bg-dark-sage focus:outline-none focus:ring-2 focus:ring-sage transition-colors">
+        <div class="px-5 py-4 bg-white border-t border-slate-200 space-y-2">
+            <button id="checkEligibilityBtn"
+                    class="w-full text-white text-base font-semibold rounded-lg px-4 py-2 shadow-sm transition-colors"
+                    style="background-color:#10b981;"
+                    onmouseover="this.style.backgroundColor='#059669'"
+                    onmouseout="this.style.backgroundColor='#10b981'">
                 Controlla eleggibilità
             </button>
-            <!-- Nuovo bottone per Timeline -->
-            <button id="openTimelineBtn" class="w-full bg-sage text-white text-base font-medium rounded-lg px-4 py-2 shadow-md hover:bg-dark-sage flex items-center justify-center gap-2 transition-colors">
+            <button id="openTimelineBtn"
+                    class="w-full text-white text-base font-semibold rounded-lg px-4 py-2 shadow-sm flex items-center justify-center gap-2 transition-colors"
+                    style="background-color:#10b981;"
+                    onmouseover="this.style.backgroundColor='#059669'"
+                    onmouseout="this.style.backgroundColor='#10b981'">
                 <i class="fas fa-calendar-alt"></i>
                 Timeline
             </button>
             <div id="eligibilityResultDiv" class="font-bold text-center mb-3 hidden"></div>
-            <button id="closeModalBtn" class="w-full bg-gray-300 text-dark-gray text-base font-medium rounded-lg px-4 py-2 shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors">
+            <button id="closeModalBtn"
+                    class="w-full bg-slate-100 text-slate-700 text-base font-semibold rounded-lg px-4 py-2 shadow-sm hover:bg-slate-200 transition-colors">
                 Chiudi
             </button>
         </div>

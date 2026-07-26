@@ -924,7 +924,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const safeSubtitle = escapeHtml(study.subtitle);
         const safeCode = escapeHtml(study.study_code || "");
         const codeBadge = safeCode
-            ? `<span class="inline-block bg-light-sage text-dark-sage text-xs font-semibold px-2 py-0.5 rounded-full mr-2">${safeCode}</span>`
+            ? `<span class="study-code-badge">${safeCode}</span>`
             : "";
         let content = `
             <div>
