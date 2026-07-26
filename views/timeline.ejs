@@ -1344,9 +1344,18 @@
   async function saveStudySettings(newCycleWeeks, newTotalWeeks) {
     if (!STUDY_ID) return true;
 
+    // Usa il valore corrente dal DB come fallback se un parametro manca
+    const cycleVal = Number.isInteger(newCycleWeeks) ? newCycleWeeks
+                   : (Number.isInteger(_cycleWeeksDb) ? _cycleWeeksDb : null);
+    const totalVal = Number.isInteger(newTotalWeeks) ? newTotalWeeks
+                   : (Number.isInteger(_totalWeeksDb) ? _totalWeeksDb : null);
+
     const body = {};
-    if (Number.isInteger(newCycleWeeks)) body.cycle_weeks = newCycleWeeks;
-    if (Number.isInteger(newTotalWeeks)) body.total_weeks = newTotalWeeks;
+    if (cycleVal !== null) body.cycle_weeks = cycleVal;
+    if (totalVal !== null) body.total_weeks = totalVal;
+
+    // Se non c'è nulla da inviare, non fare la chiamata API
+    if (Object.keys(body).length === 0) return true;
 
     const res = await authFetch(`/api/studies/${STUDY_ID}`, {
       method: "PATCH",
@@ -1356,9 +1365,15 @@
 
     if (!res.ok) {
       if (res.status !== 403) {
-        const txt = await res.text().catch(() => "");
-        console.error("PATCH /api/studies failed:", res.status, txt);
-        alert("Errore salvataggio impostazioni studio");
+        let errMsg = "Errore salvataggio impostazioni studio";
+        try {
+          const errData = await res.json();
+          if (errData && errData.error) errMsg += ": " + errData.error;
+        } catch (_) {
+          const txt = await res.text().catch(() => "");
+          console.error("PATCH /api/studies failed:", res.status, txt);
+        }
+        alert(errMsg);
       }
       return false;
     }
@@ -1578,7 +1593,10 @@
       alert("⚠️ Bisogna inserire un numero valido per le settimane per ciclo.");
       return;
     }
-    const ok = await saveStudySettings(current);
+    // passa anche total_weeks corrente per non lasciare il body vuoto
+    const currentTotal = Number.isInteger(_totalWeeksDb) ? _totalWeeksDb
+                       : Number.parseInt(tlTotalWeeks?.value || "24", 10);
+    const ok = await saveStudySettings(current, currentTotal);
     if (ok) _cycleWeeksDb = current;
   });
 
