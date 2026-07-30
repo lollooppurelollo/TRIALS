@@ -1022,15 +1022,46 @@ document.addEventListener("DOMContentLoaded", () => {
         const inclusioni = criteri.filter((c) => c.type === "inclusion");
         const esclusioni = criteri.filter((c) => c.type === "exclusion");
 
+        // Crea una griglia a 2 colonne
+        const grid = document.createElement("div");
+        grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6 w-full text-left mt-3";
+        criteriaContainer.appendChild(grid);
+
+        // Colonna inclusioni
+        const incCol = document.createElement("div");
+        incCol.className = "space-y-2.5";
+        grid.appendChild(incCol);
+
+        // Header inclusioni
+        const incHeader = document.createElement("div");
+        incHeader.className = "flex items-center gap-2 pb-2 border-b border-emerald-100";
+        incHeader.innerHTML = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Inclusione</span>`;
+        incCol.appendChild(incHeader);
+
+        // Colonna esclusioni
+        const excCol = document.createElement("div");
+        excCol.className = "space-y-2.5";
+        grid.appendChild(excCol);
+
+        // Header esclusioni
+        const excHeader = document.createElement("div");
+        excHeader.className = "flex items-center gap-2 pb-2 border-b border-red-100";
+        excHeader.innerHTML = `<span class="bg-red-100 text-red-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Esclusione</span>`;
+        excCol.appendChild(excHeader);
+
         function makeRow(c, kind) {
             const row = document.createElement("div");
             row.className =
-                "flex items-center justify-between gap-3 p-2 rounded-lg border border-gray-100";
+                "flex items-start justify-between gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors";
 
             const left = document.createElement("div");
-            left.className = "text-sm text-dark-gray";
-            left.textContent = c.text || "";
-
+            left.className = "text-sm text-slate-700 flex items-start";
+            
+            const icon = kind === "inclusion" 
+                ? '<i class="fas fa-check-circle text-emerald-500 mt-0.5 mr-2 flex-shrink-0"></i>'
+                : '<i class="fas fa-times-circle text-red-500 mt-0.5 mr-2 flex-shrink-0"></i>';
+            
+            left.innerHTML = `${icon}<span>${escapeHtml(c.text || "")}</span>`;
             row.appendChild(left);
 
             // In Trial page: solo testo
@@ -1040,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const defaultValue = kind === "inclusion";
 
             const right = document.createElement("div");
-            right.className = "flex items-center gap-2";
+            right.className = "flex items-center gap-2 flex-shrink-0";
 
             const switchWrapper = document.createElement("label");
             switchWrapper.className = "criteria-switch";
@@ -1064,25 +1095,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (inclusioni.length > 0) {
-            const h = document.createElement("h5");
-            h.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
-            h.textContent = "Criteri di Inclusione";
-            criteriaContainer.appendChild(h);
-
-            inclusioni.forEach((c) =>
-                criteriaContainer.appendChild(makeRow(c, "inclusion")),
-            );
+            inclusioni.forEach((c) => incCol.appendChild(makeRow(c, "inclusion")));
+        } else {
+            const empty = document.createElement("p");
+            empty.className = "text-xs text-slate-400 italic pt-2";
+            empty.textContent = "Nessun criterio di inclusione impostato.";
+            incCol.appendChild(empty);
         }
 
         if (esclusioni.length > 0) {
-            const h = document.createElement("h5");
-            h.className = "text-md font-bold mt-4 mb-2 text-dark-gray";
-            h.textContent = "Criteri di Esclusione";
-            criteriaContainer.appendChild(h);
-
-            esclusioni.forEach((c) =>
-                criteriaContainer.appendChild(makeRow(c, "exclusion")),
-            );
+            esclusioni.forEach((c) => excCol.appendChild(makeRow(c, "exclusion")));
+        } else {
+            const empty = document.createElement("p");
+            empty.className = "text-xs text-slate-400 italic pt-2";
+            empty.textContent = "Nessun criterio di esclusione impostato.";
+            excCol.appendChild(empty);
         }
     }
 

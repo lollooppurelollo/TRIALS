@@ -8,10 +8,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root{
-      --color-sage:#9baf93;
-      --color-light-sage:#c7d2c1;
-      --color-dark-sage:#6c7e63;
-      --color-dark-gray:#4a5568;
+      --color-sage:#10b981;        /* emerald-500 */
+      --color-light-sage:#d1fae5;  /* emerald-100 */
+      --color-dark-sage:#059669;   /* emerald-600 */
+      --color-dark-gray:#0f172a;   /* slate-900 */
       --color-blue:#bfdbfe;        /* radiology */
       --color-orange:#fdba74;      /* therapy */
       --color-gray:#e5e7eb;        /* custom */
@@ -65,7 +65,7 @@
     .daycell{
       min-height:60px;
       border-radius:.5rem;
-      border:1px solid #e5e7eb;
+      border:1px solid #cbd5e1; /* slate-300 */
       display:flex;
       align-items:flex-start;     /* prima era center */
       justify-content:flex-start; /* prima era center */
@@ -128,19 +128,22 @@
 
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-slate-50 text-slate-900">
 
 <!-- Header -->
-<div class="bg-white p-6 rounded-xl shadow-md mb-6">
+<div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm mb-6">
   <div class="flex items-start justify-between gap-4 flex-wrap">
     <div>
-      <h1 class="text-2xl font-bold text-dark-sage">Timeline Studio</h1>
-      <p class="text-gray-600 text-sm">Gestione degli eventi per lo studio selezionato.</p>
+      <h1 class="text-2xl font-bold mb-1" style="color: #134e4a;">Timeline Studio</h1>
+      <p class="text-slate-500 text-sm">Gestione degli eventi per lo studio selezionato.</p>
     </div>
 
     <!-- Toggle modalità modifica -->
     <button id="tlEditToggleBtn"
-            class="bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+            class="text-white font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+            style="background-color: #10b981;"
+            onmouseover="this.style.backgroundColor='#059669'"
+            onmouseout="this.style.backgroundColor='#10b981'">
       Entra in modalità modifica
     </button>
   </div>
@@ -158,28 +161,28 @@
 </div>
 
   <!-- Controlli timeline -->
-  <div class="bg-white p-4 rounded-xl shadow-md mb-6">
+  <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm mb-6">
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label class="block text-sm font-medium text-dark-gray">Settimane totali</label>
+        <label class="block text-sm font-medium text-slate-700">Settimane totali</label>
         <input id="tlTotalWeeks" type="number" min="4" max="504" value="120" disabled
-               class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+               class="mt-1 p-2 w-full border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white text-slate-900">
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-dark-gray">Settimane per ciclo</label>
+        <label class="block text-sm font-medium text-slate-700">Settimane per ciclo</label>
         <input id="tlCycleWeeks" type="number" min="1" max="12" value="4" disabled
-               class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+               class="mt-1 p-2 w-full border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white text-slate-900">
       </div>
     </div>
     <div class="mt-3">
-      <p class="text-xs text-gray-400">Il filtro per braccio si trova ora accanto al pulsante "Piano eventi", sopra il calendario.</p>
+      <p class="text-xs text-slate-400">Il filtro per braccio si trova ora accanto al pulsante "Piano eventi", sopra il calendario.</p>
     </div>
 
     <!-- 🔥 INSERISCI QUI IL CENTRO DI COSTO -->
     <div class="mt-4">
-      <label class="block text-sm font-medium text-dark-gray">
+      <label class="block text-sm font-medium text-slate-700">
         Centro di costo dello studio
       </label>
 
@@ -188,11 +191,14 @@
                type="text"
                disabled
                placeholder="Indicare il centro di Costo dello studio"
-               class="p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+               class="p-2 w-full border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white text-slate-900">
 
         <button id="tlSaveCostCenterBtn"
                 disabled
-                class="px-4 py-2 rounded-lg bg-sage text-white font-semibold opacity-50 cursor-not-allowed">
+                class="px-4 py-2 rounded-lg text-white font-semibold transition-colors opacity-50 cursor-not-allowed"
+                style="background-color: #10b981;"
+                onmouseover="if(!this.disabled) this.style.backgroundColor='#059669'"
+                onmouseout="if(!this.disabled) this.style.backgroundColor='#10b981'">
           Salva
         </button>
       </div>
@@ -204,22 +210,22 @@
   <div id="tlMainGrid" class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
 
     <!-- Timeline (calendario) -->
-    <section class="bg-white p-4 rounded-xl shadow-md">
+    <section class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h2 class="text-lg font-bold text-dark-gray">Timeline</h2>
+        <h2 class="text-lg font-bold" style="color: #134e4a;">Timeline</h2>
 
         <div class="flex items-center gap-2">
           <!-- Filtro braccio: spostato qui, accanto al bottone, per un accesso rapido
                senza dover scorrere fino al pannello "Controlli timeline" -->
           <select id="tlArmFilter"
                   title="Filtra il piano eventi per braccio"
-                  class="text-sm p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-sage">
+                  class="text-sm p-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
             <option value="ALL">Tutti i bracci</option>
           </select>
 
           <!-- Bottone apri/chiudi pannello destro (visibile bene su desktop) -->
           <button id="tlToggleSideBtn"
-                  class="hidden lg:inline-flex items-center gap-2 bg-white border border-gray-300 text-dark-gray font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 shadow-sm">
+                  class="hidden lg:inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
             <span id="tlToggleSideIcon">📋</span>
             <span id="tlToggleSideLabel">Chiudi piano eventi</span>
           </button>
@@ -234,23 +240,20 @@
            class="space-y-6 transition-all duration-200 w-full lg:w-[380px]">
 
       <!-- Piano eventi -->
-      <div class="bg-white p-4 rounded-xl shadow-md">
+      <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-bold text-dark-gray">Piano eventi</h2>
+          <h2 class="text-lg font-bold" style="color: #134e4a;">Piano eventi</h2>
           <span id="tlNoEventsMsg" class="text-sm text-gray-500 hidden">Nessun evento salvato.</span>
         </div>
         <div id="tlEventsList" class="space-y-3"></div>
-      </div>
-      
-
-      <!-- Form nuovo/modifica evento (visibile solo in modalità modifica) -->
-      <div id="evFormWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
-        <h2 id="evFormTitle" class="text-lg font-bold text-dark-gray mb-3">Aggiungi evento</h2>
+      <      <!-- Form nuovo/modifica evento (visibile solo in modalità modifica) -->
+      <div id="evFormWrap" class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hidden">
+        <h2 id="evFormTitle" class="text-lg font-bold mb-3" style="color: #134e4a;">Aggiungi evento</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-dark-gray">Tipo di evento</label>
-            <select id="evType" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            <label class="block text-sm font-medium text-slate-700">Tipo di evento</label>
+            <select id="evType" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               <option value="oncological_visit">Visita oncologica</option>
               <option value="blood_test">Esami ematici</option>
               <option value="radiology">Esami radiologici</option>
@@ -260,59 +263,59 @@
           </div>
 
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-dark-gray">Titolo (opzionale)</label>
-            <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+            <label class="block text-sm font-medium text-slate-700">Titolo (opzionale)</label>
+            <input id="evTitle" type="text" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
           </div>
 
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-dark-gray">Note (opzionale)</label>
-            <textarea id="evNotes" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
+            <label class="block text-sm font-medium text-slate-700">Note (opzionale)</label>
+            <textarea id="evNotes" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"></textarea>
           </div>
 
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-dark-gray">Indicazioni (opzionale)</label>
-            <textarea id="evIndications" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage"></textarea>
+            <label class="block text-sm font-medium text-slate-700">Indicazioni (opzionale)</label>
+            <textarea id="evIndications" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"></textarea>
           </div>
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-dark-gray">Solvenza (opzionale)</label>
+            <label class="block text-sm font-medium text-slate-700">Solvenza (opzionale)</label>
             <select id="evBilling"
-                    class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                    class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               <option value="">Neutro</option>
               <option value="SSN">SSN</option>
               <option value="SP">Sponsor (SP)</option>
             </select>
-            <p class="text-xs text-gray-400 mt-1">Se non selezioni nulla, rimane neutro.</p>
+            <p class="text-xs text-slate-400 mt-1">Se non selezioni nulla, rimane neutro.</p>
           </div>
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-dark-gray">Braccio/i (opzionale)</label>
-            <div id="evArmsWrap" class="mt-2 flex flex-col gap-2 text-sm text-dark-gray">
+            <label class="block text-sm font-medium text-slate-700">Braccio/i (opzionale)</label>
+            <div id="evArmsWrap" class="mt-2 flex flex-col gap-2 text-sm text-slate-700">
               <!-- verrà popolato via JS -->
             </div>
-            <p class="text-xs text-gray-400 mt-1">Se non selezioni nulla → evento valido per tutti i bracci.</p>
+            <p class="text-xs text-slate-400 mt-1">Se non selezioni nulla → evento valido per tutti i bracci.</p>
           </div>
 
           <!-- toggle -->
           <div class="md:col-span-2 flex items-center gap-2">
-            <input id="evOneShot" type="checkbox" class="rounded">
-            <label for="evOneShot" class="text-sm text-dark-gray">Evento singolo</label>
-            <span class="text-xs text-gray-400">(se non spuntato: evento ricorrente)</span>
+            <input id="evOneShot" type="checkbox" class="rounded text-emerald-500 focus:ring-emerald-400">
+            <label for="evOneShot" class="text-sm text-slate-700">Evento singolo</label>
+            <span class="text-xs text-slate-400">(se non spuntato: evento ricorrente)</span>
           </div>
 
           <!-- singolo -->
           <div id="evSingleWrap" class="md:col-span-2 hidden">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
               <div>
-                <label class="block text-sm font-medium text-dark-gray">Giorno (da inizio studio)</label>
-                <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
-                <p class="text-xs text-gray-500 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
+                <label class="block text-sm font-medium text-slate-700">Giorno (da inizio studio)</label>
+                <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                <p class="text-xs text-slate-400 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
-                <input id="evWindowBefore" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700 leading-tight">Finestra indietro (−g, opz.)</label>
+                <input id="evWindowBefore" type="number" min="0" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
               <div>
-                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
-                <input id="evWindowAfter" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700 leading-tight">Finestra avanti (+g, opz.)</label>
+                <input id="evWindowAfter" type="number" min="0" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
             </div>
           </div>
@@ -321,24 +324,24 @@
           <div id="evRecurringWrap" class="md:col-span-2">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
               <div>
-                <label class="block text-sm font-medium text-dark-gray">Ogni N giorni</label>
-                <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700">Ogni N giorni</label>
+                <input id="evRepeatEveryDays" type="number" min="1" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
               <div>
-                <label class="block text-sm font-medium text-dark-gray">Da giorno</label>
-                <input id="evStartDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700">Da giorno</label>
+                <input id="evStartDay" type="number" min="1" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
               <div>
-                <label class="block text-sm font-medium text-dark-gray">A giorno (opz.)</label>
-                <input id="evStopDay" type="number" min="1" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700">A giorno (opz.)</label>
+                <input id="evStopDay" type="number" min="1" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
               <div>
-                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra indietro (−g, opz.)</label>
-                <input id="evWindowBeforeR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700 leading-tight">Finestra indietro (−g, opz.)</label>
+                <input id="evWindowBeforeR" type="number" min="0" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
               <div>
-                <label class="block text-sm font-medium text-dark-gray leading-tight">Finestra avanti (+g, opz.)</label>
-                <input id="evWindowAfterR" type="number" min="0" class="mt-1 p-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-sage">
+                <label class="block text-sm font-medium text-slate-700 leading-tight">Finestra avanti (+g, opz.)</label>
+                <input id="evWindowAfterR" type="number" min="0" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               </div>
             </div>
           </div>
@@ -347,77 +350,85 @@
         <!-- Bottoni del form -->
         <div class="flex gap-2 mt-4">
           <button id="evSaveBtn"
-                  class="flex-1 bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+                  class="flex-1 text-white font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+                  style="background-color: #10b981;"
+                  onmouseover="this.style.backgroundColor='#059669'"
+                  onmouseout="this.style.backgroundColor='#10b981'">
             Salva evento
           </button>
 
           <button id="evCancelEditBtn"
-                  class="hidden px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
+                  class="hidden px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">
             Annulla modifica
           </button>
         </div>
-        </div> <!-- FINE evFormWrap -->
+      </div> <!-- FINE evFormWrap -->
 
-        <!-- Import Timeline (JSON) (visibile solo in modalità modifica) -->
-        <div id="tlImportWrap" class="bg-white p-4 rounded-xl shadow-md hidden">
+      <!-- Import Timeline (JSON) (visibile solo in modalità modifica) -->
+      <div id="tlImportWrap" class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hidden">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-lg font-bold text-dark-gray">Importa timeline</h2>
+          <h2 class="text-lg font-bold" style="color: #134e4a;">Importa timeline</h2>
           <button id="tlImportClearBtn"
-                  class="text-sm px-3 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50">
+                  class="text-sm px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
             Pulisci
           </button>
         </div>
 
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-slate-500">
           Incolla il JSON generato da ChatGPT. Verranno creati gli eventi, poi puoi modificarli/eliminarli.
-          <br><span class="text-xs text-gray-400">Nota: i giorni sono 0-based (Day 0 = C1D1).</span>
+          <br><span class="text-xs text-slate-400">Nota: i giorni sono 0-based (Day 0 = C1D1).</span>
         </p>
 
         <textarea id="tlImportTextarea" rows="8"
-                  class="mt-3 w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-light-sage"
+                  class="mt-3 w-full p-3 border border-slate-200 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
                   placeholder='{"events":[{"event_type":"radiology","title":"TC","one_shot":true,"at_day":56,"window_before_days":7,"window_after_days":7}]}'></textarea>
 
         <div id="tlImportMsg" class="mt-2 text-sm hidden"></div>
 
         <button id="tlImportBtn"
-                class="mt-3 w-full bg-sage text-white font-semibold px-4 py-2 rounded-lg hover:bg-dark-sage transition-colors shadow-md">
+                class="mt-3 w-full text-white font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+                style="background-color: #10b981;"
+                onmouseover="this.style.backgroundColor='#059669'"
+                onmouseout="this.style.backgroundColor='#10b981'">
           Importa eventi
         </button>
-        </div>
-        </aside>
+      </div>
+    </aside>
 
   </div>
   </section>
 </div>
 
-
-
 <!-- Modale password (usata solo per entrare/uscire dalla modalità modifica) -->
-<div id="tlPasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-[200]">
-  <div class="bg-white p-6 rounded-lg shadow-xl w-80">
-    <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>
-    <input type="password" id="tlPasswordInput" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sage" />
-    <p id="tlPasswordError" class="text-red-400 text-sm mt-2 hidden">Password errata.</p>
+<div id="tlPasswordModal" class="fixed inset-0 hidden items-center justify-center z-[200]" style="background-color: rgba(15,23,42,0.45);">
+  <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-2xl w-80">
+    <h3 class="text-lg font-bold mb-4 text-slate-900">Inserisci la password</h3>
+    <input type="password" id="tlPasswordInput" class="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white text-slate-900" />
+    <p id="tlPasswordError" class="text-red-500 text-xs mt-2 hidden">Password errata.</p>
     <div class="flex justify-end mt-4 space-x-2">
-      <button id="tlCancelPwdBtn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Annulla</button>
-      <button id="tlConfirmPwdBtn" class="bg-sage text-white font-bold py-2 px-4 rounded-lg">Conferma</button>
+      <button id="tlCancelPwdBtn" class="bg-slate-100 text-slate-700 text-sm font-semibold py-2 px-4 rounded-lg hover:bg-slate-200 transition-colors">Annulla</button>
+      <button id="tlConfirmPwdBtn"
+              class="text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm"
+              style="background-color:#10b981;"
+              onmouseover="this.style.backgroundColor='#059669'"
+              onmouseout="this.style.backgroundColor='#10b981'">Conferma</button>
     </div>
   </div>
 </div>
   
-  <div id="evDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-xl shadow-xl w-96 max-w-[90vw]">
-      <h3 id="evDetailTitle" class="text-lg font-bold mb-2"></h3>
-      <p id="evDetailInfo" class="text-sm text-gray-500 mb-3"></p>
+<div id="evDetailModal" class="fixed inset-0 hidden items-center justify-center z-50" style="background-color: rgba(15,23,42,0.45);">
+  <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-2xl w-96 max-w-[90vw]">
+      <h3 id="evDetailTitle" class="text-lg font-bold mb-2 text-slate-900"></h3>
+      <p id="evDetailInfo" class="text-sm text-slate-500 mb-3"></p>
 
       <div class="mb-3">
-        <label class="block text-sm font-medium text-dark-gray">Note</label>
-        <div id="evDetailNotes" class="text-sm text-gray-700 whitespace-pre-wrap"></div>
+        <label class="block text-sm font-medium text-slate-600">Note</label>
+        <div id="evDetailNotes" class="text-sm text-slate-800 whitespace-pre-wrap"></div>
       </div>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium text-dark-gray">Solvenza (per questa occorrenza)</label>
-        <select id="evDetailBilling" class="mt-1 p-2 w-full border border-gray-300 rounded-lg">
+        <label class="block text-sm font-medium text-slate-600">Solvenza (per questa occorrenza)</label>
+        <select id="evDetailBilling" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
           <option value="">Neutro</option>
           <option value="SSN">SSN</option>
           <option value="SP">Sponsor (SP)</option>
@@ -425,8 +436,12 @@
       </div>
 
       <div class="flex justify-end gap-2">
-        <button id="evDetailCloseBtn" class="px-4 py-2 rounded-lg border border-gray-300">Chiudi</button>
-        <button id="evDetailSaveBtn" class="px-4 py-2 rounded-lg bg-sage text-white font-semibold">Salva</button>
+        <button id="evDetailCloseBtn" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">Chiudi</button>
+        <button id="evDetailSaveBtn"
+                class="px-4 py-2 rounded-lg text-white font-semibold transition-colors shadow-sm"
+                style="background-color:#10b981;"
+                onmouseover="this.style.backgroundColor='#059669'"
+                onmouseout="this.style.backgroundColor='#10b981'">Salva</button>
       </div>
     </div>
   </div>

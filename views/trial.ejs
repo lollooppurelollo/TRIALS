@@ -142,35 +142,43 @@
   </form>
 </div>
 
-<!-- ── Import Studio (JSON) ──────────────────────────────── -->
-<div class="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm mb-8 mt-12">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="text-lg font-bold" style="color:#134e4a;">Importa studio (JSON)</h2>
-    <button id="studyImportClearBtn" type="button"
-            class="text-sm px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
-      Pulisci
+<!-- ── Import Studio (JSON) Comprimibile ─────────────────── -->
+<details class="group bg-white border border-slate-200 rounded-2xl shadow-sm mb-8 mt-12 overflow-hidden">
+  <summary class="flex items-center justify-between p-5 font-semibold cursor-pointer hover:bg-slate-50 transition-colors select-none">
+    <div class="flex items-center gap-2.5" style="color:#134e4a;">
+      <i class="fas fa-file-import text-emerald-600"></i>
+      <span class="text-base font-bold">Importa studio da JSON</span>
+    </div>
+    <span class="transition-transform duration-200 group-open:rotate-180">
+      <i class="fas fa-chevron-down text-sm text-slate-400"></i>
+    </span>
+  </summary>
+  <div class="px-6 pb-6 pt-3 border-t border-slate-100 space-y-4">
+    <div class="flex items-center justify-between gap-4">
+      <p class="text-slate-500 text-xs">
+        Incolla il JSON generato dall’analisi del protocollo. Verranno precompilati i campi del form sopra.
+      </p>
+      <button id="studyImportClearBtn" type="button"
+              class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0">
+        Pulisci
+      </button>
+    </div>
+
+    <textarea id="studyImportTextarea" rows="4"
+              class="w-full p-3 border border-slate-200 rounded-lg font-mono text-xs text-slate-800 bg-slate-50 focus:outline-none"
+              placeholder='{"study":{"title":"...","subtitle":"...","clinical_areas":["Polmone"],"specific_clinical_areas":["NSCLC"],"treatment_setting":"Metastatico","min_treatment_line":1,"max_treatment_line":1,"criteria":[{"type":"inclusion","text":"..."},{"type":"exclusion","text":"..."}]}}'></textarea>
+
+    <div id="studyImportMsg" class="mt-1 text-xs hidden"></div>
+
+    <button id="studyImportBtn" type="button"
+            class="w-full text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm text-sm"
+            style="background-color:#10b981;"
+            onmouseover="this.style.backgroundColor='#059669'"
+            onmouseout="this.style.backgroundColor='#10b981'">
+      Precompila il form
     </button>
   </div>
-
-  <p class="text-slate-500 text-sm mb-4">
-    Incolla qui il JSON generato dall'analisi del protocollo.
-    Verranno <b class="text-slate-700">precompilati</b> i campi del form sopra: poi puoi correggere a mano e salvare con "Salva Studio".
-  </p>
-
-  <textarea id="studyImportTextarea" rows="10"
-            class="w-full p-3 border border-slate-200 rounded-lg font-mono text-xs text-slate-800 bg-slate-50 focus:outline-none"
-            placeholder='{"study":{"title":"...","subtitle":"...","clinical_areas":["Polmone"],"specific_clinical_areas":["NSCLC"],"treatment_setting":"Metastatico","min_treatment_line":1,"max_treatment_line":1,"criteria":[{"type":"inclusion","text":"..."},{"type":"exclusion","text":"..."}]}}'></textarea>
-
-  <div id="studyImportMsg" class="mt-2 text-sm hidden"></div>
-
-  <button id="studyImportBtn" type="button"
-          class="mt-3 w-full text-white font-semibold p-3 rounded-lg transition-colors shadow-sm"
-          style="background-color:#10b981;"
-          onmouseover="this.style.backgroundColor='#059669'"
-          onmouseout="this.style.backgroundColor='#10b981'">
-    Precompila il form
-  </button>
-</div>
+</details>
 
 <!-- ── Studi Attivi ──────────────────────────────────────── -->
 <div id="trialListSection" class="mt-8">
@@ -225,29 +233,86 @@
       <h3 class="text-lg leading-6 font-bold text-slate-900" id="modalTitle"></h3>
       <p class="text-sm text-slate-500 mt-1" id="modalSubtitle"></p>
     </div>
-    <div class="modal-content flex-grow overflow-y-auto px-6 py-4">
+    <div class="modal-content flex-grow overflow-y-auto px-6 py-4 space-y-6">
+      
+      <!-- Informazioni Cliniche in griglia -->
       <div>
-        <h4 class="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Dettagli dello Studio</h4>
-        <div class="space-y-2 text-sm text-slate-800">
-          <div><span class="font-semibold text-slate-600">Codice Studio:</span> <span id="modalStudyCode" class="font-mono text-emerald-700"></span></div>
-          <div><span class="font-semibold text-slate-600">Area Clinica:</span> <span id="modalClinicalAreas"></span></div>
-          <div><span class="font-semibold text-slate-600">Specifica Area:</span> <span id="modalSpecificClinicalAreas"></span></div>
-          <div><span class="font-semibold text-slate-600">Setting:</span> <span id="modalTreatmentSetting"></span></div>
-          <div id="modalTreatmentLineContainer" class="hidden">
-            <span class="font-semibold text-slate-600">Linea di Trattamento:</span> <span id="modalTreatmentLine"></span>
+        <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Informazioni Cliniche</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Card Codice -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
+            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+              <i class="fas fa-barcode text-base"></i>
+            </div>
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Codice Studio</span>
+              <span id="modalStudyCode" class="text-sm font-mono font-bold text-emerald-800">—</span>
+            </div>
           </div>
-          <div id="modalInternalNotesContainer" class="hidden">
-            <span class="font-semibold text-slate-600">Note Personalizzate:</span> <span id="modalInternalNotes"></span>
+
+          <!-- Card Area Clinica -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
+            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+              <i class="fas fa-stethoscope text-base"></i>
+            </div>
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Area Clinica</span>
+              <span id="modalClinicalAreas" class="text-sm font-semibold text-slate-800">—</span>
+              <span id="modalSpecificClinicalAreas" class="block text-xs text-slate-500 mt-0.5"></span>
+            </div>
           </div>
-          <div id="modalPiContactsContainer" class="hidden">
-            <span class="font-semibold text-slate-600">Contatti dei Referenti / PI:</span> <span id="modalPiContacts"></span>
+
+          <!-- Card Setting -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
+            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+              <i class="fas fa-sliders-h text-base"></i>
+            </div>
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Setting & Linea</span>
+              <span id="modalTreatmentSetting" class="text-sm font-semibold text-slate-800">—</span>
+              <div id="modalTreatmentLineContainer" class="text-xs text-slate-500 mt-0.5 hidden">
+                Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-700"></span>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
-      <div class="mt-5">
-        <h4 class="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Criteri di Inclusione/Esclusione</h4>
-        <div class="flex flex-col space-y-2" id="criteriaContainer"></div>
+
+      <!-- Informazioni Interne del Centro (Note + Contatti) -->
+      <div id="modalCenterInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Card Note Personalizzate -->
+        <div id="modalInternalNotesContainer" class="p-4 rounded-xl border border-slate-200 bg-amber-50/20 flex items-start gap-3 hidden">
+          <div class="p-2 rounded-lg bg-amber-100 text-amber-700">
+            <i class="fas fa-sticky-note text-base"></i>
+          </div>
+          <div class="flex-grow">
+            <span class="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">Note Personalizzate</span>
+            <p id="modalInternalNotes" class="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap leading-relaxed"></p>
+          </div>
+        </div>
+
+        <!-- Card Referenti / PI -->
+        <div id="modalPiContactsContainer" class="p-4 rounded-xl border border-slate-200 bg-emerald-50/15 flex items-start gap-3 hidden">
+          <div class="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+            <i class="fas fa-user-md text-base"></i>
+          </div>
+          <div class="flex-grow">
+            <span class="block text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Contatti Referenti / PI</span>
+            <p id="modalPiContacts" class="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap leading-relaxed"></p>
+          </div>
+        </div>
+
       </div>
+
+      <!-- Criteri di I/E -->
+      <div>
+        <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Criteri di Inclusione / Esclusione</h4>
+        <div id="criteriaContainer"></div>
+      </div>
+
     </div>
     <div class="p-5 border-t border-slate-100 flex-shrink-0 space-y-2">
       <button id="openTimelineBtn"

@@ -66,16 +66,72 @@
      style="padding: 4px 4px 76px 4px; background-color: rgba(15,23,42,0.45);">
     <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
          style="width: min(1600px, 100%); height: calc(100vh - 80px);">
-        <div class="modal-content overflow-y-auto p-5">
-            <div class="text-center">
-                <h3 class="text-lg leading-6 font-semibold text-slate-900" id="modalTitle"></h3>
-                <p class="text-sm text-slate-500" id="modalSubtitle"></p>
-                <div class="mt-4">
-                    <h4 class="font-bold text-slate-800 mb-2">Criteri di I/E</h4>
-                    <div class="flex flex-col space-y-2" id="criteriaContainer">
-                        <!-- Criteri iniettati -->
+        <div class="modal-content overflow-y-auto p-6 space-y-6">
+            <div class="border-b border-slate-100 pb-4 text-center">
+                <h3 class="text-xl font-bold text-slate-900" id="modalTitle"></h3>
+                <p class="text-sm text-slate-500 mt-1" id="modalSubtitle"></p>
+            </div>
+
+            <!-- Informazioni Cliniche in griglia -->
+            <div>
+                <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Informazioni Cliniche</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  
+                  <!-- Card Codice -->
+                  <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
+                    <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                      <i class="fas fa-barcode text-base"></i>
                     </div>
+                    <div>
+                      <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Codice Studio</span>
+                      <span id="modalStudyCode" class="text-sm font-mono font-bold text-emerald-800">—</span>
+                    </div>
+                  </div>
+
+                  <!-- Card Area Clinica -->
+                  <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
+                    <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                      <i class="fas fa-stethoscope text-base"></i>
+                    </div>
+                    <div>
+                      <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Area Clinica</span>
+                      <span id="modalClinicalAreas" class="text-sm font-semibold text-slate-800">—</span>
+                      <span id="modalSpecificClinicalAreas" class="block text-xs text-slate-500 mt-0.5"></span>
+                    </div>
+                  </div>
+
+                  <!-- Card Setting -->
+                  <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
+                    <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                      <i class="fas fa-sliders-h text-base"></i>
+                    </div>
+                    <div>
+                      <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Setting & Linea</span>
+                      <span id="modalTreatmentSetting" class="text-sm font-semibold text-slate-800">—</span>
+                      <div id="modalTreatmentLineContainer" class="text-xs text-slate-500 mt-0.5 hidden">
+                        Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-700"></span>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
+            </div>
+
+            <!-- Contatti Referenti / PI (se presenti, utili anche per i pazienti per richiedere informazioni) -->
+            <div id="modalPiContactsContainer" class="p-4 rounded-xl border border-slate-200 bg-emerald-50/15 flex items-start gap-3 hidden">
+              <div class="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+                <i class="fas fa-user-md text-base"></i>
+              </div>
+              <div class="flex-grow">
+                <span class="block text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Contatti per lo Studio</span>
+                <p id="modalPiContacts" class="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap leading-relaxed"></p>
+              </div>
+            </div>
+
+            <!-- Criteri di I/E -->
+            <div>
+                <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Criteri di Inclusione / Esclusione</h4>
+                <div id="criteriaContainer"></div>
             </div>
         </div>
         <div class="px-5 py-4 bg-white border-t border-slate-200 space-y-2">
