@@ -308,8 +308,8 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
               <div>
                 <label class="block text-sm font-medium text-slate-700">Giorno (da inizio studio)</label>
-                <input id="evAtDay" type="number" min="0" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
-                <p class="text-xs text-slate-400 mt-1">Suggerimento: clicca un giorno nel calendario per precompilare.</p>
+                <input id="evAtDay" type="number" min="-2" class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                <p class="text-xs text-slate-400 mt-1">Suggerimento: clicca un giorno o le caselle arruolamento (-2) / randomizzazione (-1).</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 leading-tight">Finestra indietro (−g, opz.)</label>
@@ -467,6 +467,24 @@
     })[c]);
   }
 
+  function isPreTherapy(ev) {
+    if (ev.at_day != null && Number(ev.at_day) < 0) return true;
+    if (ev.pre_therapy === true || ev.screening === true || ev.pre_c1d1 === true) return true;
+    
+    const title = String(ev.title || "").toLowerCase();
+    const type = String(ev.event_type || "").toLowerCase();
+    const notes = String(ev.notes || "").toLowerCase();
+    const indications = String(ev.indications || "").toLowerCase();
+    const phase = String(ev.phase || "").toLowerCase();
+
+    if (phase.includes("screening") || phase.includes("pre-trattamento") || phase.includes("pre-terapia") || phase.includes("arruolamento") || phase.includes("randomizzazione") || phase.includes("pre c1d1") || phase.includes("pre-c1d1")) return true;
+    if (title.includes("screening") || title.includes("pre-trattamento") || title.includes("pre-terapia") || title.includes("arruolamento") || title.includes("randomizzazione") || title.includes("pre c1d1") || title.includes("pre-c1d1")) return true;
+    if (notes.includes("screening") || notes.includes("pre-trattamento") || notes.includes("pre-terapia") || notes.includes("arruolamento") || notes.includes("randomizzazione")) return true;
+    if (indications.includes("screening") || indications.includes("pre-trattamento") || indications.includes("pre-terapia") || indications.includes("arruolamento") || indications.includes("randomizzazione")) return true;
+    
+    return false;
+  }
+
   // Password di modifica: non più verificata solo nel browser (era
   // bypassabile). Viene memorizzata qui e inviata come header
   // "x-edit-password" con ogni richiesta di modifica; il server
@@ -570,7 +588,7 @@
     catch { throw new Error("JSON non valido. Incolla solo JSON (senza testo)."); }
 
     if (!obj || typeof obj !== "object") throw new Error("Formato non valido.");
-    if (!Array.isArray(obj.events)) throw new Error("Manca 'events' (array).");
+    if (!Array.isArray(obj.events)) obj.events = [];
 
     return obj;
   }
@@ -582,8 +600,8 @@
     const oneShot = ev.one_shot === true;
 
     if (oneShot) {
-      if (!Number.isInteger(ev.at_day) || ev.at_day < 0) {
-        return `Evento #${idx+1}: one_shot=true ma at_day mancante/non valido (>=0)`;
+      if (!Number.isInteger(ev.at_day) || ev.at_day < -2) {
+        return `Evento #${idx+1}: one_shot=true ma at_day mancante/non valido (>= -2)`;
       }
     } else {
       if (!Number.isInteger(ev.repeat_every_days) || ev.repeat_every_days <= 0) {
@@ -615,6 +633,18 @@
 
     for (let i = 0; i < events.length; i++) {
       const ev = events[i];
+
+      // Se pre-terapia/screening, forza a Giorno -2 o Giorno -1
+      if (isPreTherapy(ev)) {
+        ev.one_shot = true;
+        const armCodes = Array.isArray(ev.arm_codes) && ev.arm_codes.length ? ev.arm_codes : ["ALL"];
+        if (armCodes.includes("ALL")) {
+          ev.at_day = -2; // Arruolamento
+        } else {
+          ev.at_day = -1; // Randomizzazione
+        }
+      }
+
       const err = validateEvent(ev, i);
       if (err) { errors.push(err); continue; }
 
@@ -927,16 +957,50 @@
 
           const obj = parseImportJson(_pendingImportRaw);
 
-          if (!obj.events.length) {
-            showImportMsg("Nessun evento in 'events'.", false);
+          if (!obj.events.length && (!obj.arms || !obj.arms.length)) {
+            showImportMsg("Nessun evento o braccio nel JSON.", false);
             _pendingImportRaw = null;
             return;
           }
 
-          // ✅ Messaggio “import in corso”
-          showImportMsg(`Import in corso... (${obj.events.length} eventi)`, true);
+          // Aggiorna bracci se forniti
+          if (Array.isArray(obj.arms) && obj.arms.length > 0) {
+            const parsedArms = obj.arms.map((a, idx) => {
+              if (typeof a === "string") {
+                const code = String.fromCharCode(65 + idx);
+                return { arm_code: code, arm_label: a.trim() };
+              } else if (a && typeof a === "object") {
+                const code = String(a.arm_code || a.code || String.fromCharCode(65 + idx)).trim();
+                const label = String(a.arm_label || a.label || a.name || code).trim();
+                return { arm_code: code, arm_label: label };
+              }
+              return null;
+            }).filter(Boolean);
 
-          const { created, errors } = await importEvents(obj.events);
+            if (parsedArms.length > 0) {
+              showImportMsg("Importazione bracci in corso...", true);
+              const resArms = await authFetch(`/api/studies/${STUDY_ID}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ arms: parsedArms })
+              });
+              if (resArms.ok) {
+                await loadArms();
+              } else {
+                console.error("Errore aggiornamento bracci:", resArms.status);
+              }
+            }
+          }
+
+          // Procedi con l'importazione degli eventi
+          let created = 0;
+          let errors = [];
+          if (obj.events.length > 0) {
+            showImportMsg(`Import in corso... (${obj.events.length} eventi)`, true);
+            const resEvents = await importEvents(obj.events);
+            created = resEvents.created;
+            errors = resEvents.errors;
+          }
 
           await loadEvents(); // aggiorna lista+calendario
 
@@ -1057,6 +1121,8 @@
     if (ev.one_shot) {
       const d = ev.at_day;
       if (d == null) return "Evento singolo";
+      if (d === -2) return `Fase: Arruolamento${winText}`;
+      if (d === -1) return `Fase: Randomizzazione${winText}`;
       const w = Math.floor(d / 7);
       const dow = (d % 7) + 1;
       return `Giorno ${d + 1} — Settimana ${w}, Giorno ${dow}${winText}`;
@@ -1117,7 +1183,7 @@
     const windows = new Map();
 
     const push = (map, key, value) => {
-      if (key < 0 || key >= totalDays) return;
+      if (key < -2 || key >= totalDays) return;
       const arr = map.get(key) || [];
       arr.push(value);
       map.set(key, arr);
@@ -1168,6 +1234,110 @@
       therapy: "var(--color-orange)",
       custom: "var(--color-gray)",
     }[t] || "var(--color-gray)");
+
+    // --- Renderizzazione Blocco Pre-Trattamento ---
+    const preBlock = document.createElement("div");
+    preBlock.className = "rounded-2xl border border-slate-200 mb-8 overflow-hidden bg-white shadow-sm";
+
+    const preHeader = document.createElement("div");
+    preHeader.className = "px-6 py-4 border-b border-slate-100 flex items-center justify-between";
+    preHeader.style.backgroundColor = "#134e4a"; // Teal scuro profondo
+    preHeader.innerHTML = `<div class="font-bold text-white text-sm tracking-wider uppercase">FASE PRE-TRATTAMENTO (PRE C1D1)</div>`;
+    preBlock.appendChild(preHeader);
+
+    const preBody = document.createElement("div");
+    preBody.className = "p-6 grid grid-cols-1 md:grid-cols-2 gap-6";
+
+    // Arruolamento
+    const arrCell = document.createElement("div");
+    arrCell.className = "daycell p-5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-emerald-300 transition-all cursor-pointer flex flex-col min-h-[140px]";
+    arrCell.setAttribute("data-day-index", "-2");
+    arrCell.innerHTML = `
+      <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+        <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fas fa-user-plus text-emerald-600 text-xs"></i> 1. Arruolamento (Fase Comune)
+        </span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold uppercase">Pre C1D1</span>
+      </div>
+      <div class="space-y-1.5 flex-grow daylanes" id="preLane-2"></div>
+    `;
+
+    // Randomizzazione
+    const randCell = document.createElement("div");
+    randCell.className = "daycell p-5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-emerald-300 transition-all cursor-pointer flex flex-col min-h-[140px]";
+    randCell.setAttribute("data-day-index", "-1");
+    randCell.innerHTML = `
+      <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+        <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fas fa-random text-emerald-600 text-xs"></i> 2. Randomizzazione (Specifico per Braccio)
+        </span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold uppercase">Pre C1D1</span>
+      </div>
+      <div class="space-y-1.5 flex-grow daylanes" id="preLane-1"></div>
+    `;
+
+    preBody.appendChild(arrCell);
+    preBody.appendChild(randCell);
+    preBlock.appendChild(preBody);
+    tlTimeline.appendChild(preBlock);
+
+    // Popola le lane di Arruolamento (-2) e Randomizzazione (-1)
+    [-2, -1].forEach(dayIdx => {
+      const lanesWrap = preBlock.querySelector(`#preLane-${Math.abs(dayIdx)}`);
+      if (!lanesWrap) return;
+      lanesWrap.innerHTML = "";
+
+      const dayEntries = byDay.get(dayIdx) || [];
+      const winEntries = windows.get(dayIdx) || [];
+      const allEntries = [...dayEntries, ...winEntries];
+
+      const laneMap = new Map();
+      allEntries.forEach(x => {
+        if (!laneMap.has(x.occKey)) laneMap.set(x.occKey, { ev: x.ev, occDay: x.occDay, occKey: x.occKey, kind: x.kind });
+      });
+
+      const ordered = Array.from(laneMap.values()).sort((a,b) => {
+        const ta = (a.ev.event_type || ""), tb = (b.ev.event_type || "");
+        if (ta !== tb) return ta.localeCompare(tb);
+        const na = (a.ev.title || ""), nb = (b.ev.title || "");
+        return na.localeCompare(nb);
+      });
+
+      if (ordered.length === 0) {
+        lanesWrap.innerHTML = `<span class="text-xs text-slate-400 italic">Nessun esame inserito. Clicca per aggiungere.</span>`;
+        return;
+      }
+
+      ordered.forEach(l => {
+        const bar = document.createElement("div");
+        bar.className = "lane " + (l.kind === "main" ? "lane-main" : "lane-win");
+        
+        const c = colorByType(l.ev.event_type);
+        bar.style.background = c;
+        if (l.kind === "win") {
+          bar.style.opacity = "0.45";
+        }
+
+        const ov = findOverride(l.ev.id, dayIdx);
+        const title = effectiveField(l.ev, ov, "title") || eventTitle(l.ev);
+        const notes = effectiveField(l.ev, ov, "notes") || "";
+
+        let armSuffix = "";
+        if (dayIdx === -1 && Array.isArray(l.ev.arm_codes) && !l.ev.arm_codes.includes("ALL")) {
+          armSuffix = ` [Braccio: ${l.ev.arm_codes.join(", ")}]`;
+        }
+
+        bar.textContent = title + armSuffix;
+        bar.title = notes ? `${title}${armSuffix}\nNote: ${notes}` : (title + armSuffix);
+        bar.style.cursor = "pointer";
+        bar.addEventListener("click", (evt) => {
+          evt.stopPropagation();
+          openEventDetails(l.ev, ov, dayIdx);
+        });
+
+        lanesWrap.appendChild(bar);
+      });
+    });
 
     for (let startW = 0, cycleIdx = 1; startW < total; startW += cycleWeeks, cycleIdx++) {
       const endW = Math.min(total - 1, startW + cycleWeeks - 1);
@@ -1482,8 +1652,8 @@
 
     if (evOneShot.checked){
       const atDay = parseInt(evAtDay.value ?? "",10);
-      if (!Number.isInteger(atDay) || atDay < 0){
-        alert("Inserisci un 'Giorno da inizio studio' valido (>=0).");
+      if (!Number.isInteger(atDay) || atDay < -2){
+        alert("Inserisci un 'Giorno da inizio studio' valido (>= -2).");
         return;
       }
       payload.at_day = atDay;

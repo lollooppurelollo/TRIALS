@@ -363,6 +363,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     c.text.length > 0,
             );
 
+        const armsArr = Array.isArray(study.arms) ? study.arms : [];
+        const arms = armsArr.map((a, idx) => {
+            if (typeof a === "string") {
+                const code = String.fromCharCode(65 + idx); // A, B, C...
+                return { arm_code: code, arm_label: a.trim() };
+            } else if (a && typeof a === "object") {
+                const code = String(a.arm_code || a.code || String.fromCharCode(65 + idx)).trim();
+                const label = String(a.arm_label || a.label || a.name || code).trim();
+                return { arm_code: code, arm_label: label };
+            }
+            return null;
+        }).filter(Boolean);
+
         return {
             study_code,
             title,
@@ -379,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
             internal_notes,
             pi_contacts,
             criteria,
+            arms,
         };
     }
 
@@ -463,6 +477,34 @@ document.addEventListener("DOMContentLoaded", () => {
             study.criteria.forEach((c) => addCriteriaRow(c.text, c.type));
         } else {
             addCriteriaRow();
+        }
+
+        // Bracci: svuota e ricrea
+        if (studyArmsCount && armsList && studyArmsContainer) {
+            const count = Array.isArray(study.arms) ? study.arms.length : 1;
+            studyArmsCount.value = String(count);
+            if (count <= 1) {
+                studyArmsContainer.classList.add("hidden");
+                armsList.innerHTML = "";
+            } else {
+                studyArmsContainer.classList.remove("hidden");
+                armsList.innerHTML = "";
+                study.arms.forEach((a) => {
+                    const div = document.createElement("div");
+                    div.className = "flex space-x-2";
+                    div.innerHTML = `
+                        <input type="text"
+                               class="arm-code p-2 w-1/4 border border-gray-300 rounded-lg bg-gray-50"
+                               value="${escapeHtml(a.arm_code)}"
+                               readonly>
+                        <input type="text"
+                               class="arm-label p-2 w-3/4 border border-gray-300 rounded-lg"
+                               value="${escapeHtml(a.arm_label)}"
+                               placeholder="Nome braccio (es: Sperimentale)">
+                    `;
+                    armsList.appendChild(div);
+                });
+            }
         }
     }
 
