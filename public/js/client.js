@@ -1491,19 +1491,37 @@ document.addEventListener("DOMContentLoaded", () => {
         // --- Extra files ---
         const extraList = document.getElementById("modalExtraFilesList");
         const addExtraLabel = document.getElementById("modalUploadExtraLabel");
+        const isTrialPage = !!addExtraLabel; // Se c'è il pulsante per aggiungere file, siamo nella pagina di gestione (Trial)
         if (extraList) {
             extraList.innerHTML = "";
             const files = meta.extra_files_meta || [];
             files.forEach((f) => {
                 const row = document.createElement("div");
-                row.className = "flex items-center gap-2 text-xs";
+                row.className = "flex items-center gap-2 text-xs w-full py-1 border-b border-slate-100 last:border-0";
+                
+                const isViewable = f.mime && (f.mime.startsWith("image/") || f.mime === "application/pdf");
+                const viewBtn = isViewable 
+                    ? `<button class="text-blue-600 hover:text-blue-800 p-1" title="Visualizza" data-view-extra="${f.index}"><i class="fas fa-eye"></i></button>`
+                    : ``;
+                const delBtn = isTrialPage
+                    ? `<button class="text-red-400 hover:text-red-600 p-1" title="Elimina" data-del-extra="${f.index}"><i class="fas fa-trash"></i></button>`
+                    : ``;
+
                 row.innerHTML = `
                     <span class="flex-grow truncate text-slate-700 font-medium">${escapeHtml(f.name)}</span>
-                    <button class="text-emerald-600 hover:text-emerald-800 p-1" title="Scarica" data-dl-extra="${f.index}"><i class="fas fa-download"></i></button>
-                    <button class="text-red-400 hover:text-red-600 p-1" title="Elimina" data-del-extra="${f.index}"><i class="fas fa-trash"></i></button>
+                    <div class="flex items-center gap-1">
+                        ${viewBtn}
+                        <button class="text-emerald-600 hover:text-emerald-800 p-1" title="Scarica" data-dl-extra="${f.index}"><i class="fas fa-download"></i></button>
+                        ${delBtn}
+                    </div>
                 `;
+                if (isViewable) {
+                    row.querySelector(`[data-view-extra]`).addEventListener("click", () => openSchemaViewer(studyId, f.mime, `extra_${f.index}`, f.name));
+                }
                 row.querySelector(`[data-dl-extra]`).addEventListener("click", () => downloadFile(studyId, `extra_${f.index}`));
-                row.querySelector(`[data-del-extra]`).addEventListener("click", () => deleteFile(studyId, "extra_files", f.index));
+                if (isTrialPage) {
+                    row.querySelector(`[data-del-extra]`).addEventListener("click", () => deleteFile(studyId, "extra_files", f.index));
+                }
                 extraList.appendChild(row);
             });
             if (addExtraLabel) addExtraLabel.classList.toggle("hidden", files.length >= 4);
@@ -1581,19 +1599,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let _currentSchemaStudyId = null;
     let _currentSchemaMime = null;
+    let _currentSchemaField = "study_schema";
 
-    async function openSchemaViewer(studyId, mime) {
+    async function openSchemaViewer(studyId, mime, field = "study_schema", title = "Study Schema") {
         if (!schemaViewerModal) return;
         _currentSchemaStudyId = studyId;
         _currentSchemaMime = mime;
+        _currentSchemaField = field;
 
         schemaViewerIframe.classList.add("hidden");
         schemaViewerImg.classList.add("hidden");
 
+        const modalTitle = document.querySelector("#schemaViewerModal h3");
+        if (modalTitle) {
+            modalTitle.textContent = title;
+        }
+
         schemaViewerModal.classList.remove("hidden");
         schemaViewerModal.style.display = "flex";
 
-        const url = `/api/studies/${studyId}/file/study_schema`;
+        const url = `/api/studies/${studyId}/file/${field}`;
         if (mime && mime.startsWith("image/")) {
             schemaViewerImg.src = url;
             schemaViewerImg.classList.remove("hidden");
@@ -1609,12 +1634,14 @@ document.addEventListener("DOMContentLoaded", () => {
             schemaViewerModal.style.display = "";
             schemaViewerIframe.src = "";
             schemaViewerImg.src = "";
+            const modalTitle = document.querySelector("#schemaViewerModal h3");
+            if (modalTitle) modalTitle.textContent = "Study Schema";
         });
     }
 
     if (schemaViewerDownload) {
         schemaViewerDownload.addEventListener("click", () => {
-            if (_currentSchemaStudyId) downloadFile(_currentSchemaStudyId, "study_schema");
+            if (_currentSchemaStudyId) downloadFile(_currentSchemaStudyId, _currentSchemaField || "study_schema");
         });
     }
 
