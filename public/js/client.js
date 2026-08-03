@@ -952,6 +952,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 studyTreatmentLineContainer.classList.add("hidden");
                 criteriaListDiv.innerHTML = "";
                 addCriteriaRow();
+                
+                // Reset Bracci
+                if (studyArmsCount) studyArmsCount.value = "1";
+                if (armsList) armsList.innerHTML = "";
+                if (studyArmsContainer) studyArmsContainer.classList.add("hidden");
+
+                // Reset Import JSON
+                if (studyImportTextarea) studyImportTextarea.value = "";
+                if (studyImportMsg) studyImportMsg.classList.add("hidden");
+
                 fetchAndRenderTrials();
             });
         });
