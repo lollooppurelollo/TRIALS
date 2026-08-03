@@ -1499,7 +1499,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const row = document.createElement("div");
                 row.className = "flex items-center gap-2 text-xs w-full py-1 border-b border-slate-100 last:border-0";
                 
-                const isViewable = f.mime && (f.mime.startsWith("image/") || f.mime === "application/pdf");
+                const isViewable = f.mime && f.mime.startsWith("image/");
                 const viewBtn = isViewable 
                     ? `<button class="text-blue-600 hover:text-blue-800 p-1" title="Visualizza" data-view-extra="${f.index}"><i class="fas fa-eye"></i></button>`
                     : ``;
