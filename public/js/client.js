@@ -1089,22 +1089,22 @@ document.addEventListener("DOMContentLoaded", () => {
     //  CLINICALTRIALS.GOV INTEGRATION
     // =========================================================
 
-    // Mappa area clinica italiana → termini inglesi per CT.gov
+    // Mappa area clinica italiana → sinonimi inglesi per CT.gov con operatori booleani
     const CTGOV_AREA_MAP = {
-        "Mammella": "breast cancer",
-        "Polmone": "lung cancer",
-        "Gastro-Intestinale": "gastrointestinal cancer",
-        "Ginecologico": "gynecologic cancer ovarian endometrial",
-        "Prostata e Vie Urinarie": "prostate bladder kidney urothelial",
-        "Melanoma e Cute": "melanoma skin cancer",
-        "Testa-Collo": "head neck cancer",
-        "Fase 1": "phase 1 advanced solid tumor",
-        "Altro": "cancer",
+        "Mammella": '"breast cancer" OR "breast carcinoma" OR "breast neoplasm"',
+        "Polmone": '"lung cancer" OR "lung carcinoma" OR "lung neoplasm"',
+        "Gastro-Intestinale": '"gastrointestinal cancer" OR "gastrointestinal oncology" OR "GI cancer"',
+        "Ginecologico": '"gynecologic cancer" OR "gynecological cancer" OR "ovarian cancer" OR "endometrial cancer" OR "cervical cancer"',
+        "Prostata e Vie Urinarie": '"prostate cancer" OR "bladder cancer" OR "renal cancer" OR "kidney cancer" OR "urothelial carcinoma"',
+        "Melanoma e Cute": '"melanoma" OR "skin cancer" OR "skin carcinoma"',
+        "Testa-Collo": '"head and neck cancer" OR "head and neck squamous cell carcinoma" OR "HNSCC"',
+        "Fase 1": '"solid tumor" OR "advanced cancer" OR "metastatic cancer"',
+        "Altro": '"cancer" OR "tumor" OR "neoplasm"',
     };
     const CTGOV_SETTING_MAP = {
-        "Metastatico": "metastatic",
-        "Adiuvante": "adjuvant",
-        "Neo-adiuvante": "neoadjuvant",
+        "Metastatico": '"metastatic" OR "advanced" OR "stage IV"',
+        "Adiuvante": '"adjuvant" OR "postoperative" OR "post-operative"',
+        "Neo-adiuvante": '"neoadjuvant" OR "preoperative" OR "pre-operative"',
     };
     const CTGOV_LINE_MAP = {
         1: "first-line 1L",
@@ -1112,56 +1112,66 @@ document.addEventListener("DOMContentLoaded", () => {
         3: "third-line 3L",
     };
 
-    // Mappa le aree cliniche specifiche in termini inglesi appropriati
+    // Mappa le aree cliniche specifiche in termini inglesi ed equivalenti clinici (es. recettori ormonali per luminale)
     const CTGOV_SPECIFIC_MAP = {
-        "Luminali": "luminal",
-        "TNBC": "TNBC triple-negative",
-        "HER2 positive": "HER2-positive",
-        "Mesotelioma": "mesothelioma",
-        "NSCLC": "NSCLC lung",
-        "SCLC": "SCLC lung",
-        "Esofago": "esophagus esophageal",
-        "Stomaco": "gastric stomach",
-        "Colon": "colon",
-        "Retto": "rectum rectal",
-        "Ano": "anal anus",
-        "Vie biliari": "biliary cholangiocarcinoma",
-        "Pancreas": "pancreas pancreatic",
-        "Fegato": "liver HCC",
-        "Endometrio": "endometrial endometrium",
-        "Ovaio": "ovarian ovary",
-        "Cervice": "cervical cervix",
-        "Vulva": "vulva vulvar",
+        "Luminali": '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent"',
+        "TNBC": '"TNBC" OR "triple negative" OR "triple-negative"',
+        "HER2 positive": '"HER2 positive" OR "HER2-positive" OR "HER2+" OR "HER2 amplified"',
+        "Mesotelioma": '"mesothelioma"',
+        "NSCLC": '"NSCLC" OR "non-small cell lung cancer"',
+        "SCLC": '"SCLC" OR "small cell lung cancer"',
+        "Esofago": '"esophagus" OR "esophageal"',
+        "Stomaco": '"gastric" OR "stomach"',
+        "Colon": '"colon" OR "colonic" OR "colorectal"',
+        "Retto": '"rectum" OR "rectal" OR "colorectal"',
+        "Ano": '"anal" OR "anus"',
+        "Vie biliari": '"biliary" OR "cholangiocarcinoma" OR "gallbladder"',
+        "Pancreas": '"pancreas" OR "pancreatic"',
+        "Fegato": '"liver" OR "hepatocellular" OR "HCC"',
+        "Endometrio": '"endometrial" OR "endometrium"',
+        "Ovaio": '"ovarian" OR "ovary"',
+        "Cervice": '"cervical" OR "cervix"',
+        "Vulva": '"vulvar" OR "vulva"',
         "Altri": "",
-        "Prostata": "prostate",
-        "Rene": "renal kidney",
-        "Vescica": "bladder",
-        "Altre vie Urinarie": "urinary urothelial",
-        "Melanoma": "melanoma",
-        "SCC": "squamous cell skin",
-        "Basalioma": "basal cell skin",
+        "Prostata": '"prostate" OR "prostatic"',
+        "Rene": '"renal" OR "kidney"',
+        "Vescica": '"bladder" OR "urothelial"',
+        "Altre vie Urinarie": '"urinary" OR "urothelial"',
+        "Melanoma": '"melanoma"',
+        "SCC": '"squamous cell skin" OR "cutaneous squamous cell"',
+        "Basalioma": '"basal cell skin" OR "basal cell carcinoma"',
     };
 
     /** Costruisce i parametri query per l'API CT.gov v2 */
     function buildCtgovParams(patientData, countryFilter, statusFilter) {
-        const terms = [];
-        const area = CTGOV_AREA_MAP[patientData.clinicalAreas] || "cancer";
-        terms.push(area);
-        const setting = CTGOV_SETTING_MAP[patientData.treatmentSetting];
-        if (setting) terms.push(setting);
+        const queryParts = [];
         
-        // Traduci il sottotipo specifico se mappato, altrimenti usa il valore originale
+        // 1. Area Clinica Principale
+        const areaSynonyms = CTGOV_AREA_MAP[patientData.clinicalAreas];
+        if (areaSynonyms) {
+            queryParts.push(`(${areaSynonyms})`);
+        }
+        
+        // 2. Setting del Trattamento
+        const settingSynonyms = CTGOV_SETTING_MAP[patientData.treatmentSetting];
+        if (settingSynonyms) {
+            queryParts.push(`(${settingSynonyms})`);
+        }
+        
+        // 3. Sottotipo Specifico
         if (patientData.specificClinicalAreas) {
-            const translatedSpecific = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
-            if (translatedSpecific !== undefined) {
-                if (translatedSpecific) terms.push(translatedSpecific);
+            const specificSynonyms = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
+            if (specificSynonyms) {
+                queryParts.push(`(${specificSynonyms})`);
             } else {
-                terms.push(patientData.specificClinicalAreas);
+                queryParts.push(`("${patientData.specificClinicalAreas}")`);
             }
         }
 
+        const queryTerm = queryParts.join(" AND ");
+
         const params = new URLSearchParams({
-            "query.term": terms.join(" "),
+            "query.term": queryTerm,
             "pageSize": "15",
             "format": "json",
         });
