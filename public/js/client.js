@@ -1112,6 +1112,36 @@ document.addEventListener("DOMContentLoaded", () => {
         3: "third-line 3L",
     };
 
+    // Mappa le aree cliniche specifiche in termini inglesi appropriati
+    const CTGOV_SPECIFIC_MAP = {
+        "Luminali": "luminal",
+        "TNBC": "TNBC triple-negative",
+        "HER2 positive": "HER2-positive",
+        "Mesotelioma": "mesothelioma",
+        "NSCLC": "NSCLC lung",
+        "SCLC": "SCLC lung",
+        "Esofago": "esophagus esophageal",
+        "Stomaco": "gastric stomach",
+        "Colon": "colon",
+        "Retto": "rectum rectal",
+        "Ano": "anal anus",
+        "Vie biliari": "biliary cholangiocarcinoma",
+        "Pancreas": "pancreas pancreatic",
+        "Fegato": "liver HCC",
+        "Endometrio": "endometrial endometrium",
+        "Ovaio": "ovarian ovary",
+        "Cervice": "cervical cervix",
+        "Vulva": "vulva vulvar",
+        "Altri": "",
+        "Prostata": "prostate",
+        "Rene": "renal kidney",
+        "Vescica": "bladder",
+        "Altre vie Urinarie": "urinary urothelial",
+        "Melanoma": "melanoma",
+        "SCC": "squamous cell skin",
+        "Basalioma": "basal cell skin",
+    };
+
     /** Costruisce i parametri query per l'API CT.gov v2 */
     function buildCtgovParams(patientData, countryFilter, statusFilter) {
         const terms = [];
@@ -1119,7 +1149,17 @@ document.addEventListener("DOMContentLoaded", () => {
         terms.push(area);
         const setting = CTGOV_SETTING_MAP[patientData.treatmentSetting];
         if (setting) terms.push(setting);
-        if (patientData.specificClinicalAreas) terms.push(patientData.specificClinicalAreas);
+        
+        // Traduci il sottotipo specifico se mappato, altrimenti usa il valore originale
+        if (patientData.specificClinicalAreas) {
+            const translatedSpecific = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
+            if (translatedSpecific !== undefined) {
+                if (translatedSpecific) terms.push(translatedSpecific);
+            } else {
+                terms.push(patientData.specificClinicalAreas);
+            }
+        }
+
         const params = new URLSearchParams({
             "query.term": terms.join(" "),
             "pageSize": "15",
