@@ -71,6 +71,7 @@
       justify-content:flex-start; /* prima era center */
       padding:.35rem;
       cursor:pointer;
+      min-width: 0;
     }
 
     .daycell:hover{outline:2px solid var(--color-light-sage)}
@@ -207,7 +208,7 @@
   </div>
 
   <!-- Layout: Calendario grande + pannello laterale collassabile -->
-  <div id="tlMainGrid" class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
+  <div id="tlMainGrid" class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-6">
 
     <!-- Timeline (calendario) -->
     <section class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
@@ -1246,7 +1247,7 @@
     preBlock.appendChild(preHeader);
 
     const preBody = document.createElement("div");
-    preBody.className = "p-6 grid grid-cols-1 md:grid-cols-2 gap-6";
+    preBody.className = "p-6 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6";
 
     // Arruolamento
     const arrCell = document.createElement("div");
