@@ -122,6 +122,31 @@
       </div>
     </div>
 
+    <!-- DOCUMENTI E ALLEGATI -->
+    <div class="border-t border-slate-100 pt-5 mt-2">
+      <h3 class="text-base font-semibold text-slate-800 mb-3">Documenti e Allegati dello Studio</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Protocollo PDF -->
+        <div>
+          <label for="studyFormProtocol" class="block text-sm font-medium text-slate-700 text-xs">Protocollo PDF</label>
+          <input type="file" id="studyFormProtocol" accept="application/pdf"
+                 class="mt-1 p-1 w-full border border-slate-200 rounded-lg bg-white text-slate-900 text-xs focus:outline-none file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+        </div>
+        <!-- Study Schema -->
+        <div>
+          <label for="studyFormSchema" class="block text-sm font-medium text-slate-700 text-xs">Study Schema (PDF o Immagine)</label>
+          <input type="file" id="studyFormSchema" accept="application/pdf,image/*"
+                 class="mt-1 p-1 w-full border border-slate-200 rounded-lg bg-white text-slate-900 text-xs focus:outline-none file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+        <!-- Allegati extra -->
+        <div>
+          <label for="studyFormExtras" class="block text-sm font-medium text-slate-700 text-xs">Allegati extra (max 4, PDF o Immagini)</label>
+          <input type="file" id="studyFormExtras" accept="application/pdf,image/*" multiple
+                 class="mt-1 p-1 w-full border border-slate-200 rounded-lg bg-white text-slate-900 text-xs focus:outline-none file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+        </div>
+      </div>
+    </div>
+
     <!-- CRITERI INCLUSIONE/ESCLUSIONE -->
     <div class="border-t border-slate-100 pt-5 mt-2">
       <h3 class="text-base font-semibold text-slate-800 mb-3">Criteri di Inclusione/Esclusione</h3>
@@ -307,6 +332,83 @@
 
       </div>
 
+      <!-- Documenti allegati -->
+      <div id="modalDocsSection">
+        <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Documenti</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="modalDocsGrid">
+
+          <!-- Protocollo PDF -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="p-2 rounded-lg bg-red-50 text-red-600"><i class="fas fa-file-pdf text-base"></i></div>
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Protocollo PDF</span>
+            </div>
+            <div id="modalProtocolStatus" class="text-xs text-slate-400 mb-2 italic">Nessun file</div>
+            <div class="flex gap-2 flex-wrap">
+              <button id="modalDownloadProtocol" class="hidden text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
+                <i class="fas fa-download mr-1"></i>Scarica
+              </button>
+              <label id="modalUploadProtocolLabel" class="hidden cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
+                <i class="fas fa-upload mr-1"></i>Sostituisci
+                <input type="file" id="modalUploadProtocol" accept="application/pdf" class="hidden">
+              </label>
+              <label id="modalUploadProtocolFirstLabel" class="cursor-pointer text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
+                <i class="fas fa-upload mr-1"></i>Carica
+                <input type="file" id="modalUploadProtocolFirst" accept="application/pdf" class="hidden">
+              </label>
+              <button id="modalDeleteProtocol" class="hidden text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
+                <i class="fas fa-trash mr-1"></i>Elimina
+              </button>
+            </div>
+            <div id="modalProtocolUploadMsg" class="text-xs mt-1 hidden"></div>
+          </div>
+
+          <!-- Study Schema -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="p-2 rounded-lg bg-blue-50 text-blue-600"><i class="fas fa-project-diagram text-base"></i></div>
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Study Schema</span>
+            </div>
+            <div id="modalSchemaStatus" class="text-xs text-slate-400 mb-2 italic">Nessun file</div>
+            <div class="flex gap-2 flex-wrap">
+              <button id="modalViewSchema" class="hidden text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
+                <i class="fas fa-eye mr-1"></i>Visualizza
+              </button>
+              <button id="modalDownloadSchema" class="hidden text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
+                <i class="fas fa-download mr-1"></i>Scarica
+              </button>
+              <label id="modalUploadSchemaLabel" class="hidden cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
+                <i class="fas fa-upload mr-1"></i>Sostituisci
+                <input type="file" id="modalUploadSchema" accept="application/pdf,image/*" class="hidden">
+              </label>
+              <label id="modalUploadSchemaFirstLabel" class="cursor-pointer text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
+                <i class="fas fa-upload mr-1"></i>Carica
+                <input type="file" id="modalUploadSchemaFirst" accept="application/pdf,image/*" class="hidden">
+              </label>
+              <button id="modalDeleteSchema" class="hidden text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
+                <i class="fas fa-trash mr-1"></i>Elimina
+              </button>
+            </div>
+            <div id="modalSchemaUploadMsg" class="text-xs mt-1 hidden"></div>
+          </div>
+
+          <!-- Allegati extra -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="p-2 rounded-lg bg-violet-50 text-violet-600"><i class="fas fa-paperclip text-base"></i></div>
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Allegati (max 4)</span>
+            </div>
+            <div id="modalExtraFilesList" class="space-y-1.5 mb-2"></div>
+            <label id="modalUploadExtraLabel" class="cursor-pointer inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors">
+              <i class="fas fa-plus mr-1"></i>Aggiungi file
+              <input type="file" id="modalUploadExtra" accept="application/pdf,image/*" class="hidden">
+            </label>
+            <div id="modalExtraUploadMsg" class="text-xs mt-1 hidden"></div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Criteri di I/E -->
       <div>
         <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Criteri di Inclusione / Esclusione</h4>
@@ -326,6 +428,27 @@
               class="px-4 py-2 bg-slate-100 text-slate-700 text-base font-semibold rounded-lg w-full hover:bg-slate-200 transition-colors">
         Chiudi
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Study Schema Viewer Modal -->
+<div id="schemaViewerModal" class="fixed inset-0 z-[60] hidden items-center justify-center" style="background-color:rgba(15,23,42,0.7);">
+  <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col" style="width:min(95vw,1100px);height:90vh;">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+      <h3 class="font-bold text-slate-800">Study Schema</h3>
+      <div class="flex gap-2">
+        <button id="schemaViewerDownload" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
+          <i class="fas fa-download mr-1"></i>Scarica
+        </button>
+        <button id="schemaViewerClose" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">
+          <i class="fas fa-times mr-1"></i>Chiudi
+        </button>
+      </div>
+    </div>
+    <div class="flex-grow overflow-auto flex items-center justify-center bg-slate-100 rounded-b-2xl p-4">
+      <iframe id="schemaViewerIframe" class="w-full h-full rounded-lg hidden" style="border:none;"></iframe>
+      <img id="schemaViewerImg" class="max-w-full max-h-full object-contain rounded-lg hidden" alt="Study Schema">
     </div>
   </div>
 </div>

@@ -122,6 +122,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const studyArmsCount = document.getElementById("studyArmsCount");
     const studyArmsContainer = document.getElementById("studyArmsContainer");
     const armsList = document.getElementById("armsList");
+
+    // File management state (used by showStudyDetails and file management section)
+    let _currentFilesMeta = null;
     
     if (studyArmsCount) {
       studyArmsCount.addEventListener("change", () => {
@@ -823,6 +826,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.warn("Validazione duplicati fallita, si procede comunque:", err);
             }
 
+            // Helper per leggere file in Base64
+            const getFileBase64 = (file) => {
+                if (!file) return Promise.resolve(null);
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve({ data: e.target.result, name: file.name, mime: file.type });
+                    reader.onerror = (err) => reject(err);
+                    reader.readAsDataURL(file);
+                });
+            };
+
             showPasswordModal(async () => {
                 const criteriaItems = document.querySelectorAll(".criteria-item");
                 const criteria = Array.from(criteriaItems).map((item) => ({
@@ -854,6 +868,39 @@ document.addEventListener("DOMContentLoaded", () => {
                   });
                 }
 
+                // Leggi i file caricati nel form
+                let protocol_pdf = null;
+                let study_schema = null;
+                let study_schema_mime = null;
+                const extra_files = [];
+
+                const protocolInput = document.getElementById("studyFormProtocol");
+                if (protocolInput && protocolInput.files && protocolInput.files[0]) {
+                    const res = await getFileBase64(protocolInput.files[0]);
+                    if (res) protocol_pdf = res.data;
+                }
+
+                const schemaInput = document.getElementById("studyFormSchema");
+                if (schemaInput && schemaInput.files && schemaInput.files[0]) {
+                    const res = await getFileBase64(schemaInput.files[0]);
+                    if (res) {
+                        study_schema = res.data;
+                        study_schema_mime = res.mime;
+                    }
+                }
+
+                const extrasInput = document.getElementById("studyFormExtras");
+                if (extrasInput && extrasInput.files && extrasInput.files.length > 0) {
+                    const limit = Math.min(extrasInput.files.length, 4);
+                    for (let i = 0; i < limit; i++) {
+                        const file = extrasInput.files[i];
+                        const res = await getFileBase64(file);
+                        if (res) {
+                            extra_files.push({ name: res.name, mime: res.mime, data: res.data });
+                        }
+                    }
+                }
+
                 const newStudy = {
                   study_code: codeValue,
                   title: studyTitleInput.value,
@@ -872,7 +919,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   internal_notes: studyInternalNotesInput ? studyInternalNotesInput.value.trim() : "",
                   pi_contacts: studyPiContactsInput ? studyPiContactsInput.value.trim() : "",
                   criteria,
-                  arms
+                  arms,
+                  protocol_pdf,
+                  study_schema,
+                  study_schema_mime,
+                  extra_files
                 };
 
 
@@ -1226,6 +1277,17 @@ document.addEventListener("DOMContentLoaded", () => {
         renderCriteriaInModal(study, page === "patient");
         studyDetailModal.classList.remove("hidden");
         studyDetailModal.style.display = "flex";
+
+        // Carica metadati file per lo studio
+        _currentFilesMeta = null;
+        ["modalProtocolStatus","modalSchemaStatus"].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "Caricamento...";
+        });
+        const _extraListReset = document.getElementById("modalExtraFilesList");
+        if (_extraListReset) _extraListReset.innerHTML = "";
+        loadFilesMeta(study.id);
+        wireFileInputs(study.id);
     }
 
     if (checkEligibilityBtn) {
@@ -1283,4 +1345,228 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
+
+    // =====================================================
+    // GESTIONE FILE (protocollo, study schema, allegati)
+    // Compressione gestita interamente lato server:
+    //   - PDF: pdf-lib (object streams)
+    //   - Study Schema: invariato
+    //   - Extra immagini: sharp qualità 82
+    // =====================================================
+
+    // Legge un file come base64 Data URL
+    function readFileAsBase64(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({ dataUrl: e.target.result, mime: file.type });
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function showFileMsg(el, text, ok) {
+        if (!el) return;
+        el.classList.remove("hidden", "text-green-700", "text-red-600");
+        el.classList.add(ok ? "text-green-700" : "text-red-600");
+        el.textContent = text;
+    }
+
+    async function loadFilesMeta(studyId) {
+        try {
+            const res = await fetch(`/api/studies/${studyId}/files-meta`);
+            if (!res.ok) return;
+            _currentFilesMeta = await res.json();
+            renderFilesUI(_currentFilesMeta, studyId);
+        } catch (e) {
+            console.error("loadFilesMeta error:", e);
+        }
+    }
+
+    function renderFilesUI(meta, studyId) {
+        if (!meta) return;
+
+        // --- Protocollo ---
+        const hasProtocol = meta.has_protocol_pdf;
+        const protStatus = document.getElementById("modalProtocolStatus");
+        const dlProtocol = document.getElementById("modalDownloadProtocol");
+        const upProtocolLabel = document.getElementById("modalUploadProtocolLabel");
+        const upProtocolFirstLabel = document.getElementById("modalUploadProtocolFirstLabel");
+        const delProtocol = document.getElementById("modalDeleteProtocol");
+
+        if (protStatus) protStatus.textContent = hasProtocol ? "✅ Protocollo caricato" : "Nessun file";
+        if (dlProtocol) { dlProtocol.classList.toggle("hidden", !hasProtocol); dlProtocol.onclick = () => downloadFile(studyId, "protocol_pdf"); }
+        if (upProtocolLabel) upProtocolLabel.classList.toggle("hidden", !hasProtocol);
+        if (upProtocolFirstLabel) upProtocolFirstLabel.classList.toggle("hidden", hasProtocol);
+        if (delProtocol) { delProtocol.classList.toggle("hidden", !hasProtocol); delProtocol.onclick = () => deleteFile(studyId, "protocol_pdf"); }
+
+        // --- Study Schema ---
+        const hasSchema = meta.has_study_schema;
+        const schemaStatus = document.getElementById("modalSchemaStatus");
+        const viewSchema = document.getElementById("modalViewSchema");
+        const dlSchema = document.getElementById("modalDownloadSchema");
+        const upSchemaLabel = document.getElementById("modalUploadSchemaLabel");
+        const upSchemaFirstLabel = document.getElementById("modalUploadSchemaFirstLabel");
+        const delSchema = document.getElementById("modalDeleteSchema");
+
+        if (schemaStatus) schemaStatus.textContent = hasSchema ? "✅ Schema caricato" : "Nessun file";
+        if (viewSchema) { viewSchema.classList.toggle("hidden", !hasSchema); viewSchema.onclick = () => openSchemaViewer(studyId, meta.study_schema_mime); }
+        if (dlSchema) { dlSchema.classList.toggle("hidden", !hasSchema); dlSchema.onclick = () => downloadFile(studyId, "study_schema"); }
+        if (upSchemaLabel) upSchemaLabel.classList.toggle("hidden", !hasSchema);
+        if (upSchemaFirstLabel) upSchemaFirstLabel.classList.toggle("hidden", hasSchema);
+        if (delSchema) { delSchema.classList.toggle("hidden", !hasSchema); delSchema.onclick = () => deleteFile(studyId, "study_schema"); }
+
+        // --- Extra files ---
+        const extraList = document.getElementById("modalExtraFilesList");
+        const addExtraLabel = document.getElementById("modalUploadExtraLabel");
+        if (extraList) {
+            extraList.innerHTML = "";
+            const files = meta.extra_files_meta || [];
+            files.forEach((f) => {
+                const row = document.createElement("div");
+                row.className = "flex items-center gap-2 text-xs";
+                row.innerHTML = `
+                    <span class="flex-grow truncate text-slate-700 font-medium">${escapeHtml(f.name)}</span>
+                    <button class="text-emerald-600 hover:text-emerald-800 p-1" title="Scarica" data-dl-extra="${f.index}"><i class="fas fa-download"></i></button>
+                    <button class="text-red-400 hover:text-red-600 p-1" title="Elimina" data-del-extra="${f.index}"><i class="fas fa-trash"></i></button>
+                `;
+                row.querySelector(`[data-dl-extra]`).addEventListener("click", () => downloadFile(studyId, `extra_${f.index}`));
+                row.querySelector(`[data-del-extra]`).addEventListener("click", () => deleteFile(studyId, "extra_files", f.index));
+                extraList.appendChild(row);
+            });
+            if (addExtraLabel) addExtraLabel.classList.toggle("hidden", files.length >= 4);
+        }
+    }
+
+    function downloadFile(studyId, field) {
+        window.open(`/api/studies/${studyId}/file/${field}`, "_blank");
+    }
+
+    async function deleteFile(studyId, field, index) {
+        if (!window._editPwd) {
+            showPasswordModal(async () => { await deleteFile(studyId, field, index); });
+            return;
+        }
+        const body = { field };
+        if (field === "extra_files") { body.action = "remove"; body.index = index; }
+        else { body.data = null; body.mime = null; }
+
+        const res = await authFetch(`/api/studies/${studyId}/files`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            _currentFilesMeta = await res.json();
+            renderFilesUI(_currentFilesMeta, studyId);
+        } else {
+            alert("Errore eliminazione file.");
+        }
+    }
+
+    async function uploadFile(studyId, field, file, msgEl) {
+        if (!file) return;
+        if (!window._editPwd) {
+            showPasswordModal(async () => { await uploadFile(studyId, field, file, msgEl); });
+            return;
+        }
+
+        showFileMsg(msgEl, "⏳ Caricamento in corso...", true);
+
+        try {
+            // Leggi sempre il file raw: la compressione è gestita dal server
+            const { dataUrl, mime } = await readFileAsBase64(file);
+
+            const body = { field, data: dataUrl, mime };
+            if (field === "extra_files") { body.action = "add"; body.name = file.name; }
+
+            const res = await authFetch(`/api/studies/${studyId}/files`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            if (res.ok) {
+                _currentFilesMeta = await res.json();
+                renderFilesUI(_currentFilesMeta, studyId);
+                showFileMsg(msgEl, "✅ Caricato con successo.", true);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                showFileMsg(msgEl, `❌ ${errData.error || "Errore upload."}`, false);
+            }
+        } catch (e) {
+            console.error("uploadFile error:", e);
+            showFileMsg(msgEl, "❌ Errore elaborazione file.", false);
+        }
+    }
+
+    // --- Viewer Study Schema ---
+    const schemaViewerModal = document.getElementById("schemaViewerModal");
+    const schemaViewerIframe = document.getElementById("schemaViewerIframe");
+    const schemaViewerImg = document.getElementById("schemaViewerImg");
+    const schemaViewerClose = document.getElementById("schemaViewerClose");
+    const schemaViewerDownload = document.getElementById("schemaViewerDownload");
+
+    let _currentSchemaStudyId = null;
+    let _currentSchemaMime = null;
+
+    async function openSchemaViewer(studyId, mime) {
+        if (!schemaViewerModal) return;
+        _currentSchemaStudyId = studyId;
+        _currentSchemaMime = mime;
+
+        schemaViewerIframe.classList.add("hidden");
+        schemaViewerImg.classList.add("hidden");
+
+        schemaViewerModal.classList.remove("hidden");
+        schemaViewerModal.style.display = "flex";
+
+        const url = `/api/studies/${studyId}/file/study_schema`;
+        if (mime && mime.startsWith("image/")) {
+            schemaViewerImg.src = url;
+            schemaViewerImg.classList.remove("hidden");
+        } else {
+            schemaViewerIframe.src = url;
+            schemaViewerIframe.classList.remove("hidden");
+        }
+    }
+
+    if (schemaViewerClose) {
+        schemaViewerClose.addEventListener("click", () => {
+            schemaViewerModal.classList.add("hidden");
+            schemaViewerModal.style.display = "";
+            schemaViewerIframe.src = "";
+            schemaViewerImg.src = "";
+        });
+    }
+
+    if (schemaViewerDownload) {
+        schemaViewerDownload.addEventListener("click", () => {
+            if (_currentSchemaStudyId) downloadFile(_currentSchemaStudyId, "study_schema");
+        });
+    }
+
+    // --- Collegamento listener upload inputs ---
+    function wireFileInputs(studyId) {
+        const inputs = [
+            { id: "modalUploadProtocol",      field: "protocol_pdf",  msgId: "modalProtocolUploadMsg" },
+            { id: "modalUploadProtocolFirst", field: "protocol_pdf",  msgId: "modalProtocolUploadMsg" },
+            { id: "modalUploadSchema",         field: "study_schema",  msgId: "modalSchemaUploadMsg" },
+            { id: "modalUploadSchemaFirst",    field: "study_schema",  msgId: "modalSchemaUploadMsg" },
+            { id: "modalUploadExtra",          field: "extra_files",   msgId: "modalExtraUploadMsg" },
+        ];
+        inputs.forEach(({ id, field, msgId }) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // Clone to remove old listeners
+            const fresh = el.cloneNode(true);
+            el.parentNode.replaceChild(fresh, el);
+            fresh.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (file) uploadFile(studyId, field, file, document.getElementById(msgId));
+                fresh.value = "";
+            });
+        });
+    }
+
+    // --- Hook showStudyDetails per caricare i file ---
+    // (integrato direttamente in showStudyDetails sopra)
 });

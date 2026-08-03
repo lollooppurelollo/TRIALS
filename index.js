@@ -6,6 +6,8 @@ import rateLimit from "express-rate-limit";
 import expressLayouts from "express-ejs-layouts";
 import path from "path";
 import { fileURLToPath } from "url";
+import { PDFDocument } from "pdf-lib";
+import sharp from "sharp";
 
 dotenv.config();
 
@@ -35,6 +37,22 @@ async function initDbSchema() {
     await pool.query(`
       ALTER TABLE studies 
       ADD COLUMN IF NOT EXISTS pi_contacts TEXT;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS protocol_pdf TEXT;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS study_schema TEXT;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS study_schema_mime VARCHAR(100);
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS extra_files JSONB DEFAULT '[]'::jsonb;
     `);
     console.log("✅ Schema database verificato con successo.");
   } catch (error) {
@@ -111,7 +129,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(expressLayouts);
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 /* -------------------- Helpers -------------------- */
 function toIntOrNull(v) {
@@ -242,11 +260,38 @@ app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
 
     await client.query("BEGIN");
 
+    // Processamento e compressione file all'inserimento
+    let protocolPdfData = studyData.protocol_pdf;
+    if (protocolPdfData) {
+      protocolPdfData = await compressPdf(protocolPdfData);
+    }
+
+    let extraFilesData = studyData.extra_files || [];
+    if (Array.isArray(extraFilesData) && extraFilesData.length > 0) {
+      for (let i = 0; i < extraFilesData.length; i++) {
+        let f = extraFilesData[i];
+        if (f.data && f.mime) {
+          if (f.mime.startsWith("image/")) {
+            const comp = await compressExtraImage(f.data, f.mime);
+            f.data = comp.data;
+            f.mime = comp.mime;
+          } else if (f.mime === "application/pdf") {
+            f.data = await compressPdf(f.data);
+          }
+        }
+      }
+    }
+
     // Prepara i dati inclusi study_code
-    const fullData = { ...studyData, study_code: cleanCode };
+    const fullData = { 
+      ...studyData, 
+      study_code: cleanCode, 
+      protocol_pdf: protocolPdfData || null,
+      extra_files: extraFilesData
+    };
     const columns = Object.keys(fullData);
     const values = columns.map((c) =>
-      c === "criteria" ? JSON.stringify(fullData[c] ?? []) : fullData[c],
+      (c === "criteria" || c === "extra_files") ? JSON.stringify(fullData[c] ?? []) : fullData[c],
     );
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
 
@@ -695,6 +740,187 @@ app.delete("/api/timeline-overrides/:overrideId", editAuthLimiter, requireEditAu
   } catch (error) {
     console.error("Errore DELETE /api/timeline-overrides:", error);
     res.status(500).send("Errore eliminazione override");
+  }
+});
+
+/* -------------------- API FILES -------------------- */
+
+/**
+ * Comprime un PDF usando pdf-lib: carica, ricostruisce con object streams
+ * (compressione struttura ~20-40%) e restituisce il buffer ottimizzato.
+ */
+async function compressPdf(base64data) {
+  try {
+    const pure = base64data.replace(/^data:[^;]+;base64,/, "");
+    const buf = Buffer.from(pure, "base64");
+    const pdfDoc = await PDFDocument.load(buf, { ignoreEncryption: true });
+    const compressed = await pdfDoc.save({ useObjectStreams: true, addDefaultPage: false });
+    return "data:application/pdf;base64," + Buffer.from(compressed).toString("base64");
+  } catch (e) {
+    console.warn("PDF compress fallback (originale conservato):", e.message);
+    return base64data; // fallback: file originale
+  }
+}
+
+/**
+ * Comprime un'immagine extra allegato con sharp:
+ * - JPEG/WebP: qualità 82, nessun resize
+ * - PNG: compressione lossless livello 9
+ * - PDF: lasciato invariato
+ */
+async function compressExtraImage(base64data, mimeType) {
+  if (!mimeType || mimeType === "application/pdf") return { data: base64data, mime: mimeType };
+  try {
+    const pure = base64data.replace(/^data:[^;]+;base64,/, "");
+    const buf = Buffer.from(pure, "base64");
+    let outBuf, outMime;
+    if (mimeType === "image/png") {
+      outBuf = await sharp(buf).png({ compressionLevel: 9, adaptiveFiltering: true }).toBuffer();
+      outMime = "image/png";
+    } else {
+      // JPEG, WebP, altri: converti in JPEG qualità 82
+      outBuf = await sharp(buf).jpeg({ quality: 82, progressive: true, mozjpeg: true }).toBuffer();
+      outMime = "image/jpeg";
+    }
+    // Usa il risultato solo se è effettivamente più piccolo
+    if (outBuf.length < buf.length) {
+      return { data: "data:" + outMime + ";base64," + outBuf.toString("base64"), mime: outMime };
+    }
+    return { data: base64data, mime: mimeType };
+  } catch (e) {
+    console.warn("Image compress fallback:", e.message);
+    return { data: base64data, mime: mimeType };
+  }
+}
+
+/* PATCH /api/studies/:id/files
+ * Body JSON: { field: "protocol_pdf"|"study_schema"|"extra_files", data: "<base64>", mime: "...", name: "...", action: "add"|"remove", index: N }
+ * Autenticato con x-edit-password.
+ */
+app.patch("/api/studies/:id/files", editAuthLimiter, requireEditAuth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { field, data, mime, name, action, index } = req.body;
+
+    const existing = await pool.query("SELECT id, extra_files FROM studies WHERE id = $1", [id]);
+    if (existing.rows.length === 0) return res.status(404).json({ error: "Studio non trovato" });
+
+    if (field === "protocol_pdf") {
+      // Comprimi PDF server-side
+      const compressedData = data ? await compressPdf(data) : null;
+      await pool.query("UPDATE studies SET protocol_pdf = $1 WHERE id = $2", [compressedData, id]);
+    } else if (field === "study_schema") {
+      // Studio schema: invariato (nessuna compressione)
+      await pool.query("UPDATE studies SET study_schema = $1, study_schema_mime = $2 WHERE id = $3", [data || null, mime || null, id]);
+    } else if (field === "extra_files") {
+      let extras = existing.rows[0].extra_files || [];
+      if (!Array.isArray(extras)) extras = [];
+
+      if (action === "remove") {
+        extras.splice(index, 1);
+      } else {
+        if (extras.length >= 4) return res.status(400).json({ error: "Massimo 4 file extra consentiti." });
+        // Comprimi immagini extra, PDF invariati
+        let finalData = data;
+        let finalMime = mime || "application/octet-stream";
+        if (data && mime && mime.startsWith("image/")) {
+          const result = await compressExtraImage(data, mime);
+          finalData = result.data;
+          finalMime = result.mime;
+        } else if (data && mime === "application/pdf") {
+          finalData = await compressPdf(data);
+        }
+        extras.push({ name: name || "file", mime: finalMime, data: finalData });
+      }
+      await pool.query("UPDATE studies SET extra_files = $1 WHERE id = $2", [JSON.stringify(extras), id]);
+    } else {
+      return res.status(400).json({ error: "Campo file non valido." });
+    }
+
+    const updated = await pool.query("SELECT id, protocol_pdf, study_schema, study_schema_mime, extra_files FROM studies WHERE id = $1", [id]);
+    const row = updated.rows[0];
+    res.json({
+      id: row.id,
+      has_protocol_pdf: !!row.protocol_pdf,
+      has_study_schema: !!row.study_schema,
+      study_schema_mime: row.study_schema_mime,
+      extra_files_meta: (row.extra_files || []).map((f, i) => ({ index: i, name: f.name, mime: f.mime }))
+    });
+  } catch (e) {
+    console.error("PATCH /api/studies/:id/files exception:", e);
+    res.status(500).json({ error: "Errore interno" });
+  }
+});
+
+/* GET /api/studies/:id/file/:field  → scarica un file
+ * field: protocol_pdf | study_schema | extra_N (N = indice 0-based)
+ */
+app.get("/api/studies/:id/file/:field", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const field = req.params.field;
+
+    const { rows } = await pool.query(
+      "SELECT protocol_pdf, study_schema, study_schema_mime, extra_files FROM studies WHERE id = $1", [id]
+    );
+    if (rows.length === 0) return res.status(404).send("Studio non trovato");
+    const row = rows[0];
+
+    let base64data, mime, filename;
+
+    if (field === "protocol_pdf") {
+      if (!row.protocol_pdf) return res.status(404).send("File non trovato");
+      base64data = row.protocol_pdf;
+      mime = "application/pdf";
+      filename = `protocollo_${id}.pdf`;
+    } else if (field === "study_schema") {
+      if (!row.study_schema) return res.status(404).send("File non trovato");
+      base64data = row.study_schema;
+      mime = row.study_schema_mime || "application/pdf";
+      filename = `study_schema_${id}.${mime.includes("pdf") ? "pdf" : "png"}`;
+    } else if (field.startsWith("extra_")) {
+      const idx = parseInt(field.split("_")[1], 10);
+      const extras = row.extra_files || [];
+      if (!extras[idx]) return res.status(404).send("File non trovato");
+      base64data = extras[idx].data;
+      mime = extras[idx].mime || "application/octet-stream";
+      filename = extras[idx].name || `allegato_${idx}`;
+    } else {
+      return res.status(400).send("Campo non valido");
+    }
+
+    // Rimuovi prefisso data URL se presente
+    const pureBase64 = base64data.replace(/^data:[^;]+;base64,/, "");
+    const buf = Buffer.from(pureBase64, "base64");
+
+    res.set("Content-Type", mime);
+    const disposition = (field === "study_schema") ? "inline" : "attachment";
+    res.set("Content-Disposition", `${disposition}; filename="${filename}"`);
+    res.send(buf);
+  } catch (e) {
+    console.error("GET /api/studies/:id/file/:field exception:", e);
+    res.status(500).send("Errore interno");
+  }
+});
+
+/* GET /api/studies/:id/files-meta → metadata (senza dati binari) */
+app.get("/api/studies/:id/files-meta", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, protocol_pdf, study_schema, study_schema_mime, extra_files FROM studies WHERE id = $1",
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "Studio non trovato" });
+    const row = rows[0];
+    res.json({
+      id: row.id,
+      has_protocol_pdf: !!row.protocol_pdf,
+      has_study_schema: !!row.study_schema,
+      study_schema_mime: row.study_schema_mime,
+      extra_files_meta: (row.extra_files || []).map((f, i) => ({ index: i, name: f.name, mime: f.mime }))
+    });
+  } catch (e) {
+    res.status(500).json({ error: "Errore interno" });
   }
 });
 

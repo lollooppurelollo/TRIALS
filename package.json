@@ -8,11 +8,13 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "pg": "^8.13.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-ejs-layouts": "^2.5.1",
-    "express-rate-limit": "^7.4.0"
+    "express-rate-limit": "^7.4.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.13.0",
+    "sharp": "^0.35.3"
   }
 }
