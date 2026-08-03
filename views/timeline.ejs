@@ -220,7 +220,7 @@
                senza dover scorrere fino al pannello "Controlli timeline" -->
           <select id="tlArmFilter"
                   title="Filtra il piano eventi per braccio"
-                  class="text-sm p-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                  class="text-sm p-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 max-w-[180px] sm:max-w-[250px] lg:max-w-[300px] truncate">
             <option value="ALL">Tutti i bracci</option>
           </select>
 
@@ -865,10 +865,15 @@
 
     _arms = await res.json();
 
-    // 1) Dropdown filtro
     if (tlArmFilter) {
       tlArmFilter.innerHTML = `<option value="ALL">Tutti i bracci</option>` +
-        _arms.map(a => `<option value="${escapeHtml(a.arm_code)}">${escapeHtml(a.arm_label)}</option>`).join("");
+        _arms.map(a => {
+          const code = a.arm_code || "";
+          const label = a.arm_label || "";
+          const shortLabel = label.length > 55 ? label.slice(0, 55) + "…" : label;
+          const displayLabel = code ? `Braccio ${code}: ${shortLabel}` : shortLabel;
+          return `<option value="${escapeHtml(code)}" title="${escapeHtml(label)}">${escapeHtml(displayLabel)}</option>`;
+        }).join("");
 
       tlArmFilter.value = _selectedArm || "ALL";
     }
