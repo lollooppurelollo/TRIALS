@@ -397,6 +397,30 @@ document.addEventListener("DOMContentLoaded", () => {
             window_after_days: ev.window_after_days !== undefined ? ev.window_after_days : null,
         }));
 
+        const cycle_weeks = typeof study.cycle_weeks === "number" ? study.cycle_weeks : 4;
+        let total_weeks = typeof study.total_weeks === "number" ? study.total_weeks : null;
+        if (!total_weeks) {
+            let maxDay = 0;
+            events.forEach(ev => {
+                if (ev.one_shot && typeof ev.at_day === "number") {
+                    if (ev.at_day > maxDay) maxDay = ev.at_day;
+                } else {
+                    if (typeof ev.stop_day === "number") {
+                        if (ev.stop_day > maxDay) maxDay = ev.stop_day;
+                    } else if (typeof ev.start_day === "number") {
+                        if (ev.start_day > maxDay) maxDay = ev.start_day;
+                    }
+                }
+            });
+            if (maxDay > 0) {
+                total_weeks = Math.ceil((maxDay + 1) / 7);
+                // arrotola al multiplo del ciclo
+                total_weeks = Math.ceil(total_weeks / cycle_weeks) * cycle_weeks;
+            } else {
+                total_weeks = 24;
+            }
+        }
+
         return {
             study_code,
             title,
@@ -415,6 +439,8 @@ document.addEventListener("DOMContentLoaded", () => {
             criteria,
             arms,
             events,
+            total_weeks,
+            cycle_weeks,
         };
     }
 
@@ -529,8 +555,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Memorizza gli eventi per l'invio al salvataggio
+        // Memorizza gli eventi e le impostazioni per l'invio al salvataggio
         window._importedStudyEvents = Array.isArray(study.events) ? study.events : [];
+        window._importedTotalWeeks = study.total_weeks || null;
+        window._importedCycleWeeks = study.cycle_weeks || null;
     }
 
     const areaPrefixes = {
@@ -923,9 +951,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                // Leggi eventi dall'import JSON (se presenti)
+                // Leggi eventi e impostazioni dall'import JSON (se presenti)
                 const importedEvents = window._importedStudyEvents || [];
+                const importedTotalWeeks = window._importedTotalWeeks || null;
+                const importedCycleWeeks = window._importedCycleWeeks || null;
                 window._importedStudyEvents = null;
+                window._importedTotalWeeks = null;
+                window._importedCycleWeeks = null;
 
                 const newStudy = {
                   study_code: codeValue,
@@ -947,6 +979,8 @@ document.addEventListener("DOMContentLoaded", () => {
                   criteria,
                   arms,
                   events: importedEvents,
+                  total_weeks: importedTotalWeeks,
+                  cycle_weeks: importedCycleWeeks,
                   protocol_pdf,
                   study_schema,
                   study_schema_mime,
@@ -989,6 +1023,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (studyImportTextarea) studyImportTextarea.value = "";
                 if (studyImportMsg) studyImportMsg.classList.add("hidden");
                 window._importedStudyEvents = null;
+                window._importedTotalWeeks = null;
+                window._importedCycleWeeks = null;
 
                 fetchAndRenderTrials();
             });

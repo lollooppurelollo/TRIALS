@@ -318,10 +318,7 @@ app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
       for (const ev of events) {
         const sanitized = sanitizeEvent(ev, study.id);
         const evCols = Object.keys(sanitized);
-        const evVals = evCols.map(c => {
-          const v = sanitized[c];
-          return Array.isArray(v) ? JSON.stringify(v) : v;
-        });
+        const evVals = evCols.map(c => sanitized[c]);
         const evPlaceholders = evCols.map((_, i) => `$${i + 1}`).join(", ");
         await client.query(
           `INSERT INTO study_events (${evCols.join(", ")}) VALUES (${evPlaceholders})`,
