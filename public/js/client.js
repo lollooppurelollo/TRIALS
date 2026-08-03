@@ -1078,7 +1078,35 @@ document.addEventListener("DOMContentLoaded", () => {
             // Mostra la sezione CT.gov e memorizza i dati del paziente
             window._ctgovPatientData = patientData;
             const ctgovSection = document.getElementById("ctgovSection");
-            if (ctgovSection) ctgovSection.classList.remove("hidden");
+            if (ctgovSection) {
+                ctgovSection.classList.remove("hidden");
+                // Aggiorna le label dinamiche con i parametri reali del paziente
+                const valArea = document.getElementById("ctgovValArea");
+                const valSetting = document.getElementById("ctgovValSetting");
+                const valSpecific = document.getElementById("ctgovValSpecific");
+                
+                if (valArea) valArea.textContent = patientData.clinicalAreas || "N/A";
+                if (valSetting) valSetting.textContent = patientData.treatmentSetting || "N/A";
+                
+                const labelSpecific = document.getElementById("ctgovLabelSpecific");
+                if (valSpecific) {
+                    if (patientData.specificClinicalAreas) {
+                        valSpecific.textContent = patientData.specificClinicalAreas;
+                        if (labelSpecific) labelSpecific.classList.remove("hidden");
+                    } else {
+                        valSpecific.textContent = "Nessuno";
+                        if (labelSpecific) labelSpecific.classList.add("hidden");
+                    }
+                }
+                
+                // Resetta le checkbox a true/attive
+                const incArea = document.getElementById("ctgovIncArea");
+                const incSetting = document.getElementById("ctgovIncSetting");
+                const incSpecific = document.getElementById("ctgovIncSpecific");
+                if (incArea) { incArea.checked = true; document.getElementById("ctgovLabelArea")?.classList.add("active"); }
+                if (incSetting) { incSetting.checked = true; document.getElementById("ctgovLabelSetting")?.classList.add("active"); }
+                if (incSpecific) { incSpecific.checked = true; document.getElementById("ctgovLabelSpecific")?.classList.add("active"); }
+            }
             // Reset risultati precedenti
             const ctgovResults = document.getElementById("ctgovResults");
             if (ctgovResults) ctgovResults.innerHTML = "";
@@ -1143,23 +1171,32 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     /** Costruisce i parametri query per l'API CT.gov v2 */
-    function buildCtgovParams(patientData, countryFilter, statusFilter) {
+    function buildCtgovParams(patientData, countryFilter, statusFilter, studyTypeFilter) {
         const queryParts = [];
         
+        // Leggi lo stato delle checkbox di inclusione parametri
+        const incArea = document.getElementById("ctgovIncArea")?.checked !== false; // default true
+        const incSetting = document.getElementById("ctgovIncSetting")?.checked !== false; // default true
+        const incSpecific = document.getElementById("ctgovIncSpecific")?.checked !== false; // default true
+
         // 1. Area Clinica Principale
-        const areaSynonyms = CTGOV_AREA_MAP[patientData.clinicalAreas];
-        if (areaSynonyms) {
-            queryParts.push(`(${areaSynonyms})`);
+        if (incArea) {
+            const areaSynonyms = CTGOV_AREA_MAP[patientData.clinicalAreas];
+            if (areaSynonyms) {
+                queryParts.push(`(${areaSynonyms})`);
+            }
         }
         
         // 2. Setting del Trattamento
-        const settingSynonyms = CTGOV_SETTING_MAP[patientData.treatmentSetting];
-        if (settingSynonyms) {
-            queryParts.push(`(${settingSynonyms})`);
+        if (incSetting) {
+            const settingSynonyms = CTGOV_SETTING_MAP[patientData.treatmentSetting];
+            if (settingSynonyms) {
+                queryParts.push(`(${settingSynonyms})`);
+            }
         }
         
         // 3. Sottotipo Specifico
-        if (patientData.specificClinicalAreas) {
+        if (incSpecific && patientData.specificClinicalAreas) {
             const specificSynonyms = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
             if (specificSynonyms) {
                 queryParts.push(`(${specificSynonyms})`);
@@ -1168,7 +1205,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        const queryTerm = queryParts.join(" AND ");
+        // Filtro tipo studio tramite query syntax (AREA[StudyType]INTERVENTIONAL)
+        if (studyTypeFilter === "INTERVENTIONAL") {
+            queryParts.push("AREA[StudyType]INTERVENTIONAL");
+        }
+
+        const queryTerm = queryParts.join(" AND ") || "cancer"; // fallback per non far fallire la query se vuota
 
         const params = new URLSearchParams({
             "query.term": queryTerm,
@@ -1298,6 +1340,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Leggi filtri selezionati
         const countryFilter = document.querySelector("input[name='ctgov_country']:checked")?.value || "Italy";
         const statusFilter  = document.querySelector("input[name='ctgov_status']:checked")?.value  || "RECRUITING";
+        const studyTypeFilter = document.querySelector("input[name='ctgov_studytype']:checked")?.value || "INTERVENTIONAL";
 
         // Spinner
         ctgovResults.innerHTML = `
@@ -1310,7 +1353,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>`;
 
         try {
-            const params = buildCtgovParams(patientData, countryFilter, statusFilter);
+            const params = buildCtgovParams(patientData, countryFilter, statusFilter, studyTypeFilter);
             const res = await fetch(`https://clinicaltrials.gov/api/v2/studies?${params.toString()}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
@@ -1323,7 +1366,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="p-6 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">
                         <i class="fas fa-search-minus text-2xl mb-2 text-slate-300"></i>
                         <p class="text-sm font-medium">Nessuno studio trovato su ClinicalTrials.gov con questi filtri.</p>
-                        <p class="text-xs text-slate-400 mt-1">Prova a cambiare i filtri Paese o Stato.</p>
+                        <p class="text-xs text-slate-400 mt-1">Prova a cambiare i filtri o ad allargare la ricerca deselezionando alcuni parametri.</p>
                     </div>`;
                 return;
             }
@@ -1352,13 +1395,36 @@ document.addEventListener("DOMContentLoaded", () => {
         ctgovSearchBtn.addEventListener("click", runCtgovSearch);
     }
 
-    // Toggle stile pill filtri CT.gov
+    // Toggle stile pill filtri CT.gov (radio buttons)
     document.querySelectorAll(".ctgov-filter-pill").forEach(label => {
         label.addEventListener("click", () => {
             const group = label.dataset.group;
             document.querySelectorAll(`.ctgov-filter-pill[data-group="${group}"]`)
                     .forEach(l => l.classList.remove("active"));
             label.classList.add("active");
+            
+            // Trova e seleziona il radio button interno
+            const radio = label.querySelector("input[type='radio']");
+            if (radio) radio.checked = true;
+        });
+    });
+
+    // Toggle stile checkbox-pill (inclusione parametri AND)
+    document.querySelectorAll(".ctgov-checkbox-pill").forEach(label => {
+        label.addEventListener("click", (e) => {
+            // Impedisci attivazioni multiple e crash del click
+            const chk = label.querySelector("input[type='checkbox']");
+            if (chk) {
+                // Se il click non è originato dall'input stesso, invertiamo il checked manuale
+                if (e.target !== chk) {
+                    chk.checked = !chk.checked;
+                }
+                if (chk.checked) {
+                    label.classList.add("active");
+                } else {
+                    label.classList.remove("active");
+                }
+            }
         });
     });
 

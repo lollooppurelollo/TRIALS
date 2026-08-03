@@ -186,3 +186,28 @@ textarea:focus {
     gap: 7px;
     margin-top: 0.75rem;
 }
+
+/* ===== CT.gov checkbox pill ===== */
+.ctgov-checkbox-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    user-select: none;
+}
+.ctgov-checkbox-pill:hover {
+    background: #e2e8f0;
+}
+.ctgov-checkbox-pill.active {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
