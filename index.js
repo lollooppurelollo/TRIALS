@@ -217,7 +217,7 @@ app.get("/api/studies", async (_req, res) => {
 app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { arms, study_code, ...studyData } = req.body;
+    const { arms, events, study_code, ...studyData } = req.body;
 
     // Validazione server-side
     if (!toStrOrNull(studyData.title)) {
@@ -309,6 +309,23 @@ app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
         await client.query(
           `INSERT INTO study_arms (study_id, arm_code, arm_label, sort_order) VALUES ($1, $2, $3, $4)`,
           [study.id, a.arm_code, a.arm_label, i + 1],
+        );
+      }
+    }
+
+    // Se sono stati inviati eventi (import JSON) → inseriscili in study_events
+    if (Array.isArray(events) && events.length > 0) {
+      for (const ev of events) {
+        const sanitized = sanitizeEvent(ev, study.id);
+        const evCols = Object.keys(sanitized);
+        const evVals = evCols.map(c => {
+          const v = sanitized[c];
+          return Array.isArray(v) ? JSON.stringify(v) : v;
+        });
+        const evPlaceholders = evCols.map((_, i) => `$${i + 1}`).join(", ");
+        await client.query(
+          `INSERT INTO study_events (${evCols.join(", ")}) VALUES (${evPlaceholders})`,
+          evVals,
         );
       }
     }

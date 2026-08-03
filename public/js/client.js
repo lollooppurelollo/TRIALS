@@ -379,6 +379,24 @@ document.addEventListener("DOMContentLoaded", () => {
             return null;
         }).filter(Boolean);
 
+        // Parse events
+        const eventsArr = Array.isArray(study.events) ? study.events : [];
+        const events = eventsArr.map(ev => ({
+            event_type: ev.event_type || "custom",
+            title: ev.title || "",
+            notes: ev.notes || "",
+            indications: ev.indications || "",
+            billing: ev.billing || null,
+            arm_codes: Array.isArray(ev.arm_codes) ? ev.arm_codes : ["ALL"],
+            one_shot: ev.one_shot === true || ev.one_shot === "true",
+            at_day: ev.at_day !== undefined ? ev.at_day : null,
+            repeat_every_days: ev.repeat_every_days !== undefined ? ev.repeat_every_days : null,
+            start_day: ev.start_day !== undefined ? ev.start_day : null,
+            stop_day: ev.stop_day !== undefined ? ev.stop_day : null,
+            window_before_days: ev.window_before_days !== undefined ? ev.window_before_days : null,
+            window_after_days: ev.window_after_days !== undefined ? ev.window_after_days : null,
+        }));
+
         return {
             study_code,
             title,
@@ -396,6 +414,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pi_contacts,
             criteria,
             arms,
+            events,
         };
     }
 
@@ -509,6 +528,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
         }
+
+        // Memorizza gli eventi per l'invio al salvataggio
+        window._importedStudyEvents = Array.isArray(study.events) ? study.events : [];
     }
 
     const areaPrefixes = {
@@ -901,6 +923,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
+                // Leggi eventi dall'import JSON (se presenti)
+                const importedEvents = window._importedStudyEvents || [];
+                window._importedStudyEvents = null;
+
                 const newStudy = {
                   study_code: codeValue,
                   title: studyTitleInput.value,
@@ -920,6 +946,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   pi_contacts: studyPiContactsInput ? studyPiContactsInput.value.trim() : "",
                   criteria,
                   arms,
+                  events: importedEvents,
                   protocol_pdf,
                   study_schema,
                   study_schema_mime,
@@ -961,6 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Reset Import JSON
                 if (studyImportTextarea) studyImportTextarea.value = "";
                 if (studyImportMsg) studyImportMsg.classList.add("hidden");
+                window._importedStudyEvents = null;
 
                 fetchAndRenderTrials();
             });
