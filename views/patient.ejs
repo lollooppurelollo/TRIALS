@@ -60,6 +60,68 @@
     </div>
 </div>
 
+<!-- Sezione ClinicalTrials.gov -->
+<div id="ctgovSection" class="hidden mt-6">
+    <!-- Header e opzioni -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 rounded-xl" style="background-color:#1a3a5c;">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Cerca su ClinicalTrials.gov</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Studi internazionali basati sul profilo paziente</p>
+                </div>
+            </div>
+            <!-- Filtri -->
+            <div class="flex flex-wrap gap-4 text-sm">
+                <!-- Paese -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Paese</span>
+                    <div class="flex rounded-lg border border-slate-200 overflow-hidden">
+                        <label class="ctgov-filter-pill active" data-group="country" data-val="Italy">
+                            <input type="radio" name="ctgov_country" value="Italy" class="sr-only" checked>
+                            🇮🇹 Solo Italia
+                        </label>
+                        <label class="ctgov-filter-pill" data-group="country" data-val="all">
+                            <input type="radio" name="ctgov_country" value="all" class="sr-only">
+                            🌍 Tutti
+                        </label>
+                    </div>
+                </div>
+                <!-- Status -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stato</span>
+                    <div class="flex rounded-lg border border-slate-200 overflow-hidden">
+                        <label class="ctgov-filter-pill active" data-group="status" data-val="RECRUITING">
+                            <input type="radio" name="ctgov_status" value="RECRUITING" class="sr-only" checked>
+                            🟢 Recruiting
+                        </label>
+                        <label class="ctgov-filter-pill" data-group="status" data-val="all">
+                            <input type="radio" name="ctgov_status" value="all" class="sr-only">
+                            📋 Tutti
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Pulsante ricerca -->
+        <button id="ctgovSearchBtn"
+                class="mt-5 w-full flex items-center justify-center gap-2 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-sm"
+                style="background-color:#1a3a5c;"
+                onmouseover="this.style.backgroundColor='#0f2440'"
+                onmouseout="this.style.backgroundColor='#1a3a5c'">
+            <i class="fas fa-search text-sm"></i>
+            Cerca su ClinicalTrials.gov
+        </button>
+    </div>
+    <!-- Area risultati CT.gov -->
+    <div id="ctgovResults" class="mt-4 space-y-4"></div>
+</div>
+
 <!-- Modal Dettagli Studio -->
 <div id="studyDetailModal"
      class="fixed inset-0 z-50 hidden flex items-start justify-center"

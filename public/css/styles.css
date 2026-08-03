@@ -127,3 +127,62 @@ textarea:focus {
     border-color: #10b981 !important;
     box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
 }
+
+/* ===== ClinicalTrials.gov filter pills ===== */
+.ctgov-filter-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f8fafc;
+    color: #64748b;
+    border-right: 1px solid #e2e8f0;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+    white-space: nowrap;
+}
+.ctgov-filter-pill:last-child { border-right: none; }
+.ctgov-filter-pill:hover { background: #e2e8f0; }
+.ctgov-filter-pill.active {
+    background: #1a3a5c;
+    color: #ffffff;
+}
+
+/* ===== CT.gov result card ===== */
+.ctgov-card {
+    background: #fff;
+    border: 1.5px solid #bfdbfe;  /* blue-200 */
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.ctgov-card:hover {
+    box-shadow: 0 4px 24px rgba(26,58,92,0.10);
+    border-color: #93c5fd;
+}
+.ctgov-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #1a3a5c;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 9999px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+.ctgov-note {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 0.6rem;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #92400e;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-top: 0.75rem;
+}

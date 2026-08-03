@@ -1075,8 +1075,246 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
             });
             renderSearchResults(filteredStudies, "patient");
+            // Mostra la sezione CT.gov e memorizza i dati del paziente
+            window._ctgovPatientData = patientData;
+            const ctgovSection = document.getElementById("ctgovSection");
+            if (ctgovSection) ctgovSection.classList.remove("hidden");
+            // Reset risultati precedenti
+            const ctgovResults = document.getElementById("ctgovResults");
+            if (ctgovResults) ctgovResults.innerHTML = "";
         });
     }
+
+    // =========================================================
+    //  CLINICALTRIALS.GOV INTEGRATION
+    // =========================================================
+
+    // Mappa area clinica italiana → termini inglesi per CT.gov
+    const CTGOV_AREA_MAP = {
+        "Mammella": "breast cancer",
+        "Polmone": "lung cancer",
+        "Gastro-Intestinale": "gastrointestinal cancer",
+        "Ginecologico": "gynecologic cancer ovarian endometrial",
+        "Prostata e Vie Urinarie": "prostate bladder kidney urothelial",
+        "Melanoma e Cute": "melanoma skin cancer",
+        "Testa-Collo": "head neck cancer",
+        "Fase 1": "phase 1 advanced solid tumor",
+        "Altro": "cancer",
+    };
+    const CTGOV_SETTING_MAP = {
+        "Metastatico": "metastatic",
+        "Adiuvante": "adjuvant",
+        "Neo-adiuvante": "neoadjuvant",
+    };
+    const CTGOV_LINE_MAP = {
+        1: "first-line 1L",
+        2: "second-line 2L",
+        3: "third-line 3L",
+    };
+
+    /** Costruisce i parametri query per l'API CT.gov v2 */
+    function buildCtgovParams(patientData, countryFilter, statusFilter) {
+        const terms = [];
+        const area = CTGOV_AREA_MAP[patientData.clinicalAreas] || "cancer";
+        terms.push(area);
+        const setting = CTGOV_SETTING_MAP[patientData.treatmentSetting];
+        if (setting) terms.push(setting);
+        if (patientData.specificClinicalAreas) terms.push(patientData.specificClinicalAreas);
+        const params = new URLSearchParams({
+            "query.term": terms.join(" "),
+            "pageSize": "15",
+            "format": "json",
+        });
+        if (statusFilter !== "all") params.set("filter.overallStatus", statusFilter);
+        if (countryFilter !== "all") params.set("query.locn", countryFilter);
+        return params;
+    }
+
+    /** Determina quali parametri paziente non sono verificabili nei dati strutturati CT.gov */
+    function buildCtgovNote(patientData) {
+        const unverifiable = [];
+        if (patientData.treatmentLine !== null && patientData.treatmentLine !== undefined)
+            unverifiable.push(`linea di trattamento ${patientData.treatmentLine}`);
+        if (patientData.specificClinicalAreas)
+            unverifiable.push(`sottotipo "${patientData.specificClinicalAreas}"`);
+        if (unverifiable.length === 0) return null;
+        return `Parametri non verificabili automaticamente: ${unverifiable.join(", ")}. Controllare manualmente i criteri di eleggibilità dello studio.`;
+    }
+
+    /** Tronca il testo a maxLen caratteri con ellissi */
+    function truncateText(text, maxLen) {
+        if (!text || text.length <= maxLen) return text || "";
+        return text.substring(0, maxLen).trimEnd() + "…";
+    }
+
+    /** Crea una card HTML per un singolo risultato CT.gov */
+    function createCtgovCard(study, patientData) {
+        const proto = study.protocolSection || {};
+        const idMod = proto.identificationModule || {};
+        const statusMod = proto.statusModule || {};
+        const descMod = proto.descriptionModule || {};
+        const designMod = proto.designModule || {};
+        const locMod = proto.contactsLocationsModule || {};
+        const sponsorMod = proto.sponsorCollaboratorsModule || {};
+
+        const nctId = idMod.nctId || "";
+        const title = escapeHtml(idMod.briefTitle || "Titolo non disponibile");
+        const status = statusMod.overallStatus || "";
+        const summary = escapeHtml(truncateText(descMod.briefSummary || "", 280));
+        const studyType = designMod.studyType || "";
+        const phases = (designMod.phases || []).join(", ") || "N/A";
+        const sponsor = escapeHtml(sponsorMod.leadSponsor?.name || "");
+        const locations = locMod.locations || [];
+        const url = `https://clinicaltrials.gov/study/${nctId}`;
+
+        // Status badge colore
+        const statusColor = status === "RECRUITING" ? "#16a34a" :
+                            status === "NOT_YET_RECRUITING" ? "#d97706" :
+                            status === "COMPLETED" ? "#64748b" : "#64748b";
+        const statusLabel = status === "RECRUITING" ? "🟢 In reclutamento" :
+                            status === "NOT_YET_RECRUITING" ? "🟡 Apertura imminente" :
+                            status === "COMPLETED" ? "Completato" : escapeHtml(status);
+
+        // Centri — mostra max 4 + eventuale "+N altri"
+        let centersHtml = "<span class='text-slate-400 text-xs'>Nessun centro registrato</span>";
+        if (locations.length > 0) {
+            const shown = locations.slice(0, 4).map(l => {
+                const parts = [l.facility, l.city, l.country].filter(Boolean);
+                return `<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">${escapeHtml(parts.join(", "))}</span>`;
+            });
+            const extra = locations.length > 4 ? `<span class="text-xs text-slate-400">+${locations.length - 4} altri</span>` : "";
+            centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
+        }
+
+        // Nota di attenzione per parametri non verificabili
+        const noteText = buildCtgovNote(patientData);
+        const noteHtml = noteText
+            ? `<div class="ctgov-note"><span style="font-size:1rem;">⚠️</span><span>${escapeHtml(noteText)}</span></div>`
+            : "";
+
+        const card = document.createElement("div");
+        card.className = "ctgov-card";
+        card.innerHTML = `
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="ctgov-badge">ClinicalTrials.gov</span>
+                        <span class="text-[10px] font-mono text-slate-400">${escapeHtml(nctId)}</span>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#eff6ff;color:${statusColor}">${statusLabel}</span>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm leading-snug">${title}</h3>
+                    ${sponsor ? `<p class="text-xs text-slate-500 mt-0.5">${sponsor}</p>` : ""}
+                </div>
+                <a href="${url}" target="_blank" rel="noopener noreferrer"
+                   class="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-colors"
+                   style="background:#1a3a5c;"
+                   onmouseover="this.style.background='#0f2440'" onmouseout="this.style.background='#1a3a5c'"
+                   onclick="event.stopPropagation()">
+                    Apri <i class="fas fa-external-link-alt ml-1"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                <div class="bg-slate-50 rounded-lg px-3 py-2">
+                    <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Tipo</span>
+                    <span class="text-xs font-semibold text-slate-700">${escapeHtml(studyType || "N/D")}</span>
+                </div>
+                <div class="bg-slate-50 rounded-lg px-3 py-2">
+                    <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Fase</span>
+                    <span class="text-xs font-semibold text-slate-700">${escapeHtml(phases)}</span>
+                </div>
+                <div class="bg-slate-50 rounded-lg px-3 py-2">
+                    <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Centri</span>
+                    <span class="text-xs font-semibold text-slate-700">${locations.length || "N/D"}</span>
+                </div>
+            </div>
+            ${summary ? `<p class="text-xs text-slate-600 leading-relaxed mb-2">${summary}</p>` : ""}
+            <div>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Centri disponibili</span>
+                ${centersHtml}
+            </div>
+            ${noteHtml}
+        `;
+        return card;
+    }
+
+    /** Esegue la ricerca su CT.gov e inietta i risultati nel DOM */
+    async function runCtgovSearch() {
+        const patientData = window._ctgovPatientData;
+        if (!patientData) return;
+
+        const ctgovResults = document.getElementById("ctgovResults");
+        if (!ctgovResults) return;
+
+        // Leggi filtri selezionati
+        const countryFilter = document.querySelector("input[name='ctgov_country']:checked")?.value || "Italy";
+        const statusFilter  = document.querySelector("input[name='ctgov_status']:checked")?.value  || "RECRUITING";
+
+        // Spinner
+        ctgovResults.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10 text-slate-400 gap-3">
+                <svg class="animate-spin w-8 h-8" style="color:#1a3a5c;" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+                <span class="text-sm font-medium">Ricerca in corso su ClinicalTrials.gov…</span>
+            </div>`;
+
+        try {
+            const params = buildCtgovParams(patientData, countryFilter, statusFilter);
+            const res = await fetch(`https://clinicaltrials.gov/api/v2/studies?${params.toString()}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const studies = data.studies || [];
+
+            ctgovResults.innerHTML = "";
+
+            if (studies.length === 0) {
+                ctgovResults.innerHTML = `
+                    <div class="p-6 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">
+                        <i class="fas fa-search-minus text-2xl mb-2 text-slate-300"></i>
+                        <p class="text-sm font-medium">Nessuno studio trovato su ClinicalTrials.gov con questi filtri.</p>
+                        <p class="text-xs text-slate-400 mt-1">Prova a cambiare i filtri Paese o Stato.</p>
+                    </div>`;
+                return;
+            }
+
+            // Header conteggio
+            const header = document.createElement("p");
+            header.className = "text-xs text-slate-500 mb-2";
+            header.textContent = `${studies.length} studi trovati su ClinicalTrials.gov`;
+            ctgovResults.appendChild(header);
+
+            studies.forEach(s => ctgovResults.appendChild(createCtgovCard(s, patientData)));
+
+        } catch (err) {
+            ctgovResults.innerHTML = `
+                <div class="p-6 text-center text-red-500 bg-white border border-red-200 rounded-xl">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p class="text-sm font-medium">Errore durante la ricerca su ClinicalTrials.gov.</p>
+                    <p class="text-xs text-red-400 mt-1">Controllare la connessione internet e riprovare.</p>
+                </div>`;
+        }
+    }
+
+    // Pulsante cerca CT.gov
+    const ctgovSearchBtn = document.getElementById("ctgovSearchBtn");
+    if (ctgovSearchBtn) {
+        ctgovSearchBtn.addEventListener("click", runCtgovSearch);
+    }
+
+    // Toggle stile pill filtri CT.gov
+    document.querySelectorAll(".ctgov-filter-pill").forEach(label => {
+        label.addEventListener("click", () => {
+            const group = label.dataset.group;
+            document.querySelectorAll(`.ctgov-filter-pill[data-group="${group}"]`)
+                    .forEach(l => l.classList.remove("active"));
+            label.classList.add("active");
+        });
+    });
+
+    // =========================================================
+    //  END CLINICALTRIALS.GOV INTEGRATION
+    // =========================================================
 
     function createStudyCardElement(study, page) {
         const card = document.createElement("div");
