@@ -1514,24 +1514,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Toggle stile checkbox-pill (inclusione parametri AND)
-    document.querySelectorAll(".ctgov-checkbox-pill").forEach(label => {
-        label.addEventListener("click", (e) => {
-            // Impedisci attivazioni multiple e crash del click
-            const chk = label.querySelector("input[type='checkbox']");
-            if (chk) {
-                // Se il click non è originato dall'input stesso, invertiamo il checked manuale
-                if (e.target !== chk) {
-                    chk.checked = !chk.checked;
-                }
+    document.querySelectorAll(".ctgov-checkbox-pill input[type='checkbox']").forEach(chk => {
+        chk.addEventListener("change", () => {
+            const label = chk.closest(".ctgov-checkbox-pill");
+            if (label) {
                 if (chk.checked) {
                     label.classList.add("active");
                 } else {
                     label.classList.remove("active");
                 }
-                // Aggiorna dinamicamente i link esterni e rifai la ricerca
-                updateExternalRegistryLinks();
-                runCtgovSearch(false);
             }
+            // Aggiorna dinamicamente i link esterni e rifai la ricerca
+            updateExternalRegistryLinks();
+            runCtgovSearch(false);
         });
     });
 
