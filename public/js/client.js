@@ -1119,20 +1119,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mappa area clinica italiana → sinonimi inglesi per CT.gov con operatori booleani
     const CTGOV_AREA_MAP = {
-        "Mammella": '"breast cancer" OR "breast carcinoma" OR "breast neoplasm"',
-        "Polmone": '"lung cancer" OR "lung carcinoma" OR "lung neoplasm"',
-        "Gastro-Intestinale": '"gastrointestinal cancer" OR "gastrointestinal oncology" OR "GI cancer"',
-        "Ginecologico": '"gynecologic cancer" OR "gynecological cancer" OR "ovarian cancer" OR "endometrial cancer" OR "cervical cancer"',
-        "Prostata e Vie Urinarie": '"prostate cancer" OR "bladder cancer" OR "renal cancer" OR "kidney cancer" OR "urothelial carcinoma"',
-        "Melanoma e Cute": '"melanoma" OR "skin cancer" OR "skin carcinoma"',
-        "Testa-Collo": '"head and neck cancer" OR "head and neck squamous cell carcinoma" OR "HNSCC"',
-        "Fase 1": '"solid tumor" OR "advanced cancer" OR "metastatic cancer"',
-        "Altro": '"cancer" OR "tumor" OR "neoplasm"',
+        "Mammella": '"breast cancer" OR "breast carcinoma" OR "breast neoplasm" OR "breast tumor" OR "breast tumour" OR "mammary"',
+        "Polmone": '"lung cancer" OR "lung carcinoma" OR "lung neoplasm" OR "lung tumor" OR "lung tumour" OR "pulmonary" OR "thoracic cancer"',
+        "Gastro-Intestinale": '"gastrointestinal cancer" OR "gastrointestinal oncology" OR "GI cancer" OR "gastric cancer" OR "colorectal cancer" OR "pancreatic cancer" OR "esophageal cancer" OR "liver cancer"',
+        "Ginecologico": '"gynecologic cancer" OR "gynecological cancer" OR "ovarian cancer" OR "endometrial cancer" OR "cervical cancer" OR "uterine cancer" OR "vulvar cancer"',
+        "Prostata e Vie Urinarie": '"prostate cancer" OR "prostatic cancer" OR "bladder cancer" OR "renal cancer" OR "kidney cancer" OR "urothelial carcinoma" OR "urinary tract cancer"',
+        "Melanoma e Cute": '"melanoma" OR "skin cancer" OR "skin carcinoma" OR "cutaneous carcinoma" OR "cutaneous squamous cell" OR "basal cell carcinoma"',
+        "Testa-Collo": '"head and neck cancer" OR "head and neck squamous cell carcinoma" OR "HNSCC" OR "laryngeal cancer" OR "pharyngeal cancer" OR "oral cancer"',
+        "Fase 1": '"solid tumor" OR "advanced cancer" OR "metastatic cancer" OR "refractory solid tumor"',
+        "Altro": '"cancer" OR "tumor" OR "tumour" OR "neoplasm" OR "malignancy"',
     };
     const CTGOV_SETTING_MAP = {
-        "Metastatico": '"metastatic" OR "advanced" OR "stage IV"',
-        "Adiuvante": '"adjuvant" OR "postoperative" OR "post-operative"',
-        "Neo-adiuvante": '"neoadjuvant" OR "preoperative" OR "pre-operative"',
+        "Metastatico": '"metastatic" OR "advanced" OR "stage IV" OR "disseminated" OR "stage 4"',
+        "Adiuvante": '"adjuvant" OR "postoperative" OR "post-operative" OR "post-resection" OR "post resection"',
+        "Neo-adiuvante": '"neoadjuvant" OR "preoperative" OR "pre-operative" OR "induction chemotherapy" OR "primary systemic therapy"',
     };
     const CTGOV_LINE_MAP = {
         1: "first-line 1L",
@@ -1329,39 +1329,112 @@ document.addEventListener("DOMContentLoaded", () => {
         return card;
     }
 
-    /** Esegue la ricerca su CT.gov e inietta i risultati nel DOM */
-    async function runCtgovSearch() {
+    /** Aggiorna dinamicamente i link ai registri esterni (EU CTR) basandosi sulle scelte correnti */
+    function updateExternalRegistryLinks() {
+        const patientData = window._ctgovPatientData;
+        if (!patientData) return;
+
+        const euctrLink = document.getElementById("euctrSearchLink");
+        if (!euctrLink) return;
+
+        const queryParts = [];
+        const incArea = document.getElementById("ctgovIncArea")?.checked !== false;
+        const incSetting = document.getElementById("ctgovIncSetting")?.checked !== false;
+        const incSpecific = document.getElementById("ctgovIncSpecific")?.checked !== false;
+
+        if (incArea) {
+            const area = CTGOV_AREA_MAP[patientData.clinicalAreas];
+            if (area) queryParts.push(`(${area})`);
+        }
+        if (incSetting) {
+            const setting = CTGOV_SETTING_MAP[patientData.treatmentSetting];
+            if (setting) queryParts.push(`(${setting})`);
+        }
+        if (incSpecific && patientData.specificClinicalAreas) {
+            const specific = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
+            if (specific) {
+                queryParts.push(`(${specific})`);
+            } else {
+                queryParts.push(`("${patientData.specificClinicalAreas}")`);
+            }
+        }
+
+        const queryTerm = queryParts.join(" AND ") || "cancer";
+        
+        // Imposta l'URL del registro europeo filtrato per l'Italia
+        euctrLink.href = `https://www.clinicaltrialsregister.eu/ctr-search/search?query=${encodeURIComponent(queryTerm)}&country=it`;
+    }
+
+    /** Esegue la ricerca su CT.gov e inietta i risultati nel DOM. Supporta la paginazione 'loadMore'. */
+    async function runCtgovSearch(loadMore = false) {
         const patientData = window._ctgovPatientData;
         if (!patientData) return;
 
         const ctgovResults = document.getElementById("ctgovResults");
         if (!ctgovResults) return;
 
+        const loadMoreContainer = document.getElementById("ctgovLoadMoreContainer");
+        const loadMoreBtn = document.getElementById("ctgovLoadMoreBtn");
+
         // Leggi filtri selezionati
         const countryFilter = document.querySelector("input[name='ctgov_country']:checked")?.value || "Italy";
         const statusFilter  = document.querySelector("input[name='ctgov_status']:checked")?.value  || "RECRUITING";
         const studyTypeFilter = document.querySelector("input[name='ctgov_studytype']:checked")?.value || "INTERVENTIONAL";
 
-        // Spinner
-        ctgovResults.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-10 text-slate-400 gap-3">
-                <svg class="animate-spin w-8 h-8" style="color:#1a3a5c;" fill="none" viewBox="0 0 24 24">
+        // Aggiorna il link del portale europeo basandosi sulle impostazioni attuali
+        updateExternalRegistryLinks();
+
+        let tempSpinner = null;
+
+        if (!loadMore) {
+            // Ricerca iniziale
+            ctgovResults.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 text-slate-400 gap-3">
+                    <svg class="animate-spin w-8 h-8" style="color:#1a3a5c;" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Ricerca in corso su ClinicalTrials.gov…</span>
+                </div>`;
+            if (loadMoreContainer) loadMoreContainer.classList.add("hidden");
+            window._ctgovNextPageToken = null;
+        } else {
+            // Carica altri
+            if (loadMoreBtn) loadMoreBtn.disabled = true;
+            tempSpinner = document.createElement("div");
+            tempSpinner.className = "flex justify-center py-4";
+            tempSpinner.innerHTML = `
+                <svg class="animate-spin w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                </svg>
-                <span class="text-sm font-medium">Ricerca in corso su ClinicalTrials.gov…</span>
-            </div>`;
+                </svg>`;
+            ctgovResults.appendChild(tempSpinner);
+        }
 
         try {
             const params = buildCtgovParams(patientData, countryFilter, statusFilter, studyTypeFilter);
+            
+            // Se stiamo paginando, aggiungiamo il token della pagina successiva
+            if (loadMore && window._ctgovNextPageToken) {
+                params.set("pageToken", window._ctgovNextPageToken);
+            }
+
             const res = await fetch(`https://clinicaltrials.gov/api/v2/studies?${params.toString()}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             const studies = data.studies || [];
 
-            ctgovResults.innerHTML = "";
+            // Rimuovi lo spinner temporaneo in caso di paginazione
+            if (tempSpinner && tempSpinner.parentNode) {
+                tempSpinner.parentNode.removeChild(tempSpinner);
+            }
+            if (loadMoreBtn) loadMoreBtn.disabled = false;
 
-            if (studies.length === 0) {
+            if (!loadMore) {
+                ctgovResults.innerHTML = "";
+            }
+
+            if (studies.length === 0 && !loadMore) {
                 ctgovResults.innerHTML = `
                     <div class="p-6 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">
                         <i class="fas fa-search-minus text-2xl mb-2 text-slate-300"></i>
@@ -1371,28 +1444,55 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Header conteggio
-            const header = document.createElement("p");
-            header.className = "text-xs text-slate-500 mb-2";
-            header.textContent = `${studies.length} studi trovati su ClinicalTrials.gov`;
-            ctgovResults.appendChild(header);
+            // Mostra il numero dei risultati trovati solo sulla prima pagina
+            if (!loadMore) {
+                const header = document.createElement("p");
+                header.className = "text-xs text-slate-500 mb-2";
+                header.textContent = `${studies.length}${data.nextPageToken ? '+' : ''} studi trovati su ClinicalTrials.gov`;
+                ctgovResults.appendChild(header);
+            }
 
+            // Aggiungi le card dei risultati
             studies.forEach(s => ctgovResults.appendChild(createCtgovCard(s, patientData)));
 
+            // Memorizza e gestisci il token per la pagina successiva
+            if (data.nextPageToken) {
+                window._ctgovNextPageToken = data.nextPageToken;
+                if (loadMoreContainer) loadMoreContainer.classList.remove("hidden");
+            } else {
+                window._ctgovNextPageToken = null;
+                if (loadMoreContainer) loadMoreContainer.classList.add("hidden");
+            }
+
         } catch (err) {
-            ctgovResults.innerHTML = `
-                <div class="p-6 text-center text-red-500 bg-white border border-red-200 rounded-xl">
-                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                    <p class="text-sm font-medium">Errore durante la ricerca su ClinicalTrials.gov.</p>
-                    <p class="text-xs text-red-400 mt-1">Controllare la connessione internet e riprovare.</p>
-                </div>`;
+            if (tempSpinner && tempSpinner.parentNode) {
+                tempSpinner.parentNode.removeChild(tempSpinner);
+            }
+            if (loadMoreBtn) loadMoreBtn.disabled = false;
+
+            if (!loadMore) {
+                ctgovResults.innerHTML = `
+                    <div class="p-6 text-center text-red-500 bg-white border border-red-200 rounded-xl">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p class="text-sm font-medium">Errore durante la ricerca su ClinicalTrials.gov.</p>
+                        <p class="text-xs text-red-400 mt-1">Controllare la connessione internet e riprovare.</p>
+                    </div>`;
+            } else {
+                alert("Impossibile caricare ulteriori studi. Controllare la connessione internet.");
+            }
         }
     }
 
     // Pulsante cerca CT.gov
     const ctgovSearchBtn = document.getElementById("ctgovSearchBtn");
     if (ctgovSearchBtn) {
-        ctgovSearchBtn.addEventListener("click", runCtgovSearch);
+        ctgovSearchBtn.addEventListener("click", () => runCtgovSearch(false));
+    }
+
+    // Pulsante carica altri studi CT.gov
+    const ctgovLoadMoreBtn = document.getElementById("ctgovLoadMoreBtn");
+    if (ctgovLoadMoreBtn) {
+        ctgovLoadMoreBtn.addEventListener("click", () => runCtgovSearch(true));
     }
 
     // Toggle stile pill filtri CT.gov (radio buttons)
@@ -1405,7 +1505,11 @@ document.addEventListener("DOMContentLoaded", () => {
             
             // Trova e seleziona il radio button interno
             const radio = label.querySelector("input[type='radio']");
-            if (radio) radio.checked = true;
+            if (radio) {
+                radio.checked = true;
+                // Riesegui la ricerca per aggiornare con i nuovi filtri
+                runCtgovSearch(false);
+            }
         });
     });
 
@@ -1424,6 +1528,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     label.classList.remove("active");
                 }
+                // Aggiorna dinamicamente i link esterni e rifai la ricerca
+                updateExternalRegistryLinks();
+                runCtgovSearch(false);
             }
         });
     });
