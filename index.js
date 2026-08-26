@@ -74,11 +74,18 @@ const EDIT_PASSWORD = process.env.EDIT_PASSWORD || null;
 // Limite tentativi: la password è unica e condivisa, quindi senza un
 // limite qualcuno potrebbe provarla a forza bruta chiamando le API
 // direttamente. Max 20 tentativi ogni 15 minuti per indirizzo IP.
+// skipSuccessfulRequests: le richieste con password CORRETTA (risposta 2xx)
+// non consumano la quota — solo i tentativi con password ERRATA la
+// esauriscono. Così un utente autenticato può fare quante operazioni di
+// modifica vuole (es. importare molti eventi/studi) senza essere bloccato,
+// mentre chi prova a indovinare la password resta comunque limitato a
+// 20 tentativi ogni 15 minuti.
 const editAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
   message: { error: "Troppi tentativi. Riprova tra qualche minuto." },
 });
 
