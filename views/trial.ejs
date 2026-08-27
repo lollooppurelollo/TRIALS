@@ -482,13 +482,12 @@
 
 <!-- ── Modal Mappa degli Studi Clinici ─────────────────────── -->
 <div id="studyMapModal"
-     class="fixed inset-0 z-50 flex items-center justify-center hidden"
-     style="background-color: rgba(15,23,42,0.65); backdrop-filter: blur(4px);">
-  <div class="relative bg-white rounded-3xl shadow-2xl flex flex-col border border-slate-200"
-       style="width: 95vw; height: 92vh; max-width: 1400px;">
+     class="fixed inset-0 hidden"
+     style="background-color: #ffffff; z-index: 9999; width: 100vw; height: 100vh; overflow: hidden;">
+  <div class="relative bg-white flex flex-col w-full h-full">
     
     <!-- Modal Header -->
-    <div class="p-6 flex-shrink-0 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
+    <div class="p-6 flex-shrink-0 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
       <div>
         <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2" style="color: #134e4a;">
           <i class="fas fa-map text-emerald-600"></i> Mappa Grafica degli Studi Clinici
@@ -520,10 +519,10 @@
         </div>
 
         <div>
-          <label for="mapSpecificArea" class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Specifica Area (Opzionale)</label>
-          <select id="mapSpecificArea" class="mt-1.5 p-2.5 w-full border border-slate-200 rounded-xl bg-white text-slate-900 text-sm">
-            <option value="">Tutte le specifiche</option>
+          <label for="mapSpecificArea" class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Specifica Area (Multiselezione)</label>
+          <select id="mapSpecificArea" multiple class="mt-1.5 p-2 w-full border border-slate-200 rounded-xl bg-white text-slate-900 text-sm focus:ring-emerald-400" style="height: 120px;">
           </select>
+          <p class="text-[10px] text-slate-400 mt-1">Tieni premuto Ctrl (o Cmd) per selezionare o deselezionare più specifiche.</p>
         </div>
 
         <div>

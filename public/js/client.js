@@ -2238,11 +2238,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const area = mapClinicalArea.value;
         const specifics = specificClinicalAreasMap[area] || [];
         
-        mapSpecificArea.innerHTML = `<option value="">Tutte le specifiche</option>`;
+        mapSpecificArea.innerHTML = "";
         specifics.forEach(spec => {
             const opt = document.createElement("option");
             opt.value = spec;
             opt.textContent = spec;
+            opt.selected = true; // Pre-seleziona tutte di default
             mapSpecificArea.appendChild(opt);
         });
     }
@@ -2281,8 +2282,12 @@ document.addEventListener("DOMContentLoaded", () => {
         studyMapCanvasOuter.innerHTML = "";
 
         const selectedArea = mapClinicalArea.value;
-        const selectedSpecific = mapSpecificArea.value;
         const selectedSetting = mapSetting.value;
+        
+        // Ottieni array di specifiche selezionate
+        const selectedSpecifics = Array.from(mapSpecificArea.selectedOptions)
+            .map(o => o.value)
+            .filter(Boolean);
 
         // 1. Filtra gli studi
         const filtered = _mapAllStudies.filter(study => {
@@ -2290,9 +2295,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const hasArea = Array.isArray(study.clinical_areas) && study.clinical_areas.includes(selectedArea);
             if (!hasArea) return false;
 
-            // Filtro specifica area (opzionale)
-            if (selectedSpecific) {
-                const hasSpecific = Array.isArray(study.specific_clinical_areas) && study.specific_clinical_areas.includes(selectedSpecific);
+            // Filtro specifica area (se valorizzata)
+            const allSpecifics = specificClinicalAreasMap[selectedArea] || [];
+            const hasRestrictedSpecs = selectedSpecifics.length > 0 && selectedSpecifics.length < allSpecifics.length;
+            if (hasRestrictedSpecs) {
+                const hasSpecific = Array.isArray(study.specific_clinical_areas) && 
+                                    study.specific_clinical_areas.some(sa => selectedSpecifics.includes(sa));
                 if (!hasSpecific) return false;
             }
 
@@ -2304,15 +2312,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return true;
         });
 
-        // 2. Determina le colonne (Specifica Area)
+        // 2. Determina le colonne (Esclude Altro/Non specificato)
         let columns = [];
-        if (selectedSpecific) {
-            columns = [selectedSpecific];
+        if (selectedSpecifics.length > 0) {
+            columns = [...selectedSpecifics];
         } else {
-            // Prendi le specifiche definite per quest'area clinica
             columns = [...(specificClinicalAreasMap[selectedArea] || [])];
-            // Aggiungi colonna "Altro"
-            columns.push("Altro / Non Specificato");
         }
 
         // 3. Determina i setting (Righe/Sub-sezioni)
@@ -2357,15 +2362,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Filtra studi per questa colonna e setting
                 const matches = filtered.filter(study => {
-                    // Controlla setting
                     if (study.treatment_setting !== set) return false;
-
-                    // Controlla colonna
-                    if (colName === "Altro / Non Specificato") {
-                        return !Array.isArray(study.specific_clinical_areas) || study.specific_clinical_areas.length === 0;
-                    } else {
-                        return Array.isArray(study.specific_clinical_areas) && study.specific_clinical_areas.includes(colName);
-                    }
+                    return Array.isArray(study.specific_clinical_areas) && study.specific_clinical_areas.includes(colName);
                 });
 
                 if (matches.length > 0) {
@@ -2413,22 +2411,52 @@ document.addEventListener("DOMContentLoaded", () => {
     if (exportMapPdfBtn) {
         exportMapPdfBtn.addEventListener("click", () => {
             if (!studyMapCanvasOuter) return;
-            const element = studyMapCanvasOuter;
+            
             const area = mapClinicalArea.value;
-            const spec = mapSpecificArea.value || "Tutte";
-            const sett = mapSetting.value || "Tutti";
-            const filename = `mappa_studi_${area.toLowerCase()}_${spec.toLowerCase()}_${sett.toLowerCase()}.pdf`;
+            const filename = `mappa_studi_${area.toLowerCase()}.pdf`;
+
+            // Crea un clone pulito e visibile per l'esportazione off-screen
+            const printClone = studyMapCanvasOuter.cloneNode(true);
+            printClone.id = "studyMapPrintClone";
+            printClone.style.position = "absolute";
+            printClone.style.left = "-9999px";
+            printClone.style.top = "0";
+            printClone.style.width = "1120px";
+            printClone.style.height = "700px";
+            printClone.style.background = "#ffffff";
+            printClone.style.display = "block";
+            printClone.style.boxSizing = "border-box";
+            printClone.style.margin = "0";
+            printClone.style.padding = "24px";
+            printClone.style.borderRadius = "0";
+            
+            document.body.appendChild(printClone);
+
+            // Applica esplicitamente i valori dei font custom
+            printClone.style.setProperty("--map-title-size", studyMapCanvasOuter.style.getPropertyValue("--map-title-size") || "12px");
+            printClone.style.setProperty("--map-subtitle-size", studyMapCanvasOuter.style.getPropertyValue("--map-subtitle-size") || "10px");
 
             const opt = {
-                margin:       10,
+                margin:       0,
                 filename:     filename,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false,
+                    width: 1120,
+                    height: 700
+                },
+                jsPDF:        { unit: 'px', format: [1120, 700], orientation: 'landscape' }
             };
 
-            // Esegui esportazione
-            html2pdf().set(opt).from(element).save();
+            // Esporta il clone off-screen
+            html2pdf().set(opt).from(printClone).save().then(() => {
+                printClone.remove();
+            }).catch(err => {
+                console.error("Errore esportazione PDF:", err);
+                printClone.remove();
+            });
         });
     }
 });
