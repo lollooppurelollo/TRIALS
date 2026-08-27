@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const study_code = String(study.study_code ?? study.code ?? "").trim();
         const internal_notes = String(study.internal_notes ?? study.notes ?? "").trim();
         const pi_contacts = String(study.pi_contacts ?? study.contacts ?? study.pi ?? "").trim();
-        const status = study.status && ["in_attivazione", "attivo"].includes(study.status) ? study.status : "in_attivazione";
+        const status = study.status && ["in_attivazione", "attivo"].includes(study.status) ? study.status : null;
 
         const title = String(study.title ?? "").trim();
         if (!title) throw new Error("Manca 'title'.");
@@ -524,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Note interne e contatti PI
         if (studyInternalNotesInput) studyInternalNotesInput.value = study.internal_notes || "";
         if (studyPiContactsInput) studyPiContactsInput.value = study.pi_contacts || "";
-        if (studyStatusSelect) studyStatusSelect.value = study.status || "in_attivazione";
+        if (studyStatusSelect) studyStatusSelect.value = study.status || "";
 
         // Criteri: svuota e ricrea
         if (criteriaListDiv) criteriaListDiv.innerHTML = "";
@@ -983,7 +983,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       : null,
                   internal_notes: studyInternalNotesInput ? studyInternalNotesInput.value.trim() : "",
                   pi_contacts: studyPiContactsInput ? studyPiContactsInput.value.trim() : "",
-                  status: studyStatusSelect ? studyStatusSelect.value : "in_attivazione",
+                  status: studyStatusSelect ? (studyStatusSelect.value || null) : null,
                   criteria,
                   arms,
                   events: importedEvents,
@@ -1017,7 +1017,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 isCodeDuplicate = false;
                 if (studyInternalNotesInput) studyInternalNotesInput.value = "";
                 if (studyPiContactsInput) studyPiContactsInput.value = "";
-                if (studyStatusSelect) studyStatusSelect.value = "in_attivazione";
+                if (studyStatusSelect) studyStatusSelect.value = "";
                 studySpecificClinicalAreaContainer.classList.add("hidden");
                 studyTreatmentLineContainer.classList.add("hidden");
                 criteriaListDiv.innerHTML = "";
@@ -1560,7 +1560,9 @@ document.addEventListener("DOMContentLoaded", () => {
             : "";
         const statusBadge = study.status === "attivo"
             ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Attivo</span>`
-            : `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">In attivazione</span>`;
+            : study.status === "in_attivazione"
+            ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">In attivazione</span>`
+            : "";
         let content = `
             <div>
                 <div class="mb-1">${codeBadge}${statusBadge}<h4 class="inline font-bold text-dark-gray ml-1">${safeTitle}</h4></div>
@@ -1788,17 +1790,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Stato dello studio
         if (modalStudyStatus && modalStudyStatusCard && modalStudyStatusIcon) {
-            const status = study.status || "in_attivazione";
+            const status = study.status;
             if (status === "attivo") {
+                modalStudyStatusCard.classList.remove("hidden");
                 modalStudyStatus.textContent = "🟢 Attivo";
                 modalStudyStatus.className = "text-sm font-semibold text-emerald-800";
                 modalStudyStatusCard.className = "p-4 rounded-xl border border-emerald-200 bg-emerald-50/20 flex items-start gap-3";
                 modalStudyStatusIcon.className = "p-2 rounded-lg bg-emerald-100 text-emerald-600";
-            } else {
+            } else if (status === "in_attivazione") {
+                modalStudyStatusCard.classList.remove("hidden");
                 modalStudyStatus.textContent = "🟡 In Attivazione";
                 modalStudyStatus.className = "text-sm font-semibold text-amber-800";
                 modalStudyStatusCard.className = "p-4 rounded-xl border border-amber-200 bg-amber-50/20 flex items-start gap-3";
                 modalStudyStatusIcon.className = "p-2 rounded-lg bg-amber-100 text-amber-600";
+            } else {
+                modalStudyStatusCard.classList.add("hidden");
             }
         }
 
@@ -2162,7 +2168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const studyMapModal = document.getElementById("studyMapModal");
     const closeMapModalBtn = document.getElementById("closeMapModalBtn");
     const mapClinicalArea = document.getElementById("mapClinicalArea");
-    const mapSpecificArea = document.getElementById("mapSpecificArea");
+    const mapSpecificAreaPills = document.getElementById("mapSpecificAreaPills");
     const mapSetting = document.getElementById("mapSetting");
     const mapTitleFontSize = document.getElementById("mapTitleFontSize");
     const mapSubtitleFontSize = document.getElementById("mapSubtitleFontSize");
@@ -2172,6 +2178,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const exportMapPdfBtn = document.getElementById("exportMapPdfBtn");
 
     let _mapAllStudies = [];
+    let _selectedMapSpecifics = [];
 
     // Mappa colori per area clinica (hue fisso per area per dare armonia)
     const areaHues = {
@@ -2185,6 +2192,19 @@ document.addEventListener("DOMContentLoaded", () => {
         "Fase 1": 0,             // Rosso
         "Altro": 180             // Ciano
     };
+
+    function hslToRgb(h, s, l) {
+        s /= 100;
+        l /= 100;
+        const k = n => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+        return [
+            Math.round(255 * f(0)),
+            Math.round(255 * f(8)),
+            Math.round(255 * f(4))
+        ];
+    }
 
     function getHarmoniousColor(clinicalArea, specificArea, setting) {
         const baseHue = areaHues[clinicalArea] !== undefined ? areaHues[clinicalArea] : 180;
@@ -2204,10 +2224,14 @@ document.addEventListener("DOMContentLoaded", () => {
         else if (setting === "Neo-adiuvante") settingOffset = 5;
 
         const hue = (baseHue + specOffset + settingOffset) % 360;
+        const rgbBg = hslToRgb(hue, 75, 94);
+        const rgbBorder = hslToRgb(hue, 60, 82);
+        const rgbText = hslToRgb(hue, 80, 18);
+
         return {
-            bg: `hsl(${hue}, 75%, 94%)`,
-            border: `hsl(${hue}, 60%, 82%)`,
-            text: `hsl(${hue}, 80%, 18%)`
+            bg: `rgb(${rgbBg[0]}, ${rgbBg[1]}, ${rgbBg[2]})`,
+            border: `rgb(${rgbBorder[0]}, ${rgbBorder[1]}, ${rgbBorder[2]})`,
+            text: `rgb(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]})`
         };
     }
 
@@ -2234,17 +2258,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function populateMapSpecificAreaSelect() {
-        if (!mapClinicalArea || !mapSpecificArea) return;
+        if (!mapClinicalArea || !mapSpecificAreaPills) return;
         const area = mapClinicalArea.value;
         const specifics = specificClinicalAreasMap[area] || [];
         
-        mapSpecificArea.innerHTML = "";
+        mapSpecificAreaPills.innerHTML = "";
+        _selectedMapSpecifics = [...specifics]; // Pre-seleziona tutte di default
+
         specifics.forEach(spec => {
-            const opt = document.createElement("option");
-            opt.value = spec;
-            opt.textContent = spec;
-            opt.selected = true; // Pre-seleziona tutte di default
-            mapSpecificArea.appendChild(opt);
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "spec-pill flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all select-none w-full text-left bg-emerald-50/50 border-emerald-500 text-emerald-800 shadow-sm";
+            btn.dataset.value = spec;
+            btn.innerHTML = `
+                <span>${spec}</span>
+                <i class="fas fa-check text-emerald-600"></i>
+            `;
+            
+            btn.addEventListener("click", () => {
+                const val = btn.dataset.value;
+                if (_selectedMapSpecifics.includes(val)) {
+                    // Rimuovi
+                    _selectedMapSpecifics = _selectedMapSpecifics.filter(x => x !== val);
+                    btn.classList.remove("bg-emerald-50/50", "border-emerald-500", "text-emerald-800", "shadow-sm");
+                    btn.classList.add("bg-white", "border-slate-200", "text-slate-500");
+                    const icon = btn.querySelector("i");
+                    if (icon) icon.classList.add("hidden");
+                } else {
+                    // Aggiungi
+                    _selectedMapSpecifics.push(val);
+                    btn.classList.remove("bg-white", "border-slate-200", "text-slate-500");
+                    btn.classList.add("bg-emerald-50/50", "border-emerald-500", "text-emerald-800", "shadow-sm");
+                    const icon = btn.querySelector("i");
+                    if (icon) icon.classList.remove("hidden");
+                }
+                renderStudyMap();
+            });
+
+            mapSpecificAreaPills.appendChild(btn);
         });
     }
 
@@ -2253,9 +2304,6 @@ document.addEventListener("DOMContentLoaded", () => {
             populateMapSpecificAreaSelect();
             renderStudyMap();
         });
-    }
-    if (mapSpecificArea) {
-        mapSpecificArea.addEventListener("change", renderStudyMap);
     }
     if (mapSetting) {
         mapSetting.addEventListener("change", renderStudyMap);
@@ -2285,9 +2333,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedSetting = mapSetting.value;
         
         // Ottieni array di specifiche selezionate
-        const selectedSpecifics = Array.from(mapSpecificArea.selectedOptions)
-            .map(o => o.value)
-            .filter(Boolean);
+        const selectedSpecifics = _selectedMapSpecifics.filter(Boolean);
 
         // 1. Filtra gli studi
         const filtered = _mapAllStudies.filter(study => {
@@ -2344,15 +2390,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 const setDiv = document.createElement("div");
                 setDiv.className = "flex-grow flex flex-col bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm overflow-hidden";
                 
-                const setHdrColor = {
-                    "Metastatico": "bg-red-500",
-                    "Adiuvante": "bg-blue-500",
-                    "Neo-adiuvante": "bg-amber-500"
-                }[set] || "bg-slate-400";
+                const setDotColor = {
+                    "Metastatico": "rgb(239,68,68)",
+                    "Adiuvante": "rgb(59,130,246)",
+                    "Neo-adiuvante": "rgb(245,158,11)"
+                }[set] || "rgb(148,163,184)";
 
                 setDiv.innerHTML = `
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full ${setHdrColor}"></span> ${set}
+                    <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                        <span style="width:6px;height:6px;border-radius:50%;display:inline-block;background:${setDotColor};"></span> ${set}
                     </span>
                     <div class="study-rect-container flex flex-col gap-2 overflow-y-auto pr-1 flex-grow" style="max-height: 250px;">
                     </div>
@@ -2409,54 +2455,115 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // PDF Export function
     if (exportMapPdfBtn) {
-        exportMapPdfBtn.addEventListener("click", () => {
+        exportMapPdfBtn.addEventListener("click", async () => {
             if (!studyMapCanvasOuter) return;
-            
+
             const area = mapClinicalArea.value;
-            const filename = `mappa_studi_${area.toLowerCase()}.pdf`;
+            const filename = `mappa_studi_${area.replace(/\s+/g, '_').toLowerCase()}.pdf`;
 
-            // Crea un clone pulito e visibile per l'esportazione off-screen
-            const printClone = studyMapCanvasOuter.cloneNode(true);
-            printClone.id = "studyMapPrintClone";
-            printClone.style.position = "absolute";
-            printClone.style.left = "-9999px";
-            printClone.style.top = "0";
-            printClone.style.width = "1120px";
-            printClone.style.height = "700px";
-            printClone.style.background = "#ffffff";
-            printClone.style.display = "block";
-            printClone.style.boxSizing = "border-box";
-            printClone.style.margin = "0";
-            printClone.style.padding = "24px";
-            printClone.style.borderRadius = "0";
-            
-            document.body.appendChild(printClone);
+            const W = 1587; // px at 96dpi ~ A4 landscape (297mm)
+            const H = 1122; // px at 96dpi ~ A4 landscape (210mm)
 
-            // Applica esplicitamente i valori dei font custom
-            printClone.style.setProperty("--map-title-size", studyMapCanvasOuter.style.getPropertyValue("--map-title-size") || "12px");
-            printClone.style.setProperty("--map-subtitle-size", studyMapCanvasOuter.style.getPropertyValue("--map-subtitle-size") || "10px");
+            const titleSize = studyMapCanvasOuter.style.getPropertyValue("--map-title-size") || "12px";
+            const subtitleSize = studyMapCanvasOuter.style.getPropertyValue("--map-subtitle-size") || "10px";
 
-            const opt = {
-                margin:       0,
-                filename:     filename,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    logging: false,
-                    width: 1120,
-                    height: 700
-                },
-                jsPDF:        { unit: 'px', format: [1120, 700], orientation: 'landscape' }
+            // Costruisci un wrapper standalone con stili inline
+            const wrapper = document.createElement("div");
+            wrapper.style.cssText = `
+                position: fixed;
+                top: 0; left: 0;
+                width: ${W}px;
+                height: ${H}px;
+                background: #ffffff;
+                padding: 32px;
+                box-sizing: border-box;
+                overflow: hidden;
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                z-index: -9999;
+                opacity: 0;
+                pointer-events: none;
+            `;
+
+            // Clone il contenuto della mappa dentro il wrapper
+            const inner = studyMapCanvasOuter.cloneNode(true);
+            inner.style.cssText = `
+                width: 100%;
+                height: 100%;
+                display: flex;
+                box-sizing: border-box;
+                overflow: hidden;
+                --map-title-size: ${titleSize};
+                --map-subtitle-size: ${subtitleSize};
+            `;
+
+            // Forza gli stili inline su tutti i figli che usano classi Tailwind critiche
+            const applyInlineStyles = (el) => {
+                if (!el || el.nodeType !== 1) return;
+                const cls = el.className || "";
+                const style = el.style;
+                // Griglia colonne
+                if (style.gridTemplateColumns) { /* già inline */ }
+                // Rimuovi max-height scrollabile nel clone (vogliamo tutto visibile)
+                if (el.classList && el.classList.contains("study-rect-container")) {
+                    style.maxHeight = "none";
+                    style.overflowY = "visible";
+                }
+                // Risolvi CSS variables dei font nel clone
+                if (el.classList && el.classList.contains("map-card-title")) {
+                    style.fontSize = titleSize;
+                    style.fontWeight = "700";
+                    style.lineHeight = "1.3";
+                }
+                if (el.classList && el.classList.contains("map-card-subtitle")) {
+                    style.fontSize = subtitleSize;
+                    style.opacity = "0.8";
+                    style.lineHeight = "1.4";
+                    style.marginTop = "4px";
+                }
+                Array.from(el.children).forEach(applyInlineStyles);
             };
+            applyInlineStyles(inner);
 
-            // Esporta il clone off-screen
-            html2pdf().set(opt).from(printClone).save().then(() => {
-                printClone.remove();
-            }).catch(err => {
-                console.error("Errore esportazione PDF:", err);
-                printClone.remove();
-            });
+            wrapper.appendChild(inner);
+            document.body.appendChild(wrapper);
+
+            // Breve pausa per il rendering
+            await new Promise(r => setTimeout(r, 120));
+
+            try {
+                const canvas = await html2canvas(wrapper, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    width: W,
+                    height: H,
+                    windowWidth: W,
+                    windowHeight: H,
+                    backgroundColor: "#ffffff"
+                });
+
+                const imgData = canvas.toDataURL("image/jpeg", 0.97);
+                // jsPDF: A4 landscape in mm
+                const { jsPDF } = window.jspdf || {};
+                if (jsPDF) {
+                    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+                    doc.addImage(imgData, "JPEG", 0, 0, 297, 210);
+                    doc.save(filename);
+                } else {
+                    // Fallback html2pdf
+                    const opt = {
+                        margin: 0,
+                        filename,
+                        image: { type: "jpeg", quality: 0.97 },
+                        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, width: W, height: H, windowWidth: W, windowHeight: H, backgroundColor: "#ffffff" },
+                        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+                    };
+                    await html2pdf().set(opt).from(wrapper).save();
+                }
+            } finally {
+                wrapper.remove();
+            }
         });
     }
 });

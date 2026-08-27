@@ -56,7 +56,11 @@ async function initDbSchema() {
     `);
     await pool.query(`
       ALTER TABLE studies 
-      ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'in_attivazione';
+      ADD COLUMN IF NOT EXISTS status VARCHAR(50) NULL;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ALTER COLUMN status DROP DEFAULT;
     `);
     console.log("✅ Schema database verificato con successo.");
   } catch (error) {

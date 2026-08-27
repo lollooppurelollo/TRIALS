@@ -123,7 +123,8 @@
           <label for="studyStatus" class="block text-sm font-medium text-slate-700">Stato dello Studio</label>
           <select id="studyStatus"
                   class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none">
-            <option value="in_attivazione" selected>🟡 In Attivazione</option>
+            <option value="" selected>— Non Specificato —</option>
+            <option value="in_attivazione">🟡 In Attivazione</option>
             <option value="attivo">🟢 Attivo</option>
           </select>
         </div>
@@ -477,7 +478,9 @@
   </div>
 </div>
 
-<!-- html2pdf.js CDN library -->
+<!-- PDF/Canvas libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <!-- ── Modal Mappa degli Studi Clinici ─────────────────────── -->
@@ -519,10 +522,10 @@
         </div>
 
         <div>
-          <label for="mapSpecificArea" class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Specifica Area (Multiselezione)</label>
-          <select id="mapSpecificArea" multiple class="mt-1.5 p-2 w-full border border-slate-200 rounded-xl bg-white text-slate-900 text-sm focus:ring-emerald-400" style="height: 120px;">
-          </select>
-          <p class="text-[10px] text-slate-400 mt-1">Tieni premuto Ctrl (o Cmd) per selezionare o deselezionare più specifiche.</p>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Specifica Area (Multiselezione)</label>
+          <div id="mapSpecificAreaPills" class="flex flex-col gap-2 max-h-[180px] overflow-y-auto p-1.5 border border-slate-200 rounded-xl bg-white">
+            <!-- Pills generated dynamically in JS -->
+          </div>
         </div>
 
         <div>
