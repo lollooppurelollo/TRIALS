@@ -2154,4 +2154,281 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Hook showStudyDetails per caricare i file ---
     // (integrato direttamente in showStudyDetails sopra)
+
+    // =========================================================
+    // MAPPA DEGLI STUDI CLINICI
+    // =========================================================
+    const openMapBtn = document.getElementById("openMapBtn");
+    const studyMapModal = document.getElementById("studyMapModal");
+    const closeMapModalBtn = document.getElementById("closeMapModalBtn");
+    const mapClinicalArea = document.getElementById("mapClinicalArea");
+    const mapSpecificArea = document.getElementById("mapSpecificArea");
+    const mapSetting = document.getElementById("mapSetting");
+    const mapTitleFontSize = document.getElementById("mapTitleFontSize");
+    const mapSubtitleFontSize = document.getElementById("mapSubtitleFontSize");
+    const titleSizeVal = document.getElementById("titleSizeVal");
+    const subtitleSizeVal = document.getElementById("subtitleSizeVal");
+    const studyMapCanvasOuter = document.getElementById("studyMapCanvasOuter");
+    const exportMapPdfBtn = document.getElementById("exportMapPdfBtn");
+
+    let _mapAllStudies = [];
+
+    // Mappa colori per area clinica (hue fisso per area per dare armonia)
+    const areaHues = {
+        "Mammella": 340,         // Rosa/Fucsia
+        "Polmone": 200,          // Azzurro/Blu
+        "Gastro-Intestinale": 25, // Arancio/Marrone
+        "Ginecologico": 280,      // Viola/Magente
+        "Prostata e Vie Urinarie": 220, // Blu reale
+        "Melanoma e Cute": 140,   // Verde foresta
+        "Testa-Collo": 45,       // Giallo/Oro
+        "Fase 1": 0,             // Rosso
+        "Altro": 180             // Ciano
+    };
+
+    function getHarmoniousColor(clinicalArea, specificArea, setting) {
+        const baseHue = areaHues[clinicalArea] !== undefined ? areaHues[clinicalArea] : 180;
+        // Aggiungi un offset basato sulla specifica area
+        let specOffset = 0;
+        if (specificArea) {
+            for (let i = 0; i < specificArea.length; i++) {
+                specOffset += specificArea.charCodeAt(i);
+            }
+            specOffset = (specOffset % 5) * 15; // Massimo ±30 gradi
+        }
+        
+        // Aggiungi un offset basato sul setting
+        let settingOffset = 0;
+        if (setting === "Metastatico") settingOffset = 10;
+        else if (setting === "Adiuvante") settingOffset = -10;
+        else if (setting === "Neo-adiuvante") settingOffset = 5;
+
+        const hue = (baseHue + specOffset + settingOffset) % 360;
+        return {
+            bg: `hsl(${hue}, 75%, 94%)`,
+            border: `hsl(${hue}, 60%, 82%)`,
+            text: `hsl(${hue}, 80%, 18%)`
+        };
+    }
+
+    if (openMapBtn) {
+        openMapBtn.addEventListener("click", async () => {
+            studyMapModal.classList.remove("hidden");
+            // Carica tutti gli studi
+            try {
+                const res = await fetch("/api/studies");
+                _mapAllStudies = await res.json();
+            } catch (err) {
+                console.error("Errore fetch studi per mappa:", err);
+                _mapAllStudies = [];
+            }
+            populateMapSpecificAreaSelect();
+            renderStudyMap();
+        });
+    }
+
+    if (closeMapModalBtn) {
+        closeMapModalBtn.addEventListener("click", () => {
+            studyMapModal.classList.add("hidden");
+        });
+    }
+
+    function populateMapSpecificAreaSelect() {
+        if (!mapClinicalArea || !mapSpecificArea) return;
+        const area = mapClinicalArea.value;
+        const specifics = specificClinicalAreasMap[area] || [];
+        
+        mapSpecificArea.innerHTML = `<option value="">Tutte le specifiche</option>`;
+        specifics.forEach(spec => {
+            const opt = document.createElement("option");
+            opt.value = spec;
+            opt.textContent = spec;
+            mapSpecificArea.appendChild(opt);
+        });
+    }
+
+    if (mapClinicalArea) {
+        mapClinicalArea.addEventListener("change", () => {
+            populateMapSpecificAreaSelect();
+            renderStudyMap();
+        });
+    }
+    if (mapSpecificArea) {
+        mapSpecificArea.addEventListener("change", renderStudyMap);
+    }
+    if (mapSetting) {
+        mapSetting.addEventListener("change", renderStudyMap);
+    }
+
+    // Font size controls
+    if (mapTitleFontSize) {
+        mapTitleFontSize.addEventListener("input", (e) => {
+            const val = e.target.value;
+            if (titleSizeVal) titleSizeVal.textContent = val + "px";
+            if (studyMapCanvasOuter) studyMapCanvasOuter.style.setProperty("--map-title-size", val + "px");
+        });
+    }
+    if (mapSubtitleFontSize) {
+        mapSubtitleFontSize.addEventListener("input", (e) => {
+            const val = e.target.value;
+            if (subtitleSizeVal) subtitleSizeVal.textContent = val + "px";
+            if (studyMapCanvasOuter) studyMapCanvasOuter.style.setProperty("--map-subtitle-size", val + "px");
+        });
+    }
+
+    function renderStudyMap() {
+        if (!studyMapCanvasOuter) return;
+        studyMapCanvasOuter.innerHTML = "";
+
+        const selectedArea = mapClinicalArea.value;
+        const selectedSpecific = mapSpecificArea.value;
+        const selectedSetting = mapSetting.value;
+
+        // 1. Filtra gli studi
+        const filtered = _mapAllStudies.filter(study => {
+            // Filtro area clinica
+            const hasArea = Array.isArray(study.clinical_areas) && study.clinical_areas.includes(selectedArea);
+            if (!hasArea) return false;
+
+            // Filtro specifica area (opzionale)
+            if (selectedSpecific) {
+                const hasSpecific = Array.isArray(study.specific_clinical_areas) && study.specific_clinical_areas.includes(selectedSpecific);
+                if (!hasSpecific) return false;
+            }
+
+            // Filtro setting (opzionale)
+            if (selectedSetting) {
+                if (study.treatment_setting !== selectedSetting) return false;
+            }
+
+            return true;
+        });
+
+        // 2. Determina le colonne (Specifica Area)
+        let columns = [];
+        if (selectedSpecific) {
+            columns = [selectedSpecific];
+        } else {
+            // Prendi le specifiche definite per quest'area clinica
+            columns = [...(specificClinicalAreasMap[selectedArea] || [])];
+            // Aggiungi colonna "Altro"
+            columns.push("Altro / Non Specificato");
+        }
+
+        // 3. Determina i setting (Righe/Sub-sezioni)
+        const settings = selectedSetting ? [selectedSetting] : ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+
+        // 4. Costruisci il layout grid
+        const grid = document.createElement("div");
+        grid.className = "grid gap-4 h-full w-full";
+        grid.style.gridTemplateColumns = `repeat(${columns.length}, minmax(0, 1fr))`;
+        grid.style.minHeight = "640px";
+
+        columns.forEach(colName => {
+            const colDiv = document.createElement("div");
+            colDiv.className = "flex flex-col gap-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100/80 h-full overflow-hidden";
+            
+            // Colonna Header
+            const colHdr = document.createElement("h4");
+            colHdr.className = "text-[11px] font-bold text-center py-2 bg-slate-200/60 rounded-xl text-slate-700 uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis shadow-sm";
+            colHdr.textContent = colName;
+            colDiv.appendChild(colHdr);
+
+            // Sub-sezioni per i Setting
+            settings.forEach(set => {
+                const setDiv = document.createElement("div");
+                setDiv.className = "flex-grow flex flex-col bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm overflow-hidden";
+                
+                const setHdrColor = {
+                    "Metastatico": "bg-red-500",
+                    "Adiuvante": "bg-blue-500",
+                    "Neo-adiuvante": "bg-amber-500"
+                }[set] || "bg-slate-400";
+
+                setDiv.innerHTML = `
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full ${setHdrColor}"></span> ${set}
+                    </span>
+                    <div class="study-rect-container flex flex-col gap-2 overflow-y-auto pr-1 flex-grow" style="max-height: 250px;">
+                    </div>
+                `;
+
+                const container = setDiv.querySelector(".study-rect-container");
+
+                // Filtra studi per questa colonna e setting
+                const matches = filtered.filter(study => {
+                    // Controlla setting
+                    if (study.treatment_setting !== set) return false;
+
+                    // Controlla colonna
+                    if (colName === "Altro / Non Specificato") {
+                        return !Array.isArray(study.specific_clinical_areas) || study.specific_clinical_areas.length === 0;
+                    } else {
+                        return Array.isArray(study.specific_clinical_areas) && study.specific_clinical_areas.includes(colName);
+                    }
+                });
+
+                if (matches.length > 0) {
+                    matches.forEach(study => {
+                        const card = document.createElement("div");
+                        card.className = "p-2.5 rounded-xl border flex flex-col justify-between shadow-sm cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md";
+                        
+                        const colors = getHarmoniousColor(selectedArea, colName, set);
+                        card.style.backgroundColor = colors.bg;
+                        card.style.borderColor = colors.border;
+                        card.style.color = colors.text;
+
+                        const safeTitle = escapeHtml(study.title || "");
+                        const safeSubtitle = escapeHtml(study.subtitle || "");
+
+                        card.innerHTML = `
+                            <div class="map-card-title font-bold leading-tight line-clamp-2" style="font-size: var(--map-title-size);">${study.study_code ? study.study_code + ' - ' : ''}${safeTitle}</div>
+                            <div class="map-card-subtitle mt-1 leading-snug line-clamp-2 opacity-80" style="font-size: var(--map-subtitle-size);">${safeSubtitle}</div>
+                        `;
+
+                        card.addEventListener("click", () => {
+                            studyMapModal.classList.add("hidden");
+                            showStudyDetails(study, "trial");
+                        });
+
+                        container.appendChild(card);
+                    });
+                } else {
+                    const empty = document.createElement("div");
+                    empty.className = "flex-grow flex items-center justify-center border border-dashed border-slate-200 rounded-xl p-4 text-[10px] text-slate-300 italic";
+                    empty.textContent = "Nessuno studio";
+                    container.appendChild(empty);
+                }
+
+                colDiv.appendChild(setDiv);
+            });
+
+            grid.appendChild(colDiv);
+        });
+
+        studyMapCanvasOuter.appendChild(grid);
+    }
+
+    // PDF Export function
+    if (exportMapPdfBtn) {
+        exportMapPdfBtn.addEventListener("click", () => {
+            if (!studyMapCanvasOuter) return;
+            const element = studyMapCanvasOuter;
+            const area = mapClinicalArea.value;
+            const spec = mapSpecificArea.value || "Tutte";
+            const sett = mapSetting.value || "Tutti";
+            const filename = `mappa_studi_${area.toLowerCase()}_${spec.toLowerCase()}_${sett.toLowerCase()}.pdf`;
+
+            const opt = {
+                margin:       10,
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            // Esegui esportazione
+            html2pdf().set(opt).from(element).save();
+        });
+    }
 });
