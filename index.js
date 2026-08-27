@@ -54,6 +54,10 @@ async function initDbSchema() {
       ALTER TABLE studies 
       ADD COLUMN IF NOT EXISTS extra_files JSONB DEFAULT '[]'::jsonb;
     `);
+    await pool.query(`
+      ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'in_attivazione';
+    `);
     console.log("✅ Schema database verificato con successo.");
   } catch (error) {
     console.error("❌ Errore durante la verifica dello schema database:", error);
@@ -123,6 +127,7 @@ const ALLOWED_CLINICAL_AREAS = [
   "Altro",
 ];
 const ALLOWED_TREATMENT_SETTINGS = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+const ALLOWED_STUDY_STATUSES = ["in_attivazione", "attivo"];
 const ALLOWED_EVENT_TYPES = [
   "oncological_visit",
   "blood_test",
@@ -395,14 +400,17 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
     const internal_notes = toStrOrNull(req.body.internal_notes);
     const pi_contacts = toStrOrNull(req.body.pi_contacts);
 
+    const status = req.body.status !== undefined ? String(req.body.status).trim() : undefined;
+
     const bodyHasCycle = Object.prototype.hasOwnProperty.call(req.body, "cycle_weeks");
     const bodyHasTotal = Object.prototype.hasOwnProperty.call(req.body, "total_weeks");
     const bodyHasCostCenter = Object.prototype.hasOwnProperty.call(req.body, "cost_center");
     const bodyHasCode = Object.prototype.hasOwnProperty.call(req.body, "study_code");
     const bodyHasNotes = Object.prototype.hasOwnProperty.call(req.body, "internal_notes");
     const bodyHasContacts = Object.prototype.hasOwnProperty.call(req.body, "pi_contacts");
+    const bodyHasStatus = Object.prototype.hasOwnProperty.call(req.body, "status");
 
-    if (!bodyHasCycle && !bodyHasTotal && !bodyHasCostCenter && !bodyHasCode && !bodyHasNotes && !bodyHasContacts) {
+    if (!bodyHasCycle && !bodyHasTotal && !bodyHasCostCenter && !bodyHasCode && !bodyHasNotes && !bodyHasContacts && !bodyHasStatus) {
       return res.status(400).json({ error: "Niente da aggiornare" });
     }
 
@@ -418,6 +426,9 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
       (!Number.isInteger(total_weeks) || total_weeks < 4 || total_weeks > 104)
     ) {
       return res.status(400).json({ error: "total_weeks non valido" });
+    }
+    if (bodyHasStatus && !ALLOWED_STUDY_STATUSES.includes(status)) {
+      return res.status(400).json({ error: "status non valido (usa: in_attivazione, attivo)" });
     }
 
     // 1) verifica che lo studio esista
@@ -447,6 +458,7 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
     if (bodyHasCode) patch.study_code = study_code;
     if (bodyHasNotes) patch.internal_notes = internal_notes;
     if (bodyHasContacts) patch.pi_contacts = pi_contacts;
+    if (bodyHasStatus) patch.status = status;
 
     const setCols = Object.keys(patch);
     const setClause = setCols

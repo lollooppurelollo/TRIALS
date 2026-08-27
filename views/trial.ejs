@@ -119,6 +119,14 @@
                     class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none"
                     placeholder="Nome, email e recapiti del Principal Investigator..."></textarea>
         </div>
+        <div>
+          <label for="studyStatus" class="block text-sm font-medium text-slate-700">Stato dello Studio</label>
+          <select id="studyStatus"
+                  class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none">
+            <option value="in_attivazione" selected>🟡 In Attivazione</option>
+            <option value="attivo">🟢 Attivo</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -299,6 +307,17 @@
               <div id="modalTreatmentLineContainer" class="text-xs text-slate-500 mt-0.5 hidden">
                 Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-700"></span>
               </div>
+            </div>
+          </div>
+
+          <!-- Card Stato Studio -->
+          <div id="modalStudyStatusCard" class="p-4 rounded-xl border flex items-start gap-3">
+            <div class="p-2 rounded-lg" id="modalStudyStatusIcon">
+              <i class="fas fa-circle-dot text-base"></i>
+            </div>
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stato Studio</span>
+              <span id="modalStudyStatus" class="text-sm font-semibold">—</span>
             </div>
           </div>
 

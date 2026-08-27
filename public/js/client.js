@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const studySpecificClinicalAreaContainer = document.getElementById(
         "studySpecificClinicalAreaContainer",
     );
+    const studyStatusSelect = document.getElementById("studyStatus");
     const doctorTrialListDiv = document.querySelector(
         "#trialListSection #trialList",
     );
@@ -117,6 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalInternalNotes = document.getElementById("modalInternalNotes");
     const modalPiContactsContainer = document.getElementById("modalPiContactsContainer");
     const modalPiContacts = document.getElementById("modalPiContacts");
+    const modalStudyStatus = document.getElementById("modalStudyStatus");
+    const modalStudyStatusCard = document.getElementById("modalStudyStatusCard");
+    const modalStudyStatusIcon = document.getElementById("modalStudyStatusIcon");
     const studyInternalNotesInput = document.getElementById("studyInternalNotes");
     const studyPiContactsInput = document.getElementById("studyPiContacts");
     const studyArmsCount = document.getElementById("studyArmsCount");
@@ -312,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const study_code = String(study.study_code ?? study.code ?? "").trim();
         const internal_notes = String(study.internal_notes ?? study.notes ?? "").trim();
         const pi_contacts = String(study.pi_contacts ?? study.contacts ?? study.pi ?? "").trim();
+        const status = study.status && ["in_attivazione", "attivo"].includes(study.status) ? study.status : "in_attivazione";
 
         const title = String(study.title ?? "").trim();
         if (!title) throw new Error("Manca 'title'.");
@@ -436,6 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 : max_treatment_line,
             internal_notes,
             pi_contacts,
+            status,
             criteria,
             arms,
             events,
@@ -518,6 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Note interne e contatti PI
         if (studyInternalNotesInput) studyInternalNotesInput.value = study.internal_notes || "";
         if (studyPiContactsInput) studyPiContactsInput.value = study.pi_contacts || "";
+        if (studyStatusSelect) studyStatusSelect.value = study.status || "in_attivazione";
 
         // Criteri: svuota e ricrea
         if (criteriaListDiv) criteriaListDiv.innerHTML = "";
@@ -976,6 +983,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       : null,
                   internal_notes: studyInternalNotesInput ? studyInternalNotesInput.value.trim() : "",
                   pi_contacts: studyPiContactsInput ? studyPiContactsInput.value.trim() : "",
+                  status: studyStatusSelect ? studyStatusSelect.value : "in_attivazione",
                   criteria,
                   arms,
                   events: importedEvents,
@@ -1009,6 +1017,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 isCodeDuplicate = false;
                 if (studyInternalNotesInput) studyInternalNotesInput.value = "";
                 if (studyPiContactsInput) studyPiContactsInput.value = "";
+                if (studyStatusSelect) studyStatusSelect.value = "in_attivazione";
                 studySpecificClinicalAreaContainer.classList.add("hidden");
                 studyTreatmentLineContainer.classList.add("hidden");
                 criteriaListDiv.innerHTML = "";
@@ -1549,16 +1558,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const codeBadge = safeCode
             ? `<span class="study-code-badge">${safeCode}</span>`
             : "";
+        const statusBadge = study.status === "attivo"
+            ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Attivo</span>`
+            : `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">In attivazione</span>`;
         let content = `
             <div>
-                <div class="mb-1">${codeBadge}<h4 class="inline font-bold text-dark-gray">${safeTitle}</h4></div>
+                <div class="mb-1">${codeBadge}${statusBadge}<h4 class="inline font-bold text-dark-gray ml-1">${safeTitle}</h4></div>
                 <p class="text-sm text-gray-600">${safeSubtitle}</p>
             </div>`;
         if (page === "trial") {
             content = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="mb-1">${codeBadge}<h4 class="inline font-bold text-dark-gray">${safeTitle}</h4></div>
+                        <div class="mb-1">${codeBadge}${statusBadge}<h4 class="inline font-bold text-dark-gray ml-1">${safeTitle}</h4></div>
                         <p class="text-sm text-gray-600">${safeSubtitle}</p>
                     </div>
                     <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors ml-3 flex-shrink-0" data-id="${study.id}"><i class="fas fa-trash-alt"></i></button>
@@ -1771,6 +1783,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 modalTreatmentLine.textContent = `${study.min_treatment_line || "N/A"} - ${study.max_treatment_line || "N/A"}`;
             } else {
                 modalTreatmentLineContainer.classList.add("hidden");
+            }
+        }
+
+        // Stato dello studio
+        if (modalStudyStatus && modalStudyStatusCard && modalStudyStatusIcon) {
+            const status = study.status || "in_attivazione";
+            if (status === "attivo") {
+                modalStudyStatus.textContent = "🟢 Attivo";
+                modalStudyStatus.className = "text-sm font-semibold text-emerald-800";
+                modalStudyStatusCard.className = "p-4 rounded-xl border border-emerald-200 bg-emerald-50/20 flex items-start gap-3";
+                modalStudyStatusIcon.className = "p-2 rounded-lg bg-emerald-100 text-emerald-600";
+            } else {
+                modalStudyStatus.textContent = "🟡 In Attivazione";
+                modalStudyStatus.className = "text-sm font-semibold text-amber-800";
+                modalStudyStatusCard.className = "p-4 rounded-xl border border-amber-200 bg-amber-50/20 flex items-start gap-3";
+                modalStudyStatusIcon.className = "p-2 rounded-lg bg-amber-100 text-amber-600";
             }
         }
 
