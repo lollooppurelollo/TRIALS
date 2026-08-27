@@ -2461,109 +2461,109 @@ document.addEventListener("DOMContentLoaded", () => {
             const area = mapClinicalArea.value;
             const filename = `mappa_studi_${area.replace(/\s+/g, '_').toLowerCase()}.pdf`;
 
-            const W = 1587; // px at 96dpi ~ A4 landscape (297mm)
-            const H = 1122; // px at 96dpi ~ A4 landscape (210mm)
-
             const titleSize = studyMapCanvasOuter.style.getPropertyValue("--map-title-size") || "12px";
             const subtitleSize = studyMapCanvasOuter.style.getPropertyValue("--map-subtitle-size") || "10px";
 
-            // Costruisci un wrapper standalone con stili inline
+            // Dimensioni A4 landscape a 96dpi
+            const W = 1122;
+            const H = 794;
+
+            // Wrapper off-screen VISIBILE (non opacity:0, non z-index negativo)
             const wrapper = document.createElement("div");
-            wrapper.style.cssText = `
-                position: fixed;
-                top: 0; left: 0;
-                width: ${W}px;
-                height: ${H}px;
-                background: #ffffff;
-                padding: 32px;
-                box-sizing: border-box;
-                overflow: hidden;
-                font-family: 'Inter', 'Segoe UI', sans-serif;
-                z-index: -9999;
-                opacity: 0;
-                pointer-events: none;
-            `;
+            wrapper.style.cssText = [
+                "position: absolute",
+                `left: ${-W - 100}px`,
+                "top: 0",
+                `width: ${W}px`,
+                `height: ${H}px`,
+                "background: #ffffff",
+                "padding: 24px",
+                "box-sizing: border-box",
+                "overflow: hidden",
+                "font-family: Inter, Segoe UI, sans-serif",
+                "z-index: 1"
+            ].join("; ");
 
-            // Clone il contenuto della mappa dentro il wrapper
+            // Clona il contenuto della mappa
             const inner = studyMapCanvasOuter.cloneNode(true);
-            inner.style.cssText = `
-                width: 100%;
-                height: 100%;
-                display: flex;
-                box-sizing: border-box;
-                overflow: hidden;
-                --map-title-size: ${titleSize};
-                --map-subtitle-size: ${subtitleSize};
-            `;
 
-            // Forza gli stili inline su tutti i figli che usano classi Tailwind critiche
-            const applyInlineStyles = (el) => {
+            // Copia gli stili inline già presenti (gridTemplateColumns ecc.)
+            inner.style.width = "100%";
+            inner.style.height = "100%";
+            inner.style.display = "grid";
+            inner.style.boxSizing = "border-box";
+            inner.style.overflow = "hidden";
+            inner.style.gap = studyMapCanvasOuter.style.gap || "16px";
+            inner.style.gridTemplateColumns = studyMapCanvasOuter.querySelector("div")
+                ? studyMapCanvasOuter.querySelector("div").style.gridTemplateColumns || ""
+                : "";
+
+            // Risolvi CSS variables e rimuovi scroll nel clone
+            const resolveEl = (el) => {
                 if (!el || el.nodeType !== 1) return;
-                const cls = el.className || "";
-                const style = el.style;
-                // Griglia colonne
-                if (style.gridTemplateColumns) { /* già inline */ }
-                // Rimuovi max-height scrollabile nel clone (vogliamo tutto visibile)
-                if (el.classList && el.classList.contains("study-rect-container")) {
-                    style.maxHeight = "none";
-                    style.overflowY = "visible";
+                if (el.classList.contains("study-rect-container")) {
+                    el.style.maxHeight = "none";
+                    el.style.overflowY = "visible";
                 }
-                // Risolvi CSS variables dei font nel clone
-                if (el.classList && el.classList.contains("map-card-title")) {
-                    style.fontSize = titleSize;
-                    style.fontWeight = "700";
-                    style.lineHeight = "1.3";
+                if (el.classList.contains("map-card-title")) {
+                    el.style.fontSize = titleSize;
+                    el.style.fontWeight = "700";
+                    el.style.lineHeight = "1.3";
+                    el.style.display = "block";
                 }
-                if (el.classList && el.classList.contains("map-card-subtitle")) {
-                    style.fontSize = subtitleSize;
-                    style.opacity = "0.8";
-                    style.lineHeight = "1.4";
-                    style.marginTop = "4px";
+                if (el.classList.contains("map-card-subtitle")) {
+                    el.style.fontSize = subtitleSize;
+                    el.style.opacity = "0.8";
+                    el.style.lineHeight = "1.4";
+                    el.style.marginTop = "4px";
+                    el.style.display = "block";
                 }
-                Array.from(el.children).forEach(applyInlineStyles);
+                // Rimuovi overflow hidden sulle colonne in modo che tutto sia visibile
+                el.style.overflow = el.style.overflow === "hidden" ? "visible" : el.style.overflow;
+                Array.from(el.children).forEach(resolveEl);
             };
-            applyInlineStyles(inner);
+            resolveEl(inner);
 
             wrapper.appendChild(inner);
             document.body.appendChild(wrapper);
 
-            // Breve pausa per il rendering
-            await new Promise(r => setTimeout(r, 120));
+            // Aspetta che il browser abbia renderizzato
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            await new Promise(r => setTimeout(r, 200));
 
             try {
                 const canvas = await html2canvas(wrapper, {
-                    scale: 2,
+                    scale: 1.5,
                     useCORS: true,
                     allowTaint: true,
-                    logging: false,
+                    logging: true,
+                    backgroundColor: "#ffffff",
                     width: W,
                     height: H,
-                    windowWidth: W,
-                    windowHeight: H,
-                    backgroundColor: "#ffffff"
+                    scrollX: 0,
+                    scrollY: 0,
+                    x: 0,
+                    y: 0
                 });
 
-                const imgData = canvas.toDataURL("image/jpeg", 0.97);
-                // jsPDF: A4 landscape in mm
+                const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
                 const { jsPDF } = window.jspdf || {};
                 if (jsPDF) {
                     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                     doc.addImage(imgData, "JPEG", 0, 0, 297, 210);
                     doc.save(filename);
                 } else {
-                    // Fallback html2pdf
-                    const opt = {
-                        margin: 0,
-                        filename,
-                        image: { type: "jpeg", quality: 0.97 },
-                        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, width: W, height: H, windowWidth: W, windowHeight: H, backgroundColor: "#ffffff" },
-                        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
-                    };
-                    await html2pdf().set(opt).from(wrapper).save();
+                    console.error("jsPDF non disponibile");
+                    alert("Libreria jsPDF non caricata. Controlla la connessione.");
                 }
+            } catch (err) {
+                console.error("Errore esportazione PDF:", err);
+                alert("Errore durante l'esportazione: " + err.message);
             } finally {
                 wrapper.remove();
             }
         });
     }
+
 });
