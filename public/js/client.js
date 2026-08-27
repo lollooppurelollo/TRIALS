@@ -2332,25 +2332,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedArea = mapClinicalArea.value;
         const selectedSetting = mapSetting.value;
         
-        // Ottieni array di specifiche selezionate
         const selectedSpecifics = _selectedMapSpecifics.filter(Boolean);
+
+        // Colori setting
+        const settingMeta = {
+            "Metastatico":   { dot: "rgb(239,68,68)",   bg: "rgba(254,226,226,0.5)",  border: "rgb(252,165,165)",  label: "rgb(185,28,28)"  },
+            "Adiuvante":     { dot: "rgb(59,130,246)",   bg: "rgba(219,234,254,0.5)",  border: "rgb(147,197,253)",  label: "rgb(29,78,216)"  },
+            "Neo-adiuvante": { dot: "rgb(245,158,11)",  bg: "rgba(254,243,199,0.5)", border: "rgb(252,211,77)",  label: "rgb(180,83,9)"  }
+        };
 
         // 1. Filtra gli studi
         const filtered = _mapAllStudies.filter(study => {
-            // Filtro area clinica
             const hasArea = Array.isArray(study.clinical_areas) && study.clinical_areas.includes(selectedArea);
             if (!hasArea) return false;
 
-            // Filtro specifica area (se valorizzata)
             const allSpecifics = specificClinicalAreasMap[selectedArea] || [];
             const hasRestrictedSpecs = selectedSpecifics.length > 0 && selectedSpecifics.length < allSpecifics.length;
             if (hasRestrictedSpecs) {
-                const hasSpecific = Array.isArray(study.specific_clinical_areas) && 
+                const hasSpecific = Array.isArray(study.specific_clinical_areas) &&
                                     study.specific_clinical_areas.some(sa => selectedSpecifics.includes(sa));
                 if (!hasSpecific) return false;
             }
 
-            // Filtro setting (opzionale)
             if (selectedSetting) {
                 if (study.treatment_setting !== selectedSetting) return false;
             }
@@ -2358,53 +2361,74 @@ document.addEventListener("DOMContentLoaded", () => {
             return true;
         });
 
-        // 2. Determina le colonne (Esclude Altro/Non specificato)
-        let columns = [];
-        if (selectedSpecifics.length > 0) {
-            columns = [...selectedSpecifics];
-        } else {
-            columns = [...(specificClinicalAreasMap[selectedArea] || [])];
-        }
+        // 2. Colonne (Esclude Altro/Non specificato)
+        let columns = selectedSpecifics.length > 0
+            ? [...selectedSpecifics]
+            : [...(specificClinicalAreasMap[selectedArea] || [])];
+        columns = columns.filter(c => c && c.toLowerCase() !== "altro" && c.toLowerCase() !== "non specificato");
 
-        // 3. Determina i setting (Righe/Sub-sezioni)
+        // 3. Setting (righe)
         const settings = selectedSetting ? [selectedSetting] : ["Metastatico", "Adiuvante", "Neo-adiuvante"];
 
-        // 4. Costruisci il layout grid
-        const grid = document.createElement("div");
-        grid.className = "grid gap-4 h-full w-full";
-        grid.style.gridTemplateColumns = `repeat(${columns.length}, minmax(0, 1fr))`;
-        grid.style.minHeight = "640px";
+        if (columns.length === 0) {
+            studyMapCanvasOuter.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:200px;color:#94a3b8;font-size:14px;">Seleziona almeno un'area specifica</div>`;
+            return;
+        }
 
-        columns.forEach(colName => {
-            const colDiv = document.createElement("div");
-            colDiv.className = "flex flex-col gap-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100/80 h-full overflow-hidden";
-            
-            // Colonna Header
-            const colHdr = document.createElement("h4");
-            colHdr.className = "text-[11px] font-bold text-center py-2 bg-slate-200/60 rounded-xl text-slate-700 uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis shadow-sm";
-            colHdr.textContent = colName;
-            colDiv.appendChild(colHdr);
+        // 4. Contenitore principale (flex column = una riga per setting)
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "display:flex;flex-direction:column;gap:12px;width:100%;height:100%;box-sizing:border-box;";
 
-            // Sub-sezioni per i Setting
-            settings.forEach(set => {
-                const setDiv = document.createElement("div");
-                setDiv.className = "flex-grow flex flex-col bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm overflow-hidden";
-                
-                const setDotColor = {
-                    "Metastatico": "rgb(239,68,68)",
-                    "Adiuvante": "rgb(59,130,246)",
-                    "Neo-adiuvante": "rgb(245,158,11)"
-                }[set] || "rgb(148,163,184)";
+        settings.forEach(set => {
+            const sm = settingMeta[set] || { dot: "rgb(148,163,184)", bg: "rgba(248,250,252,0.8)", border: "rgb(203,213,225)", label: "rgb(71,85,105)" };
 
-                setDiv.innerHTML = `
-                    <span style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-                        <span style="width:6px;height:6px;border-radius:50%;display:inline-block;background:${setDotColor};"></span> ${set}
-                    </span>
-                    <div class="study-rect-container flex flex-col gap-2 overflow-y-auto pr-1 flex-grow" style="max-height: 250px;">
-                    </div>
+            // Banda setting
+            const band = document.createElement("div");
+            band.style.cssText = `
+                background: ${sm.bg};
+                border: 1.5px solid ${sm.border};
+                border-radius: 14px;
+                padding: 10px 14px 12px 14px;
+                box-sizing: border-box;
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            `;
+
+            // Header setting
+            const bandHdr = document.createElement("div");
+            bandHdr.style.cssText = `display:flex;align-items:center;gap:7px;margin-bottom:4px;`;
+            bandHdr.innerHTML = `
+                <span style="width:10px;height:10px;border-radius:50%;background:${sm.dot};display:inline-block;flex-shrink:0;"></span>
+                <span style="font-size:11px;font-weight:800;color:${sm.label};text-transform:uppercase;letter-spacing:0.08em;">${set}</span>
+            `;
+            band.appendChild(bandHdr);
+
+            // Grid colonne dentro la banda
+            const colGrid = document.createElement("div");
+            colGrid.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(${columns.length}, minmax(0, 1fr));
+                gap: 8px;
+                flex: 1;
+                min-height: 0;
+            `;
+
+            columns.forEach(colName => {
+                const colCell = document.createElement("div");
+                colCell.style.cssText = `
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                    min-width: 0;
                 `;
 
-                const container = setDiv.querySelector(".study-rect-container");
+                // Header colonna (solo prima riga)
+                if (set === settings[0]) {
+                    // Non mettiamo header qui — lo aggiungiamo fuori dalla banda
+                }
 
                 // Filtra studi per questa colonna e setting
                 const matches = filtered.filter(study => {
@@ -2415,43 +2439,106 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (matches.length > 0) {
                     matches.forEach(study => {
                         const card = document.createElement("div");
-                        card.className = "p-2.5 rounded-xl border flex flex-col justify-between shadow-sm cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md";
-                        
                         const colors = getHarmoniousColor(selectedArea, colName, set);
-                        card.style.backgroundColor = colors.bg;
-                        card.style.borderColor = colors.border;
-                        card.style.color = colors.text;
-
-                        const safeTitle = escapeHtml(study.title || "");
-                        const safeSubtitle = escapeHtml(study.subtitle || "");
-
-                        card.innerHTML = `
-                            <div class="map-card-title font-bold leading-tight line-clamp-2" style="font-size: var(--map-title-size);">${study.study_code ? study.study_code + ' - ' : ''}${safeTitle}</div>
-                            <div class="map-card-subtitle mt-1 leading-snug line-clamp-2 opacity-80" style="font-size: var(--map-subtitle-size);">${safeSubtitle}</div>
+                        card.style.cssText = `
+                            padding: 8px 10px;
+                            border-radius: 10px;
+                            border: 1.5px solid ${colors.border};
+                            background: ${colors.bg};
+                            color: ${colors.text};
+                            cursor: pointer;
+                            box-sizing: border-box;
+                            word-break: break-word;
+                            overflow-wrap: break-word;
+                            transition: box-shadow 0.15s;
                         `;
 
+                        const titleEl = document.createElement("div");
+                        titleEl.className = "map-card-title";
+                        titleEl.style.cssText = `font-size:var(--map-title-size);font-weight:700;line-height:1.3;`;
+                        titleEl.textContent = (study.study_code ? study.study_code + " — " : "") + (study.title || "");
+
+                        const subtitleEl = document.createElement("div");
+                        subtitleEl.className = "map-card-subtitle";
+                        subtitleEl.style.cssText = `font-size:var(--map-subtitle-size);margin-top:3px;line-height:1.35;opacity:0.8;`;
+                        subtitleEl.textContent = study.subtitle || "";
+
+                        card.appendChild(titleEl);
+                        if (study.subtitle) card.appendChild(subtitleEl);
+
+                        card.addEventListener("mouseenter", () => card.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)");
+                        card.addEventListener("mouseleave", () => card.style.boxShadow = "none");
                         card.addEventListener("click", () => {
                             studyMapModal.classList.add("hidden");
                             showStudyDetails(study, "trial");
                         });
 
-                        container.appendChild(card);
+                        colCell.appendChild(card);
                     });
                 } else {
                     const empty = document.createElement("div");
-                    empty.className = "flex-grow flex items-center justify-center border border-dashed border-slate-200 rounded-xl p-4 text-[10px] text-slate-300 italic";
-                    empty.textContent = "Nessuno studio";
-                    container.appendChild(empty);
+                    empty.style.cssText = `
+                        border: 1.5px dashed rgba(148,163,184,0.35);
+                        border-radius: 10px;
+                        padding: 10px 6px;
+                        text-align: center;
+                        font-size: 10px;
+                        color: rgba(148,163,184,0.6);
+                        font-style: italic;
+                        flex: 1;
+                    `;
+                    empty.textContent = "—";
+                    colCell.appendChild(empty);
                 }
 
-                colDiv.appendChild(setDiv);
+                colGrid.appendChild(colCell);
             });
 
-            grid.appendChild(colDiv);
+            band.appendChild(colGrid);
+            wrap.appendChild(band);
         });
 
-        studyMapCanvasOuter.appendChild(grid);
+        // Riga intestazioni colonne (in cima, fuori dalle bande)
+        const hdrRow = document.createElement("div");
+        hdrRow.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(${columns.length}, minmax(0, 1fr));
+            gap: 8px;
+            padding: 0 14px;
+            box-sizing: border-box;
+        `;
+        columns.forEach(colName => {
+            const hdr = document.createElement("div");
+            hdr.style.cssText = `
+                background: rgb(51,65,85);
+                color: #fff;
+                border-radius: 8px;
+                padding: 6px 8px;
+                font-size: 11px;
+                font-weight: 800;
+                text-align: center;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                white-space: normal;
+                word-break: break-word;
+                line-height: 1.3;
+            `;
+            hdr.textContent = colName;
+            hdrRow.appendChild(hdr);
+        });
+
+        studyMapCanvasOuter.style.display = "flex";
+        studyMapCanvasOuter.style.flexDirection = "column";
+        studyMapCanvasOuter.style.gap = "8px";
+        studyMapCanvasOuter.style.padding = "12px";
+        studyMapCanvasOuter.style.background = "#f8fafc";
+        studyMapCanvasOuter.style.borderRadius = "16px";
+        studyMapCanvasOuter.style.minHeight = "600px";
+
+        studyMapCanvasOuter.appendChild(hdrRow);
+        studyMapCanvasOuter.appendChild(wrap);
     }
+
 
     // PDF Export function
     if (exportMapPdfBtn) {
