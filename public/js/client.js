@@ -2207,34 +2207,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getHarmoniousColor(clinicalArea, specificArea) {
-        // Colore basato SOLO sulla specifica area, non sul setting
-        // Palette separata dalle tinte del sito (verde emerald) e dalle bande setting
         const specificHues = {
             // Mammella
-            "HER2 positive": 270,   // Viola
-            "HER2+": 270,
-            "Luminali": 200,        // Azzurro acciaio
-            "TNBC": 30,             // Arancio
+            "HER2 positive": 275,   // Viola brillante
+            "HER2+": 275,
+            "Luminali": 208,        // Azzurro vivo
+            "TNBC": 18,             // Corallo/Arancio vivo
             // Polmone
-            "NSCLC": 190,
+            "NSCLC": 195,
             "SCLC": 260,
-            "Epidermoide": 40,
+            "Epidermoide": 35,
             // GI
             "Colon-Retto": 25,
             "Gastrico": 50,
             "Pancreas": 35,
             "Epatocarcinoma": 20,
-            // Default per area clinica
         };
         const areaDefaultHues = {
-            "Mammella": 270, "Polmone": 195, "Gastro-Intestinale": 30,
+            "Mammella": 275, "Polmone": 195, "Gastro-Intestinale": 30,
             "Ginecologico": 290, "Prostata e Vie Urinarie": 220,
             "Melanoma e Cute": 145, "Testa-Collo": 45, "Fase 1": 10, "Altro": 185
         };
 
         let hue = specificHues[specificArea];
         if (hue === undefined) {
-            // Genera hue deterministico dalla stringa
             let hash = 0;
             for (let i = 0; i < (specificArea || "").length; i++)
                 hash = (hash * 31 + (specificArea || "").charCodeAt(i)) & 0xffff;
@@ -2242,11 +2238,10 @@ document.addEventListener("DOMContentLoaded", () => {
             hue = (baseHue + (hash % 6) * 40) % 360;
         }
 
-        // Pastels chiari e saturi, SENZA toccare il range rosso (0-20) o azzurro (200-230)
-        // né il verde (130-160) usato da Neo-adiuvante
-        const rgbBg     = hslToRgb(hue, 55, 93);  // molto chiaro
-        const rgbBorder = hslToRgb(hue, 50, 77);  // medio
-        const rgbText   = hslToRgb(hue, 65, 22);  // scuro leggibile
+        // Colori molto più vividi e brillanti (saturazione 92%, luminosità 95%)
+        const rgbBg     = hslToRgb(hue, 92, 95);  // sfondo brillante e chiaro
+        const rgbBorder = hslToRgb(hue, 85, 75);  // bordo ben definito e vivo
+        const rgbText   = hslToRgb(hue, 95, 20);  // testo scuro e ad alto contrasto
 
         return {
             bg:     `rgb(${rgbBg[0]},${rgbBg[1]},${rgbBg[2]})`,
@@ -2457,10 +2452,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     matches.forEach(study => {
                         const card = document.createElement("div");
                         const colors = getHarmoniousColor(selectedArea, colName);
+                        const isActivation = study.status === "in_attivazione";
+                        const borderStyle = isActivation ? "dashed" : "solid";
+                        
                         card.style.cssText = `
                             padding: 8px 10px;
                             border-radius: 10px;
-                            border: 1.5px solid ${colors.border};
+                            border: 2px ${borderStyle} ${colors.border};
                             background: ${colors.bg};
                             color: ${colors.text};
                             cursor: pointer;
