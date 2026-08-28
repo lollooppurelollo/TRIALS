@@ -1151,7 +1151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mappa le aree cliniche specifiche in termini inglesi ed equivalenti clinici (es. recettori ormonali per luminale)
     const CTGOV_SPECIFIC_MAP = {
-        "Luminali": '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent"',
+        "Luminali": '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent" OR "HR+/HER2-" OR "HR+/HER2" OR "HR+ / HER2-"',
         "TNBC": '"TNBC" OR "triple negative" OR "triple-negative"',
         "HER2 positive": '"HER2 positive" OR "HER2-positive" OR "HER2+" OR "HER2 amplified"',
         "Mesotelioma": '"mesothelioma"',
@@ -1276,15 +1276,26 @@ document.addEventListener("DOMContentLoaded", () => {
                             status === "NOT_YET_RECRUITING" ? "🟡 Apertura imminente" :
                             status === "COMPLETED" ? "Completato" : escapeHtml(status);
 
-        // Centri — mostra max 4 + eventuale "+N altri"
+        // Centri — mostra prioritariamente tutti i centri italiani se disponibili, altrimenti max 4 centri
         let centersHtml = "<span class='text-slate-400 text-xs'>Nessun centro registrato</span>";
         if (locations.length > 0) {
-            const shown = locations.slice(0, 4).map(l => {
-                const parts = [l.facility, l.city, l.country].filter(Boolean);
-                return `<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">${escapeHtml(parts.join(", "))}</span>`;
-            });
-            const extra = locations.length > 4 ? `<span class="text-xs text-slate-400">+${locations.length - 4} altri</span>` : "";
-            centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
+            const italianLocs = locations.filter(l => l.country && (l.country.toLowerCase() === "italy" || l.country.toLowerCase() === "italia"));
+            if (italianLocs.length > 0) {
+                const shown = italianLocs.map(l => {
+                    const parts = [l.facility, l.city, l.country].filter(Boolean);
+                    return `<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">${escapeHtml(parts.join(", "))}</span>`;
+                });
+                const extraCount = locations.length - italianLocs.length;
+                const extra = extraCount > 0 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${extraCount} altri</span>` : "";
+                centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
+            } else {
+                const shown = locations.slice(0, 4).map(l => {
+                    const parts = [l.facility, l.city, l.country].filter(Boolean);
+                    return `<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">${escapeHtml(parts.join(", "))}</span>`;
+                });
+                const extra = locations.length > 4 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${locations.length - 4} altri</span>` : "";
+                centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
+            }
         }
 
         // Nota di attenzione per parametri non verificabili
@@ -2207,46 +2218,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getHarmoniousColor(clinicalArea, specificArea) {
-        const specificHues = {
+        const specificColors = {
             // Mammella
-            "HER2 positive": 275,   // Viola brillante
-            "HER2+": 275,
-            "Luminali": 208,        // Azzurro vivo
-            "TNBC": 18,             // Corallo/Arancio vivo
+            "HER2 positive": { border: "#a855f7", text: "#7e22ce" }, // Viola vibrante
+            "HER2+": { border: "#a855f7", text: "#7e22ce" },
+            "Luminali": { border: "#f59e0b", text: "#b45309" },      // Ambra vivo
+            "TNBC": { border: "#ec4899", text: "#be185d" },          // Rosa intenso
             // Polmone
-            "NSCLC": 195,
-            "SCLC": 260,
-            "Epidermoide": 35,
+            "NSCLC": { border: "#06b6d4", text: "#0891b2" },         // Ciano
+            "SCLC": { border: "#6366f1", text: "#4f46e5" },          // Indaco
+            "Epidermoide": { border: "#f97316", text: "#ea580c" },   // Arancio
             // GI
-            "Colon-Retto": 25,
-            "Gastrico": 50,
-            "Pancreas": 35,
-            "Epatocarcinoma": 20,
-        };
-        const areaDefaultHues = {
-            "Mammella": 275, "Polmone": 195, "Gastro-Intestinale": 30,
-            "Ginecologico": 290, "Prostata e Vie Urinarie": 220,
-            "Melanoma e Cute": 145, "Testa-Collo": 45, "Fase 1": 10, "Altro": 185
+            "Colon-Retto": { border: "#14b8a6", text: "#0d9488" },   // Teal
+            "Gastrico": { border: "#10b981", text: "#059669" },      // Smeraldo
+            "Pancreas": { border: "#84cc16", text: "#65a30d" },      // Lime
+            "Epatocarcinoma": { border: "#ca8a04", text: "#854d0e" } // Giallo
         };
 
-        let hue = specificHues[specificArea];
-        if (hue === undefined) {
-            let hash = 0;
-            for (let i = 0; i < (specificArea || "").length; i++)
-                hash = (hash * 31 + (specificArea || "").charCodeAt(i)) & 0xffff;
-            const baseHue = areaDefaultHues[clinicalArea] ?? 180;
-            hue = (baseHue + (hash % 6) * 40) % 360;
-        }
+        const match = specificColors[specificArea];
+        if (match) return match;
 
-        // Colori molto più vividi e brillanti (saturazione 92%, luminosità 95%)
-        const rgbBg     = hslToRgb(hue, 92, 95);  // sfondo brillante e chiaro
-        const rgbBorder = hslToRgb(hue, 85, 75);  // bordo ben definito e vivo
-        const rgbText   = hslToRgb(hue, 95, 20);  // testo scuro e ad alto contrasto
-
+        // Fallback deterministico basato su HSL
+        let hash = 0;
+        for (let i = 0; i < (specificArea || "").length; i++)
+            hash = (hash * 31 + (specificArea || "").charCodeAt(i)) & 0xffff;
+        
+        const hues = [30, 90, 160, 200, 250, 285, 325];
+        const hue = hues[hash % hues.length];
+        
         return {
-            bg:     `rgb(${rgbBg[0]},${rgbBg[1]},${rgbBg[2]})`,
-            border: `rgb(${rgbBorder[0]},${rgbBorder[1]},${rgbBorder[2]})`,
-            text:   `rgb(${rgbText[0]},${rgbText[1]},${rgbText[2]})`
+            border: `hsl(${hue}, 75%, 50%)`,
+            text: `hsl(${hue}, 85%, 28%)`
         };
     }
 
@@ -2456,26 +2458,28 @@ document.addEventListener("DOMContentLoaded", () => {
                         const borderStyle = isActivation ? "dashed" : "solid";
                         
                         card.style.cssText = `
-                            padding: 8px 10px;
-                            border-radius: 10px;
-                            border: 2px ${borderStyle} ${colors.border};
-                            background: ${colors.bg};
-                            color: ${colors.text};
+                            padding: 10px 12px;
+                            border-radius: 12px;
+                            border: 1.5px ${borderStyle} rgba(226, 232, 240, 0.9);
+                            border-left: 5px ${borderStyle} ${colors.border};
+                            background: #ffffff;
+                            color: #1e293b;
                             cursor: pointer;
                             box-sizing: border-box;
                             word-break: break-word;
                             overflow-wrap: break-word;
-                            transition: box-shadow 0.15s;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                            transition: box-shadow 0.15s, transform 0.15s;
                         `;
 
                         const titleEl = document.createElement("div");
                         titleEl.className = "map-card-title";
-                        titleEl.style.cssText = `font-size:var(--map-title-size);font-weight:700;line-height:1.3;`;
+                        titleEl.style.cssText = `font-size:var(--map-title-size);font-weight:700;line-height:1.3;color:#0f172a;`;
                         titleEl.textContent = (study.study_code ? study.study_code + " — " : "") + (study.title || "");
 
                         const subtitleEl = document.createElement("div");
                         subtitleEl.className = "map-card-subtitle";
-                        subtitleEl.style.cssText = `font-size:var(--map-subtitle-size);margin-top:3px;line-height:1.35;opacity:0.8;`;
+                        subtitleEl.style.cssText = `font-size:var(--map-subtitle-size);margin-top:4px;line-height:1.35;color:#475569;opacity:0.9;`;
                         subtitleEl.textContent = study.subtitle || "";
 
                         card.appendChild(titleEl);
@@ -2542,6 +2546,39 @@ document.addEventListener("DOMContentLoaded", () => {
             hdrRow.appendChild(hdr);
         });
 
+        // Barra superiore con Titolo e Legenda dello Stato
+        const topBar = document.createElement("div");
+        topBar.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            margin-bottom: 8px;
+            background: #ffffff;
+            border-radius: 12px;
+        `;
+
+        const mapTitle = document.createElement("h3");
+        mapTitle.style.cssText = "font-size: 16px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;";
+        mapTitle.innerHTML = `<span style="width: 4px; height: 16px; background: #10b981; border-radius: 2px; display: inline-block;"></span> Mappa Studi — ${selectedArea}`;
+        topBar.appendChild(mapTitle);
+
+        const legendBar = document.createElement("div");
+        legendBar.style.cssText = "display: flex; gap: 14px; align-items: center;";
+        legendBar.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 20px; height: 10px; border-radius: 2px; border: 2px solid #64748b; background: #ffffff; display: inline-block;"></span>
+                <span style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Attivo</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 20px; height: 10px; border-radius: 2px; border: 2px dashed #94a3b8; background: #ffffff; display: inline-block;"></span>
+                <span style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">In Attivazione</span>
+            </div>
+        `;
+        topBar.appendChild(legendBar);
+
         // Stili outer canvas
         studyMapCanvasOuter.style.display = "flex";
         studyMapCanvasOuter.style.flexDirection = "column";
@@ -2553,6 +2590,7 @@ document.addEventListener("DOMContentLoaded", () => {
         studyMapCanvasOuter.style.height = "auto";
         studyMapCanvasOuter.style.overflow = "visible";
 
+        studyMapCanvasOuter.appendChild(topBar);
         studyMapCanvasOuter.appendChild(hdrRow);
         studyMapCanvasOuter.appendChild(wrap);
     }
