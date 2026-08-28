@@ -2206,32 +2206,52 @@ document.addEventListener("DOMContentLoaded", () => {
         ];
     }
 
-    function getHarmoniousColor(clinicalArea, specificArea, setting) {
-        const baseHue = areaHues[clinicalArea] !== undefined ? areaHues[clinicalArea] : 180;
-        // Aggiungi un offset basato sulla specifica area
-        let specOffset = 0;
-        if (specificArea) {
-            for (let i = 0; i < specificArea.length; i++) {
-                specOffset += specificArea.charCodeAt(i);
-            }
-            specOffset = (specOffset % 5) * 15; // Massimo ±30 gradi
-        }
-        
-        // Aggiungi un offset basato sul setting
-        let settingOffset = 0;
-        if (setting === "Metastatico") settingOffset = 10;
-        else if (setting === "Adiuvante") settingOffset = -10;
-        else if (setting === "Neo-adiuvante") settingOffset = 5;
+    function getHarmoniousColor(clinicalArea, specificArea) {
+        // Colore basato SOLO sulla specifica area, non sul setting
+        // Palette separata dalle tinte del sito (verde emerald) e dalle bande setting
+        const specificHues = {
+            // Mammella
+            "HER2 positive": 270,   // Viola
+            "HER2+": 270,
+            "Luminali": 200,        // Azzurro acciaio
+            "TNBC": 30,             // Arancio
+            // Polmone
+            "NSCLC": 190,
+            "SCLC": 260,
+            "Epidermoide": 40,
+            // GI
+            "Colon-Retto": 25,
+            "Gastrico": 50,
+            "Pancreas": 35,
+            "Epatocarcinoma": 20,
+            // Default per area clinica
+        };
+        const areaDefaultHues = {
+            "Mammella": 270, "Polmone": 195, "Gastro-Intestinale": 30,
+            "Ginecologico": 290, "Prostata e Vie Urinarie": 220,
+            "Melanoma e Cute": 145, "Testa-Collo": 45, "Fase 1": 10, "Altro": 185
+        };
 
-        const hue = (baseHue + specOffset + settingOffset) % 360;
-        const rgbBg = hslToRgb(hue, 75, 94);
-        const rgbBorder = hslToRgb(hue, 60, 82);
-        const rgbText = hslToRgb(hue, 80, 18);
+        let hue = specificHues[specificArea];
+        if (hue === undefined) {
+            // Genera hue deterministico dalla stringa
+            let hash = 0;
+            for (let i = 0; i < (specificArea || "").length; i++)
+                hash = (hash * 31 + (specificArea || "").charCodeAt(i)) & 0xffff;
+            const baseHue = areaDefaultHues[clinicalArea] ?? 180;
+            hue = (baseHue + (hash % 6) * 40) % 360;
+        }
+
+        // Pastels chiari e saturi, SENZA toccare il range rosso (0-20) o azzurro (200-230)
+        // né il verde (130-160) usato da Neo-adiuvante
+        const rgbBg     = hslToRgb(hue, 55, 93);  // molto chiaro
+        const rgbBorder = hslToRgb(hue, 50, 77);  // medio
+        const rgbText   = hslToRgb(hue, 65, 22);  // scuro leggibile
 
         return {
-            bg: `rgb(${rgbBg[0]}, ${rgbBg[1]}, ${rgbBg[2]})`,
-            border: `rgb(${rgbBorder[0]}, ${rgbBorder[1]}, ${rgbBorder[2]})`,
-            text: `rgb(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]})`
+            bg:     `rgb(${rgbBg[0]},${rgbBg[1]},${rgbBg[2]})`,
+            border: `rgb(${rgbBorder[0]},${rgbBorder[1]},${rgbBorder[2]})`,
+            text:   `rgb(${rgbText[0]},${rgbText[1]},${rgbText[2]})`
         };
     }
 
@@ -2334,11 +2354,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const selectedSpecifics = _selectedMapSpecifics.filter(Boolean);
 
-        // Colori setting
+        // Colori setting — palette separata dalle card
         const settingMeta = {
-            "Metastatico":   { dot: "rgb(239,68,68)",   bg: "rgba(254,226,226,0.5)",  border: "rgb(252,165,165)",  label: "rgb(185,28,28)"  },
-            "Adiuvante":     { dot: "rgb(59,130,246)",   bg: "rgba(219,234,254,0.5)",  border: "rgb(147,197,253)",  label: "rgb(29,78,216)"  },
-            "Neo-adiuvante": { dot: "rgb(245,158,11)",  bg: "rgba(254,243,199,0.5)", border: "rgb(252,211,77)",  label: "rgb(180,83,9)"  }
+            "Metastatico":   { dot: "rgb(220,38,38)",  bg: "rgb(254,242,242)",  border: "rgb(252,165,165)", label: "rgb(153,27,27)"  },
+            "Adiuvante":     { dot: "rgb(37,99,235)",  bg: "rgb(239,246,255)",  border: "rgb(147,197,253)", label: "rgb(29,78,216)"  },
+            "Neo-adiuvante": { dot: "rgb(5,150,105)",  bg: "rgb(236,253,245)",  border: "rgb(110,231,183)", label: "rgb(4,120,87)"   }
         };
 
         // 1. Filtra gli studi
@@ -2377,7 +2397,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 4. Contenitore principale (flex column = una riga per setting)
         const wrap = document.createElement("div");
-        wrap.style.cssText = "display:flex;flex-direction:column;gap:12px;width:100%;height:100%;box-sizing:border-box;";
+        wrap.style.cssText = "display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box;";
 
         settings.forEach(set => {
             const sm = settingMeta[set] || { dot: "rgb(148,163,184)", bg: "rgba(248,250,252,0.8)", border: "rgb(203,213,225)", label: "rgb(71,85,105)" };
@@ -2390,8 +2410,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 border-radius: 14px;
                 padding: 10px 14px 12px 14px;
                 box-sizing: border-box;
-                flex: 1;
-                min-height: 0;
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
@@ -2412,8 +2430,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 display: grid;
                 grid-template-columns: repeat(${columns.length}, minmax(0, 1fr));
                 gap: 8px;
-                flex: 1;
-                min-height: 0;
+                align-items: start;
             `;
 
             columns.forEach(colName => {
@@ -2439,7 +2456,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (matches.length > 0) {
                     matches.forEach(study => {
                         const card = document.createElement("div");
-                        const colors = getHarmoniousColor(selectedArea, colName, set);
+                        const colors = getHarmoniousColor(selectedArea, colName);
                         card.style.cssText = `
                             padding: 8px 10px;
                             border-radius: 10px;
@@ -2527,18 +2544,20 @@ document.addEventListener("DOMContentLoaded", () => {
             hdrRow.appendChild(hdr);
         });
 
+        // Stili outer canvas
         studyMapCanvasOuter.style.display = "flex";
         studyMapCanvasOuter.style.flexDirection = "column";
         studyMapCanvasOuter.style.gap = "8px";
         studyMapCanvasOuter.style.padding = "12px";
         studyMapCanvasOuter.style.background = "#f8fafc";
         studyMapCanvasOuter.style.borderRadius = "16px";
-        studyMapCanvasOuter.style.minHeight = "600px";
+        studyMapCanvasOuter.style.minHeight = "";
+        studyMapCanvasOuter.style.height = "auto";
+        studyMapCanvasOuter.style.overflow = "visible";
 
         studyMapCanvasOuter.appendChild(hdrRow);
         studyMapCanvasOuter.appendChild(wrap);
     }
-
 
     // PDF Export function
     if (exportMapPdfBtn) {
@@ -2551,62 +2570,48 @@ document.addEventListener("DOMContentLoaded", () => {
             const titleSize = studyMapCanvasOuter.style.getPropertyValue("--map-title-size") || "12px";
             const subtitleSize = studyMapCanvasOuter.style.getPropertyValue("--map-subtitle-size") || "10px";
 
-            // Dimensioni A4 landscape a 96dpi
-            const W = 1122;
-            const H = 794;
+            // A4 landscape: 297mm × 210mm. A 96dpi = 1122 × 794px (usiamo un po' meno per margini)
+            const W = 1090;
 
-            // Wrapper off-screen VISIBILE (non opacity:0, non z-index negativo)
+            // Wrapper off-screen VISIBILE
             const wrapper = document.createElement("div");
-            wrapper.style.cssText = [
-                "position: absolute",
-                `left: ${-W - 100}px`,
-                "top: 0",
-                `width: ${W}px`,
-                `height: ${H}px`,
-                "background: #ffffff",
-                "padding: 24px",
-                "box-sizing: border-box",
-                "overflow: hidden",
-                "font-family: Inter, Segoe UI, sans-serif",
-                "z-index: 1"
-            ].join("; ");
+            wrapper.style.cssText = `position:absolute;left:-9999px;top:0;width:${W}px;background:#ffffff;font-family:Inter,Segoe UI,sans-serif;z-index:1;box-sizing:border-box;padding:16px;`;
 
-            // Clona il contenuto della mappa
+            // Clona studyMapCanvasOuter copiando il cssText inline esatto
             const inner = studyMapCanvasOuter.cloneNode(true);
 
-            // Copia gli stili inline già presenti (gridTemplateColumns ecc.)
+            // Copia esattamente gli stili inline dell'elemento live (display:flex, flex-direction:column…)
+            inner.style.cssText = studyMapCanvasOuter.style.cssText;
+            // Adatta per il PDF
             inner.style.width = "100%";
-            inner.style.height = "100%";
-            inner.style.display = "grid";
-            inner.style.boxSizing = "border-box";
-            inner.style.overflow = "hidden";
-            inner.style.gap = studyMapCanvasOuter.style.gap || "16px";
-            inner.style.gridTemplateColumns = studyMapCanvasOuter.querySelector("div")
-                ? studyMapCanvasOuter.querySelector("div").style.gridTemplateColumns || ""
-                : "";
+            inner.style.height = "auto";
+            inner.style.minHeight = "";
+            inner.style.overflow = "visible";
+            inner.style.borderRadius = "12px";
 
-            // Risolvi CSS variables e rimuovi scroll nel clone
+            // Risolvi CSS variables e rimuovi scroll in tutti i discendenti
             const resolveEl = (el) => {
                 if (!el || el.nodeType !== 1) return;
-                if (el.classList.contains("study-rect-container")) {
-                    el.style.maxHeight = "none";
-                    el.style.overflowY = "visible";
-                }
+                // Rimuovi overflow e max-height da tutti gli elementi
+                if (el.style.overflow === "hidden" || el.style.overflow === "auto") el.style.overflow = "visible";
+                if (el.style.overflowY) el.style.overflowY = "visible";
+                if (el.style.maxHeight) el.style.maxHeight = "none";
+                // CSS variables font → valori concreti
                 if (el.classList.contains("map-card-title")) {
                     el.style.fontSize = titleSize;
                     el.style.fontWeight = "700";
                     el.style.lineHeight = "1.3";
                     el.style.display = "block";
+                    el.style.webkitLineClamp = "";
                 }
                 if (el.classList.contains("map-card-subtitle")) {
                     el.style.fontSize = subtitleSize;
                     el.style.opacity = "0.8";
-                    el.style.lineHeight = "1.4";
-                    el.style.marginTop = "4px";
+                    el.style.lineHeight = "1.35";
+                    el.style.marginTop = "3px";
                     el.style.display = "block";
+                    el.style.webkitLineClamp = "";
                 }
-                // Rimuovi overflow hidden sulle colonne in modo che tutto sia visibile
-                el.style.overflow = el.style.overflow === "hidden" ? "visible" : el.style.overflow;
                 Array.from(el.children).forEach(resolveEl);
             };
             resolveEl(inner);
@@ -2614,31 +2619,36 @@ document.addEventListener("DOMContentLoaded", () => {
             wrapper.appendChild(inner);
             document.body.appendChild(wrapper);
 
-            // Aspetta che il browser abbia renderizzato
+            // Aspetta rendering completo
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 250));
 
             try {
+                // Cattura a dimensioni naturali del wrapper (altezza auto)
+                const H = wrapper.getBoundingClientRect().height || 794;
+
                 const canvas = await html2canvas(wrapper, {
-                    scale: 1.5,
+                    scale: 2,
                     useCORS: true,
                     allowTaint: true,
-                    logging: true,
+                    logging: false,
                     backgroundColor: "#ffffff",
                     width: W,
-                    height: H,
+                    height: Math.ceil(H),
                     scrollX: 0,
-                    scrollY: 0,
-                    x: 0,
-                    y: 0
+                    scrollY: 0
                 });
 
                 const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
                 const { jsPDF } = window.jspdf || {};
                 if (jsPDF) {
+                    // Calcola dimensioni in mm mantenendo le proporzioni
+                    const aspectRatio = canvas.height / canvas.width;
+                    const pdfW = 297; // A4 landscape larghezza in mm
+                    const pdfH = Math.min(pdfW * aspectRatio, 210); // max A4 height
                     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-                    doc.addImage(imgData, "JPEG", 0, 0, 297, 210);
+                    doc.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
                     doc.save(filename);
                 } else {
                     console.error("jsPDF non disponibile");
@@ -2646,11 +2656,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } catch (err) {
                 console.error("Errore esportazione PDF:", err);
-                alert("Errore durante l'esportazione: " + err.message);
+                alert("Errore: " + err.message);
             } finally {
                 wrapper.remove();
             }
         });
     }
-
 });
