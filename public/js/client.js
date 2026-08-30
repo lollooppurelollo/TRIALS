@@ -118,6 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalInternalNotes = document.getElementById("modalInternalNotes");
     const modalPiContactsContainer = document.getElementById("modalPiContactsContainer");
     const modalPiContacts = document.getElementById("modalPiContacts");
+    const modalStudyStatusBadge = document.getElementById("modalStudyStatusBadge");
+    // legacy elements (possono essere null nel nuovo layout)
     const modalStudyStatus = document.getElementById("modalStudyStatus");
     const modalStudyStatusCard = document.getElementById("modalStudyStatusCard");
     const modalStudyStatusIcon = document.getElementById("modalStudyStatusIcon");
@@ -1799,23 +1801,18 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Stato dello studio
-        if (modalStudyStatus && modalStudyStatusCard && modalStudyStatusIcon) {
+        // Stato dello studio — badge inline nel titolo
+        if (modalStudyStatusBadge) {
             const status = study.status;
             if (status === "attivo") {
-                modalStudyStatusCard.classList.remove("hidden");
-                modalStudyStatus.textContent = "🟢 Attivo";
-                modalStudyStatus.className = "text-sm font-semibold text-emerald-800";
-                modalStudyStatusCard.className = "p-4 rounded-xl border border-emerald-200 bg-emerald-50/20 flex items-start gap-3";
-                modalStudyStatusIcon.className = "p-2 rounded-lg bg-emerald-100 text-emerald-600";
+                modalStudyStatusBadge.textContent = "🟢 Attivo";
+                modalStudyStatusBadge.className = "flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800";
             } else if (status === "in_attivazione") {
-                modalStudyStatusCard.classList.remove("hidden");
-                modalStudyStatus.textContent = "🟡 In Attivazione";
-                modalStudyStatus.className = "text-sm font-semibold text-amber-800";
-                modalStudyStatusCard.className = "p-4 rounded-xl border border-amber-200 bg-amber-50/20 flex items-start gap-3";
-                modalStudyStatusIcon.className = "p-2 rounded-lg bg-amber-100 text-amber-600";
+                modalStudyStatusBadge.textContent = "🟡 In Attivazione";
+                modalStudyStatusBadge.className = "flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-800";
             } else {
-                modalStudyStatusCard.classList.add("hidden");
+                modalStudyStatusBadge.textContent = "";
+                modalStudyStatusBadge.className = "hidden";
             }
         }
 

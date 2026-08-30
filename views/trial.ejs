@@ -264,171 +264,117 @@
 
 <!-- ── Modal Dettagli Studio ─────────────────────────────── -->
 <div id="studyDetailModal"
-     class="fixed inset-0 z-50 flex items-start justify-center hidden"
-     style="padding: 4px 4px 76px 4px; background-color: rgba(15,23,42,0.45);">
-  <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-200"
-       style="width: min(1600px, 100%); height: calc(100vh - 80px);">
-    <div class="p-6 flex-shrink-0 border-b border-slate-100">
-      <h3 class="text-lg leading-6 font-bold text-slate-900" id="modalTitle"></h3>
-      <p class="text-sm text-slate-500 mt-1" id="modalSubtitle"></p>
+     class="fixed inset-0 z-50 flex items-stretch justify-center hidden"
+     style="background-color: rgba(15,23,42,0.5);">
+  <div class="relative bg-white flex flex-col w-full h-full" style="max-width:1600px; margin:auto;">
+
+    <!-- Header compatto: titolo + stato + info cliniche inline -->
+    <div class="px-6 py-3 flex-shrink-0 border-b border-slate-100">
+      <!-- Riga 1: titolo + badge stato -->
+      <div class="flex items-start justify-between gap-4 mb-2">
+        <div class="flex items-center gap-3 flex-wrap min-w-0">
+          <h3 class="text-base leading-tight font-bold text-slate-900" id="modalTitle"></h3>
+          <span id="modalStudyStatusBadge" class="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border"></span>
+        </div>
+        <p class="text-xs text-slate-500 leading-snug text-right flex-shrink-0 max-w-xs" id="modalSubtitle"></p>
+      </div>
+      <!-- Riga 2: chip info cliniche orizzontali -->
+      <div class="flex items-center gap-3 flex-wrap text-[11px]">
+        <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
+          <i class="fas fa-barcode text-emerald-600 text-[10px]"></i>
+          <span class="font-mono font-bold text-emerald-800" id="modalStudyCode">—</span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
+          <i class="fas fa-stethoscope text-emerald-600 text-[10px]"></i>
+          <span class="font-semibold text-slate-700" id="modalClinicalAreas">—</span>
+          <span class="text-slate-400 text-[10px]" id="modalSpecificClinicalAreas"></span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
+          <i class="fas fa-sliders-h text-emerald-600 text-[10px]"></i>
+          <span class="font-semibold text-slate-700" id="modalTreatmentSetting">—</span>
+          <div id="modalTreatmentLineContainer" class="hidden text-[10px] text-slate-400">
+            · Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-600"></span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="modal-content flex-grow overflow-y-auto px-6 py-4 space-y-6">
-      
-      <!-- Informazioni Cliniche in griglia -->
-      <div>
-        <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Informazioni Cliniche</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          <!-- Card Codice -->
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
-            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-              <i class="fas fa-barcode text-base"></i>
-            </div>
-            <div>
-              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Codice Studio</span>
-              <span id="modalStudyCode" class="text-sm font-mono font-bold text-emerald-800">—</span>
-            </div>
-          </div>
 
-          <!-- Card Area Clinica -->
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
-            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-              <i class="fas fa-stethoscope text-base"></i>
-            </div>
-            <div>
-              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Area Clinica</span>
-              <span id="modalClinicalAreas" class="text-sm font-semibold text-slate-800">—</span>
-              <span id="modalSpecificClinicalAreas" class="block text-xs text-slate-500 mt-0.5"></span>
-            </div>
-          </div>
+    <!-- Contenuto scrollabile -->
+    <div class="modal-content flex-grow overflow-y-auto px-6 py-3 space-y-4">
 
-          <!-- Card Setting -->
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 flex items-start gap-3">
-            <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-              <i class="fas fa-sliders-h text-base"></i>
-            </div>
-            <div>
-              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Setting & Linea</span>
-              <span id="modalTreatmentSetting" class="text-sm font-semibold text-slate-800">—</span>
-              <div id="modalTreatmentLineContainer" class="text-xs text-slate-500 mt-0.5 hidden">
-                Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-700"></span>
-              </div>
-            </div>
+      <!-- Note e PI (solo se presenti) -->
+      <div id="modalCenterInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div id="modalInternalNotesContainer" class="px-3 py-2 rounded-lg border border-amber-200 bg-amber-50/30 flex items-start gap-2 hidden">
+          <span class="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fas fa-sticky-note text-[10px]"></i></span>
+          <div class="flex-grow min-w-0">
+            <span class="block text-[9px] font-bold text-amber-800 uppercase tracking-wider mb-1">Note Personalizzate</span>
+            <p id="modalInternalNotes" class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed"></p>
           </div>
-
-          <!-- Card Stato Studio -->
-          <div id="modalStudyStatusCard" class="p-4 rounded-xl border flex items-start gap-3">
-            <div class="p-2 rounded-lg" id="modalStudyStatusIcon">
-              <i class="fas fa-circle-dot text-base"></i>
-            </div>
-            <div>
-              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stato Studio</span>
-              <span id="modalStudyStatus" class="text-sm font-semibold">—</span>
-            </div>
+        </div>
+        <div id="modalPiContactsContainer" class="px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50/15 flex items-start gap-2 hidden">
+          <span class="w-6 h-6 rounded-md bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0 mt-0.5"><i class="fas fa-user-md text-[10px]"></i></span>
+          <div class="flex-grow min-w-0">
+            <span class="block text-[9px] font-bold text-emerald-900 uppercase tracking-wider mb-1">Contatti Referenti / PI</span>
+            <p id="modalPiContacts" class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed"></p>
           </div>
-
         </div>
       </div>
 
-      <!-- Informazioni Interne del Centro (Note + Contatti) -->
-      <div id="modalCenterInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        <!-- Card Note Personalizzate -->
-        <div id="modalInternalNotesContainer" class="p-4 rounded-xl border border-slate-200 bg-amber-50/20 flex items-start gap-3 hidden">
-          <div class="p-2 rounded-lg bg-amber-100 text-amber-700">
-            <i class="fas fa-sticky-note text-base"></i>
-          </div>
-          <div class="flex-grow">
-            <span class="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">Note Personalizzate</span>
-            <p id="modalInternalNotes" class="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap leading-relaxed"></p>
-          </div>
-        </div>
-
-        <!-- Card Referenti / PI -->
-        <div id="modalPiContactsContainer" class="p-4 rounded-xl border border-slate-200 bg-emerald-50/15 flex items-start gap-3 hidden">
-          <div class="p-2 rounded-lg bg-emerald-100 text-emerald-800">
-            <i class="fas fa-user-md text-base"></i>
-          </div>
-          <div class="flex-grow">
-            <span class="block text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Contatti Referenti / PI</span>
-            <p id="modalPiContacts" class="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap leading-relaxed"></p>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Documenti allegati -->
+      <!-- Documenti: riga orizzontale compatta -->
       <div id="modalDocsSection">
-        <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Documenti</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="modalDocsGrid">
+        <h4 class="font-semibold text-slate-400 mb-2 text-[10px] uppercase tracking-wider">Documenti</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2" id="modalDocsGrid">
 
           <!-- Protocollo PDF -->
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="p-2 rounded-lg bg-red-50 text-red-600"><i class="fas fa-file-pdf text-base"></i></div>
-              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Protocollo PDF</span>
+          <div class="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/30 flex items-center gap-3">
+            <div class="w-7 h-7 rounded-md bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-file-pdf text-sm"></i></div>
+            <div class="flex-grow min-w-0">
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Protocollo PDF</span>
+                <div id="modalProtocolStatus" class="text-[10px] text-slate-400 italic">Nessun file</div>
+              </div>
+              <div class="flex gap-1.5 flex-wrap">
+                <button id="modalDownloadProtocol" class="hidden text-[10px] px-2 py-0.5 rounded-md bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors"><i class="fas fa-download mr-0.5"></i>Scarica</button>
+                <label id="modalUploadProtocolLabel" class="hidden cursor-pointer text-[10px] px-2 py-0.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"><i class="fas fa-upload mr-0.5"></i>Sostituisci<input type="file" id="modalUploadProtocol" accept="application/pdf" class="hidden"></label>
+                <label id="modalUploadProtocolFirstLabel" class="cursor-pointer text-[10px] px-2 py-0.5 rounded-md bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors"><i class="fas fa-upload mr-0.5"></i>Carica<input type="file" id="modalUploadProtocolFirst" accept="application/pdf" class="hidden"></label>
+                <button id="modalDeleteProtocol" class="hidden text-[10px] px-2 py-0.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors"><i class="fas fa-trash mr-0.5"></i>Elimina</button>
+              </div>
+              <div id="modalProtocolUploadMsg" class="text-[10px] mt-0.5 hidden"></div>
             </div>
-            <div id="modalProtocolStatus" class="text-xs text-slate-400 mb-2 italic">Nessun file</div>
-            <div class="flex gap-2 flex-wrap">
-              <button id="modalDownloadProtocol" class="hidden text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
-                <i class="fas fa-download mr-1"></i>Scarica
-              </button>
-              <label id="modalUploadProtocolLabel" class="hidden cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
-                <i class="fas fa-upload mr-1"></i>Sostituisci
-                <input type="file" id="modalUploadProtocol" accept="application/pdf" class="hidden">
-              </label>
-              <label id="modalUploadProtocolFirstLabel" class="cursor-pointer text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
-                <i class="fas fa-upload mr-1"></i>Carica
-                <input type="file" id="modalUploadProtocolFirst" accept="application/pdf" class="hidden">
-              </label>
-              <button id="modalDeleteProtocol" class="hidden text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
-                <i class="fas fa-trash mr-1"></i>Elimina
-              </button>
-            </div>
-            <div id="modalProtocolUploadMsg" class="text-xs mt-1 hidden"></div>
           </div>
 
           <!-- Study Schema -->
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="p-2 rounded-lg bg-blue-50 text-blue-600"><i class="fas fa-project-diagram text-base"></i></div>
-              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Study Schema</span>
+          <div class="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/30 flex items-center gap-3">
+            <div class="w-7 h-7 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-project-diagram text-sm"></i></div>
+            <div class="flex-grow min-w-0">
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Study Schema</span>
+                <div id="modalSchemaStatus" class="text-[10px] text-slate-400 italic">Nessun file</div>
+              </div>
+              <div class="flex gap-1.5 flex-wrap">
+                <button id="modalViewSchema" class="hidden text-[10px] px-2 py-0.5 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"><i class="fas fa-eye mr-0.5"></i>Visualizza</button>
+                <button id="modalDownloadSchema" class="hidden text-[10px] px-2 py-0.5 rounded-md bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors"><i class="fas fa-download mr-0.5"></i>Scarica</button>
+                <label id="modalUploadSchemaLabel" class="hidden cursor-pointer text-[10px] px-2 py-0.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"><i class="fas fa-upload mr-0.5"></i>Sostituisci<input type="file" id="modalUploadSchema" accept="application/pdf,image/*" class="hidden"></label>
+                <label id="modalUploadSchemaFirstLabel" class="cursor-pointer text-[10px] px-2 py-0.5 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"><i class="fas fa-upload mr-0.5"></i>Carica<input type="file" id="modalUploadSchemaFirst" accept="application/pdf,image/*" class="hidden"></label>
+                <button id="modalDeleteSchema" class="hidden text-[10px] px-2 py-0.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors"><i class="fas fa-trash mr-0.5"></i>Elimina</button>
+              </div>
+              <div id="modalSchemaUploadMsg" class="text-[10px] mt-0.5 hidden"></div>
             </div>
-            <div id="modalSchemaStatus" class="text-xs text-slate-400 mb-2 italic">Nessun file</div>
-            <div class="flex gap-2 flex-wrap">
-              <button id="modalViewSchema" class="hidden text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
-                <i class="fas fa-eye mr-1"></i>Visualizza
-              </button>
-              <button id="modalDownloadSchema" class="hidden text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">
-                <i class="fas fa-download mr-1"></i>Scarica
-              </button>
-              <label id="modalUploadSchemaLabel" class="hidden cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
-                <i class="fas fa-upload mr-1"></i>Sostituisci
-                <input type="file" id="modalUploadSchema" accept="application/pdf,image/*" class="hidden">
-              </label>
-              <label id="modalUploadSchemaFirstLabel" class="cursor-pointer text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
-                <i class="fas fa-upload mr-1"></i>Carica
-                <input type="file" id="modalUploadSchemaFirst" accept="application/pdf,image/*" class="hidden">
-              </label>
-              <button id="modalDeleteSchema" class="hidden text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
-                <i class="fas fa-trash mr-1"></i>Elimina
-              </button>
-            </div>
-            <div id="modalSchemaUploadMsg" class="text-xs mt-1 hidden"></div>
           </div>
 
           <!-- Allegati extra -->
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="p-2 rounded-lg bg-violet-50 text-violet-600"><i class="fas fa-paperclip text-base"></i></div>
-              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Allegati (max 4)</span>
+          <div class="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/30 flex items-center gap-3">
+            <div class="w-7 h-7 rounded-md bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-paperclip text-sm"></i></div>
+            <div class="flex-grow min-w-0">
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Allegati (max 4)</span>
+                <label id="modalUploadExtraLabel" class="cursor-pointer inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-md bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors">
+                  <i class="fas fa-plus"></i>Aggiungi<input type="file" id="modalUploadExtra" accept="application/pdf,image/*" class="hidden">
+                </label>
+              </div>
+              <div id="modalExtraFilesList" class="space-y-1"></div>
+              <div id="modalExtraUploadMsg" class="text-[10px] mt-0.5 hidden"></div>
             </div>
-            <div id="modalExtraFilesList" class="space-y-1.5 mb-2"></div>
-            <label id="modalUploadExtraLabel" class="cursor-pointer inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors">
-              <i class="fas fa-plus mr-1"></i>Aggiungi file
-              <input type="file" id="modalUploadExtra" accept="application/pdf,image/*" class="hidden">
-            </label>
-            <div id="modalExtraUploadMsg" class="text-xs mt-1 hidden"></div>
           </div>
 
         </div>
@@ -436,26 +382,29 @@
 
       <!-- Criteri di I/E -->
       <div>
-        <h4 class="font-semibold text-slate-400 mb-3 text-xs uppercase tracking-wider">Criteri di Inclusione / Esclusione</h4>
+        <h4 class="font-semibold text-slate-400 mb-2 text-[10px] uppercase tracking-wider">Criteri di Inclusione / Esclusione</h4>
         <div id="criteriaContainer"></div>
       </div>
 
     </div>
-    <div class="p-5 border-t border-slate-100 flex-shrink-0 space-y-2">
+
+    <!-- Footer compatto -->
+    <div class="px-6 py-2.5 border-t border-slate-100 flex-shrink-0 flex gap-2">
       <button id="openTimelineBtn"
-              class="w-full text-white text-base font-semibold rounded-lg px-4 py-2 shadow-sm flex items-center justify-center gap-2 transition-colors"
+              class="flex-1 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors"
               style="background-color:#10b981;"
               onmouseover="this.style.backgroundColor='#059669'"
               onmouseout="this.style.backgroundColor='#10b981'">
         <i class="fas fa-calendar-alt"></i> Timeline
       </button>
       <button id="closeModalBtn"
-              class="px-4 py-2 bg-slate-100 text-slate-700 text-base font-semibold rounded-lg w-full hover:bg-slate-200 transition-colors">
+              class="px-5 py-2 bg-slate-100 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-200 transition-colors">
         Chiudi
       </button>
     </div>
   </div>
 </div>
+
 
 <!-- Study Schema Viewer Modal -->
 <div id="schemaViewerModal" class="fixed inset-0 z-[60] hidden items-center justify-center" style="background-color:rgba(15,23,42,0.7);">
