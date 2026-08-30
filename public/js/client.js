@@ -1903,6 +1903,11 @@ document.addEventListener("DOMContentLoaded", () => {
         closeModalBtn.addEventListener("click", () => {
             studyDetailModal.classList.add("hidden");
             studyDetailModal.style.display = "none";
+            // Se lo studio era stato aperto dalla mappa, la rimostro
+            if (window._openedFromMap && studyMapModal) {
+                window._openedFromMap = false;
+                studyMapModal.classList.remove("hidden");
+            }
         });
     }
 
@@ -2459,17 +2464,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         
                         card.style.cssText = `
                             padding: 10px 12px;
-                            border-radius: 12px;
-                            border: 1.5px ${borderStyle} rgba(226, 232, 240, 0.9);
-                            border-left: 5px ${borderStyle} ${colors.border};
+                            border-radius: 10px;
+                            border: 2px ${borderStyle} ${colors.border};
                             background: #ffffff;
                             color: #1e293b;
                             cursor: pointer;
                             box-sizing: border-box;
                             word-break: break-word;
                             overflow-wrap: break-word;
-                            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-                            transition: box-shadow 0.15s, transform 0.15s;
+                            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+                            transition: box-shadow 0.15s;
                         `;
 
                         const titleEl = document.createElement("div");
@@ -2485,9 +2489,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         card.appendChild(titleEl);
                         if (study.subtitle) card.appendChild(subtitleEl);
 
-                        card.addEventListener("mouseenter", () => card.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)");
-                        card.addEventListener("mouseleave", () => card.style.boxShadow = "none");
+                        card.addEventListener("mouseenter", () => card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.13)");
+                        card.addEventListener("mouseleave", () => card.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)");
                         card.addEventListener("click", () => {
+                            // Nascondi la mappa temporaneamente e torna ad essa alla chiusura
+                            window._openedFromMap = true;
                             studyMapModal.classList.add("hidden");
                             showStudyDetails(study, "trial");
                         });
@@ -2547,35 +2553,32 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // Barra superiore con Titolo e Legenda dello Stato
+        // Barra titolo + legenda compatta — usa SVG per il tratteggio (html2canvas non renderizza CSS dashed)
         const topBar = document.createElement("div");
         topBar.style.cssText = `
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 14px;
+            padding: 5px 12px;
             box-sizing: border-box;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-            margin-bottom: 8px;
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 10px;
+            margin-bottom: 4px;
         `;
 
-        const mapTitle = document.createElement("h3");
-        mapTitle.style.cssText = "font-size: 16px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;";
-        mapTitle.innerHTML = `<span style="width: 4px; height: 16px; background: #10b981; border-radius: 2px; display: inline-block;"></span> Mappa Studi — ${selectedArea}`;
+        const mapTitle = document.createElement("div");
+        mapTitle.style.cssText = "font-size: 14px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 7px;";
+        mapTitle.innerHTML = `<span style="width: 3px; height: 14px; background: #10b981; border-radius: 2px; display: inline-block; flex-shrink:0;"></span> Mappa Studi — ${selectedArea}`;
         topBar.appendChild(mapTitle);
 
+        // Legenda con SVG per tratteggio (compatibile con html2canvas)
         const legendBar = document.createElement("div");
-        legendBar.style.cssText = "display: flex; gap: 14px; align-items: center;";
+        legendBar.style.cssText = "display: flex; gap: 12px; align-items: center;";
+        const svgSolid = `<svg width="22" height="12" style="display:inline-block;vertical-align:middle;"><rect x="1" y="1" width="20" height="10" rx="2" fill="#fff" stroke="#64748b" stroke-width="2"/></svg>`;
+        const svgDashed = `<svg width="22" height="12" style="display:inline-block;vertical-align:middle;"><rect x="1" y="1" width="20" height="10" rx="2" fill="#fff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3,2"/></svg>`;
         legendBar.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 20px; height: 10px; border-radius: 2px; border: 2px solid #64748b; background: #ffffff; display: inline-block;"></span>
-                <span style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">Attivo</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 20px; height: 10px; border-radius: 2px; border: 2px dashed #94a3b8; background: #ffffff; display: inline-block;"></span>
-                <span style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">In Attivazione</span>
-            </div>
+            <div style="display:flex;align-items:center;gap:5px;">${svgSolid}<span style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">Attivo</span></div>
+            <div style="display:flex;align-items:center;gap:5px;">${svgDashed}<span style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">In Attivazione</span></div>
         `;
         topBar.appendChild(legendBar);
 
