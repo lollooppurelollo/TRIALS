@@ -2456,7 +2456,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     matches.forEach(study => {
                         const card = document.createElement("div");
                         const colors = getHarmoniousColor(selectedArea, colName);
-                        const isActivation = study.status === "in_attivazione";
+                        const isActivation = String(study.status || "").toLowerCase() === "in_attivazione";
                         const borderStyle = isActivation ? "dashed" : "solid";
                         
                         card.style.cssText = `
@@ -2531,6 +2531,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         columns.forEach(colName => {
             const hdr = document.createElement("div");
+            hdr.className = "map-col-header";
             hdr.style.cssText = `
                 background: rgb(51,65,85);
                 color: #fff;
@@ -2544,6 +2545,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 white-space: normal;
                 word-break: break-word;
                 line-height: 1.3;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 32px;
+                box-sizing: border-box;
             `;
             hdr.textContent = colName;
             hdrRow.appendChild(hdr);
@@ -2633,6 +2639,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (el.style.overflowY) el.style.overflowY = "visible";
                 if (el.style.maxHeight) el.style.maxHeight = "none";
                 // CSS variables font → valori concreti
+                if (el.classList.contains("map-col-header")) {
+                    el.style.display = "flex";
+                    el.style.alignItems = "center";
+                    el.style.justifyContent = "center";
+                    el.style.textAlign = "center";
+                }
                 if (el.classList.contains("map-card-title")) {
                     el.style.fontSize = titleSize;
                     el.style.fontWeight = "700";
