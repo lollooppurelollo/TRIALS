@@ -270,13 +270,21 @@
 
     <!-- Header compatto: titolo + stato + info cliniche inline -->
     <div class="px-6 py-3 flex-shrink-0 border-b border-slate-100">
-      <!-- Riga 1: titolo + badge stato -->
+      <!-- Riga 1: titolo + badge stato + pulsante chiudi X -->
       <div class="flex items-start justify-between gap-4 mb-2">
         <div class="flex items-center gap-3 flex-wrap min-w-0">
           <h3 class="text-base leading-tight font-bold text-slate-900" id="modalTitle"></h3>
           <span id="modalStudyStatusBadge" class="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border"></span>
         </div>
-        <p class="text-xs text-slate-500 leading-snug text-right flex-shrink-0 max-w-xs" id="modalSubtitle"></p>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <p class="text-xs text-slate-500 leading-snug text-right max-w-xs" id="modalSubtitle"></p>
+          <button id="closeModalXBtn"
+                  type="button"
+                  class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-full transition-colors focus:outline-none"
+                  title="Chiudi">
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
       </div>
       <!-- Riga 2: chip info cliniche orizzontali -->
       <div class="flex items-center gap-3 flex-wrap text-[11px]">

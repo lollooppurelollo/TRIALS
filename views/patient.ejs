@@ -224,9 +224,15 @@
     <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
          style="width: min(1600px, 100%); height: calc(100vh - 80px);">
         <div class="modal-content flex-grow overflow-y-auto p-6 space-y-6">
-            <div class="border-b border-slate-100 pb-4 text-center">
-                <h3 class="text-xl font-bold text-slate-900" id="modalTitle"></h3>
-                <p class="text-sm text-slate-500 mt-1" id="modalSubtitle"></p>
+            <div class="border-b border-slate-100 pb-4 text-center relative">
+                <button id="closeModalXBtn"
+                        type="button"
+                        class="absolute top-0 right-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-full transition-colors focus:outline-none"
+                        title="Chiudi">
+                  <i class="fas fa-times text-lg"></i>
+                </button>
+                <h3 class="text-xl font-bold text-slate-900 pr-8" id="modalTitle"></h3>
+                <p class="text-sm text-slate-500 mt-1 pr-8" id="modalSubtitle"></p>
             </div>
 
             <!-- Informazioni Cliniche in griglia -->

@@ -1896,8 +1896,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener("click", () => {
+    const closeDetailModal = () => {
+        if (studyDetailModal) {
             studyDetailModal.classList.add("hidden");
             studyDetailModal.style.display = "none";
             // Se lo studio era stato aperto dalla mappa, la rimostro
@@ -1905,7 +1905,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 window._openedFromMap = false;
                 studyMapModal.classList.remove("hidden");
             }
-        });
+        }
+    };
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener("click", closeDetailModal);
+    }
+    const closeModalXBtn = document.getElementById("closeModalXBtn");
+    if (closeModalXBtn) {
+        closeModalXBtn.addEventListener("click", closeDetailModal);
     }
 
     if (window.location.pathname === "/trials") {
