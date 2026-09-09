@@ -271,22 +271,25 @@
     <!-- Header compatto: titolo + stato + info cliniche inline -->
     <div class="px-6 py-3 flex-shrink-0 border-b border-slate-100">
       <!-- Riga 1: titolo + badge stato + pulsante chiudi X -->
-      <div class="flex items-start justify-between gap-4 mb-2">
+      <div class="flex items-center justify-between gap-4 mb-1.5">
         <div class="flex items-center gap-3 flex-wrap min-w-0">
-          <h3 class="text-base leading-tight font-bold text-slate-900" id="modalTitle"></h3>
+          <h3 class="text-lg leading-tight font-bold text-slate-900" id="modalTitle"></h3>
           <span id="modalStudyStatusBadge" class="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border"></span>
         </div>
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <p class="text-xs text-slate-500 leading-snug text-right max-w-xs" id="modalSubtitle"></p>
-          <button id="closeModalXBtn"
-                  type="button"
-                  class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-full transition-colors focus:outline-none"
-                  title="Chiudi">
-            <i class="fas fa-times text-lg"></i>
-          </button>
-        </div>
+        <button id="closeModalXBtn"
+                type="button"
+                class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-full transition-colors focus:outline-none flex-shrink-0"
+                title="Chiudi">
+          <i class="fas fa-times text-lg"></i>
+        </button>
       </div>
-      <!-- Riga 2: chip info cliniche orizzontali -->
+
+      <!-- Riga 2: sottotitolo a tutto schermo -->
+      <div id="modalSubtitleContainer" class="mb-2.5">
+        <p class="text-sm text-slate-600 font-medium leading-relaxed" id="modalSubtitle"></p>
+      </div>
+
+      <!-- Riga 3: chip info cliniche orizzontali -->
       <div class="flex items-center gap-3 flex-wrap text-[11px]">
         <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
           <i class="fas fa-barcode text-emerald-600 text-[10px]"></i>
@@ -404,10 +407,6 @@
               onmouseover="this.style.backgroundColor='#059669'"
               onmouseout="this.style.backgroundColor='#10b981'">
         <i class="fas fa-calendar-alt"></i> Timeline
-      </button>
-      <button id="closeModalBtn"
-              class="px-5 py-2 bg-slate-100 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-200 transition-colors">
-        Chiudi
       </button>
     </div>
   </div>

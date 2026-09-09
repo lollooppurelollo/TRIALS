@@ -1766,7 +1766,17 @@ document.addEventListener("DOMContentLoaded", () => {
     function showStudyDetails(study, page) {
         studyDetailModal.dataset.studyId = study.id;
         modalTitle.textContent = study.title;
-        modalSubtitle.textContent = study.subtitle;
+        const modalSubtitleContainer = document.getElementById("modalSubtitleContainer");
+        if (modalSubtitle) {
+            modalSubtitle.textContent = study.subtitle || "";
+            if (modalSubtitleContainer) {
+                if (study.subtitle && study.subtitle.trim()) {
+                    modalSubtitleContainer.classList.remove("hidden");
+                } else {
+                    modalSubtitleContainer.classList.add("hidden");
+                }
+            }
+        }
 
         // Badge Codice Studio
         if (modalStudyCode) {
@@ -2484,7 +2494,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const titleEl = document.createElement("div");
                         titleEl.className = "map-card-title";
                         titleEl.style.cssText = `font-size:var(--map-title-size);font-weight:700;line-height:1.3;color:#0f172a;`;
-                        titleEl.textContent = (study.study_code ? study.study_code + " — " : "") + (study.title || "");
+                        titleEl.textContent = study.title || "";
 
                         const subtitleEl = document.createElement("div");
                         subtitleEl.className = "map-card-subtitle";
