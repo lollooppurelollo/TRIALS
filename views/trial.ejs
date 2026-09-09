@@ -447,11 +447,20 @@
     
     <!-- Modal Header -->
     <div class="p-6 flex-shrink-0 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-      <div>
-        <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2" style="color: #134e4a;">
-          <i class="fas fa-map text-emerald-600"></i> Mappa Grafica degli Studi Clinici
-        </h3>
-        <p class="text-xs text-slate-500 mt-1">Visualizzazione grafica e mappa strutturata degli studi.</p>
+      <div class="flex items-center gap-4">
+        <button id="toggleMapSidebarBtn"
+                type="button"
+                class="text-slate-500 hover:text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/80 px-3 py-1.5 rounded-xl transition-all text-xs font-semibold flex items-center gap-2 focus:outline-none shadow-sm"
+                title="Nascondi / Mostra menu filtri">
+          <i class="fas fa-bars text-slate-400" id="toggleMapSidebarIcon"></i>
+          <span id="toggleMapSidebarText">Nascondi Filtri</span>
+        </button>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2" style="color: #134e4a;">
+            <i class="fas fa-map text-emerald-600"></i> Mappa Grafica degli Studi Clinici
+          </h3>
+          <p class="text-xs text-slate-500 mt-1">Visualizzazione grafica e mappa strutturata degli studi.</p>
+        </div>
       </div>
       <button id="closeMapModalBtn" class="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-full hover:bg-slate-100">
         <i class="fas fa-times text-lg"></i>
@@ -461,7 +470,7 @@
     <!-- Modal Content: Sidebar (filters) + Main Area (canvas) -->
     <div class="flex-grow flex overflow-hidden">
       <!-- Sidebar Filters (Left) -->
-      <div class="w-80 border-r border-slate-100 p-6 flex flex-col gap-5 bg-slate-50/30 overflow-y-auto flex-shrink-0">
+      <div id="mapSidebar" class="w-80 border-r border-slate-100 p-6 flex flex-col gap-5 bg-slate-50/30 overflow-y-auto flex-shrink-0 transition-all duration-300">
         <div>
           <label for="mapClinicalArea" class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Area Clinica *</label>
           <select id="mapClinicalArea" class="mt-1.5 p-2.5 w-full border border-slate-200 rounded-xl bg-white text-slate-900 text-sm font-semibold">

@@ -2619,6 +2619,28 @@ document.addEventListener("DOMContentLoaded", () => {
         studyMapCanvasOuter.appendChild(wrap);
     }
 
+    // Toggle Sidebar Mappa
+    const toggleMapSidebarBtn = document.getElementById("toggleMapSidebarBtn");
+    const mapSidebar = document.getElementById("mapSidebar");
+    if (toggleMapSidebarBtn && mapSidebar) {
+        toggleMapSidebarBtn.addEventListener("click", () => {
+            const isHidden = mapSidebar.classList.contains("hidden");
+            const icon = document.getElementById("toggleMapSidebarIcon");
+            const text = document.getElementById("toggleMapSidebarText");
+            if (isHidden) {
+                mapSidebar.classList.remove("hidden");
+                if (icon) icon.className = "fas fa-bars text-slate-400";
+                if (text) text.textContent = "Nascondi Filtri";
+                toggleMapSidebarBtn.setAttribute("title", "Nascondi menu filtri");
+            } else {
+                mapSidebar.classList.add("hidden");
+                if (icon) icon.className = "fas fa-sliders-h text-slate-400";
+                if (text) text.textContent = "Mostra Filtri";
+                toggleMapSidebarBtn.setAttribute("title", "Mostra menu filtri");
+            }
+        });
+    }
+
     // PDF Export function
     if (exportMapPdfBtn) {
         exportMapPdfBtn.addEventListener("click", async () => {
