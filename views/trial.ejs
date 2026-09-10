@@ -166,12 +166,16 @@
       </button>
     </div>
 
-    <button type="submit"
+    <button type="submit" id="studyFormSubmitBtn"
             class="w-full text-white font-semibold p-3 rounded-lg transition-colors shadow-sm mt-4"
             style="background-color:#10b981;"
             onmouseover="this.style.backgroundColor='#059669'"
             onmouseout="this.style.backgroundColor='#10b981'">
       Salva Studio
+    </button>
+    <button type="button" id="studyFormCancelEditBtn"
+            class="w-full font-semibold p-3 rounded-lg transition-colors shadow-sm mt-2 border border-slate-300 text-slate-600 bg-white hover:bg-slate-50 hidden">
+      <i class="fas fa-times mr-1"></i> Annulla modifica
     </button>
   </form>
 </div>
@@ -264,8 +268,8 @@
 
 <!-- ── Modal Dettagli Studio ─────────────────────────────── -->
 <div id="studyDetailModal"
-     class="fixed inset-0 z-50 flex items-stretch justify-center hidden"
-     style="background-color: rgba(15,23,42,0.5);">
+     class="fixed inset-0 z-[10000] flex items-stretch justify-center hidden"
+     style="background-color: rgba(15,23,42,0.5); z-index: 10000;">
   <div class="relative bg-white flex flex-col w-full h-full" style="max-width:1600px; margin:auto;">
 
     <!-- Header compatto: titolo + stato + info cliniche inline -->
@@ -401,6 +405,10 @@
 
     <!-- Footer compatto -->
     <div class="px-6 py-2.5 border-t border-slate-100 flex-shrink-0 flex gap-2">
+      <button id="modalEditStudyBtn"
+              class="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors">
+        <i class="fas fa-edit"></i> Modifica
+      </button>
       <button id="openTimelineBtn"
               class="flex-1 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors"
               style="background-color:#10b981;"

@@ -219,8 +219,8 @@
 
 <!-- Modal Dettagli Studio (Vista Paziente) -->
 <div id="studyDetailModal"
-     class="fixed inset-0 z-50 flex items-stretch justify-center hidden"
-     style="background-color: rgba(15,23,42,0.5);">
+     class="fixed inset-0 z-[10000] flex items-stretch justify-center hidden"
+     style="background-color: rgba(15,23,42,0.5); z-index: 10000;">
   <div class="relative bg-white flex flex-col w-full h-full" style="max-width:1600px; margin:auto;">
 
     <!-- Header compatto: titolo + stato + sottotitolo + info cliniche inline -->
@@ -344,6 +344,10 @@
 
     <!-- Footer compatto (Vista Paziente) -->
     <div class="px-6 py-2.5 border-t border-slate-100 flex-shrink-0 flex items-center gap-2">
+      <button id="modalEditStudyBtn"
+              class="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors">
+        <i class="fas fa-edit"></i> Modifica
+      </button>
       <button id="checkEligibilityBtn"
               class="flex-1 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors"
               style="background-color:#10b981;"

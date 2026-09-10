@@ -856,6 +856,96 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ---- Pulsante Modifica nel modale dello studio ----
+    const modalEditStudyBtn = document.getElementById("modalEditStudyBtn");
+    const studyFormSubmitBtn = document.getElementById("studyFormSubmitBtn");
+    const studyFormCancelEditBtn = document.getElementById("studyFormCancelEditBtn");
+
+    // Porta il form in modalità creazione
+    function resetFormEditMode() {
+        window._editingStudyId = null;
+        if (studyFormSubmitBtn) {
+            studyFormSubmitBtn.textContent = "Salva Studio";
+            studyFormSubmitBtn.style.backgroundColor = "#10b981";
+        }
+        if (studyFormCancelEditBtn) studyFormCancelEditBtn.classList.add("hidden");
+        const editBanner = document.getElementById("studyFormEditBanner");
+        if (editBanner) editBanner.remove();
+    }
+
+    // Porta il form in modalità modifica e pre-compila con i dati dello studio
+    async function enterFormEditMode(studyId) {
+        try {
+            const res = await fetch("/api/studies");
+            const allStudies = await res.json();
+            const study = allStudies.find((s) => String(s.id) === String(studyId));
+            if (!study) { alert("Studio non trovato."); return; }
+
+            // Chiude il modale dettagli
+            closeDetailModal();
+
+            // Pre-compila il form
+            applyStudyImportToForm(study);
+
+            // Entra in edit mode
+            window._editingStudyId = studyId;
+
+            if (studyFormSubmitBtn) {
+                studyFormSubmitBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Aggiorna Studio';
+                studyFormSubmitBtn.style.backgroundColor = "#d97706"; // amber
+            }
+            if (studyFormCancelEditBtn) studyFormCancelEditBtn.classList.remove("hidden");
+
+            // Aggiunge banner informativo
+            const existingBanner = document.getElementById("studyFormEditBanner");
+            if (!existingBanner) {
+                const banner = document.createElement("div");
+                banner.id = "studyFormEditBanner";
+                banner.className = "mb-4 px-4 py-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-sm font-semibold flex items-center gap-2";
+                banner.innerHTML = `<i class="fas fa-edit"></i> Stai modificando lo studio: <span class="font-mono">${escapeHtml(study.study_code || study.title)}</span>`;
+                const studyFormEl = document.getElementById("studyForm");
+                if (studyFormEl) studyFormEl.insertAdjacentElement("beforebegin", banner);
+            }
+
+            // Scrolla al form
+            const formSection = document.querySelector(".bg-white.border.border-slate-200.p-8.rounded-2xl");
+            if (formSection) formSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (err) {
+            console.error("enterFormEditMode error:", err);
+            alert("Errore nel caricamento dei dati dello studio.");
+        }
+    }
+
+    if (modalEditStudyBtn) {
+        modalEditStudyBtn.addEventListener("click", () => {
+            const studyId = studyDetailModal ? studyDetailModal.dataset.studyId : null;
+            if (!studyId) return;
+
+            if (window.location.pathname === "/trials") {
+                // Sulla pagina trial: pre-compila il form direttamente
+                showPasswordModal(() => enterFormEditMode(studyId));
+            } else {
+                // Da altre pagine: vai alla pagina trial con parametro ?edit=
+                showPasswordModal(() => {
+                    window.location.href = `/trials?edit=${studyId}`;
+                });
+            }
+        });
+    }
+
+    if (studyFormCancelEditBtn) {
+        studyFormCancelEditBtn.addEventListener("click", () => {
+            resetFormEditMode();
+            if (studyForm) studyForm.reset();
+            if (criteriaListDiv) { criteriaListDiv.innerHTML = ""; addCriteriaRow(); }
+            if (studySpecificClinicalAreaContainer) studySpecificClinicalAreaContainer.classList.add("hidden");
+            if (studyTreatmentLineContainer) studyTreatmentLineContainer.classList.add("hidden");
+            if (studyArmsCount) studyArmsCount.value = "1";
+            if (armsList) armsList.innerHTML = "";
+            if (studyArmsContainer) studyArmsContainer.classList.add("hidden");
+        });
+    }
+
     if (studyForm) {
         studyForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -869,11 +959,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Controlla duplicati in tempo reale prima del modale password
+            // (in edit mode, esclude lo studio corrente)
             try {
                 const dupRes = await fetch("/api/studies");
                 const allStudies = await dupRes.json();
                 const isDup = allStudies.some(
-                    (s) => s.study_code && s.study_code.trim().toLowerCase() === codeValue.toLowerCase()
+                    (s) => s.study_code &&
+                           s.study_code.trim().toLowerCase() === codeValue.toLowerCase() &&
+                           String(s.id) !== String(window._editingStudyId || "")
                 );
                 if (isDup) {
                     if (codeErrorMsg) codeErrorMsg.classList.remove("hidden");
@@ -998,8 +1091,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
 
-                const response = await authFetch("/api/studies", {
-                    method: "POST",
+                const isEditMode = !!window._editingStudyId;
+                const apiUrl = isEditMode
+                    ? `/api/studies/${window._editingStudyId}`
+                    : "/api/studies";
+                const apiMethod = isEditMode ? "PUT" : "POST";
+
+                const response = await authFetch(apiUrl, {
+                    method: apiMethod,
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newStudy),
                 });
@@ -1014,6 +1113,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     return;
                 }
+                // Reset edit mode
+                resetFormEditMode();
                 studyForm.reset();
                 if (codeErrorMsg) codeErrorMsg.classList.add("hidden");
                 isCodeDuplicate = false;
@@ -1929,6 +2030,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.location.pathname === "/trials") {
         fetchAndRenderTrials();
         addCriteriaRow();
+
+        // Gestione ?edit=<studyId>: modalit\u00e0 modifica automatica da redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const editStudyId = urlParams.get("edit");
+        if (editStudyId) {
+            // Rimuove il parametro dall'URL senza ricaricare la pagina
+            window.history.replaceState({}, "", "/trials");
+            // Attende che fetchAndRenderTrials abbia caricato i dati, poi entra in edit
+            setTimeout(() => {
+                showPasswordModal(() => enterFormEditMode(editStudyId));
+            }, 600);
+        }
     }
 
     // === Pulsante Timeline (MODIFICATO) ===
