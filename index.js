@@ -220,13 +220,40 @@ app.post("/api/verify-password", editAuthLimiter, requireEditAuth, (_req, res) =
 /* -------------------- API STUDIES -------------------- */
 app.get("/api/studies", async (_req, res) => {
   try {
-    const { rows } = await pool.query(
-      "SELECT * FROM studies ORDER BY created_at ASC",
-    );
+    const { rows } = await pool.query(`
+      SELECT s.*, 
+             COALESCE(
+               (SELECT json_agg(json_build_object('arm_code', a.arm_code, 'arm_label', a.arm_label) ORDER BY a.sort_order)
+                FROM study_arms a WHERE a.study_id = s.id),
+               '[]'::json
+             ) AS arms
+      FROM studies s
+      ORDER BY s.created_at ASC
+    `);
     res.json(rows || []);
   } catch (error) {
     console.error("Errore GET /api/studies:", error);
     res.status(500).send("Errore recupero studi");
+  }
+});
+
+app.get("/api/studies/:id", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT s.*, 
+             COALESCE(
+               (SELECT json_agg(json_build_object('arm_code', a.arm_code, 'arm_label', a.arm_label) ORDER BY a.sort_order)
+                FROM study_arms a WHERE a.study_id = s.id),
+               '[]'::json
+             ) AS arms
+      FROM studies s
+      WHERE s.id = $1
+    `, [req.params.id]);
+    if (rows.length === 0) return res.status(404).send("Not found");
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Errore GET /api/studies/:id:", error);
+    res.status(500).send("Errore recupero studio");
   }
 });
 
@@ -361,20 +388,6 @@ app.delete("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res
   } catch (error) {
     console.error("Errore DELETE /api/studies:", error);
     res.status(500).send("Errore eliminazione studio");
-  }
-});
-
-// Leggi uno studio
-app.get("/api/studies/:id", async (req, res) => {
-  try {
-    const { rows } = await pool.query("SELECT * FROM studies WHERE id = $1", [
-      req.params.id,
-    ]);
-    if (rows.length === 0) return res.status(404).send("Not found");
-    res.json(rows[0]);
-  } catch (error) {
-    console.error("Errore GET /api/studies/:id:", error);
-    res.status(500).send("Errore recupero studio");
   }
 });
 

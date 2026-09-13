@@ -142,6 +142,12 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        // Leggi le etichette dei bracci già digitate prima di rigenerare
+        const existingLabels = [];
+        armsList.querySelectorAll(".arm-label").forEach(input => {
+          existingLabels.push(input.value);
+        });
+
         studyArmsContainer.classList.remove("hidden");
         armsList.innerHTML = "";
 
@@ -149,18 +155,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (let i = 0; i < count; i++) {
           const code = defaultCodes[i] || `ARM${i+1}`;
+          const labelVal = existingLabels[i] || "";
 
           const div = document.createElement("div");
           div.className = "flex space-x-2";
 
           div.innerHTML = `
             <input type="text"
-                   class="arm-code p-2 w-1/4 border border-gray-300 rounded-lg"
+                   class="arm-code p-2 w-1/4 border border-gray-300 rounded-lg bg-gray-50"
                    value="${code}"
                    readonly>
 
             <input type="text"
                    class="arm-label p-2 w-3/4 border border-gray-300 rounded-lg"
+                   value="${escapeHtml(labelVal)}"
                    placeholder="Nome braccio (es: Sperimentale)">
           `;
 
@@ -877,10 +885,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // Porta il form in modalità modifica e pre-compila con i dati dello studio
     async function enterFormEditMode(studyId) {
         try {
-            const res = await fetch("/api/studies");
-            const allStudies = await res.json();
-            const study = allStudies.find((s) => String(s.id) === String(studyId));
-            if (!study) { alert("Studio non trovato."); return; }
+            const res = await fetch(`/api/studies/${studyId}`);
+            if (!res.ok) { alert("Studio non trovato."); return; }
+            const study = await res.json();
+
+            // Fallback se arms non è ancora presente
+            if (!Array.isArray(study.arms) || study.arms.length === 0) {
+                try {
+                    const armsRes = await fetch(`/api/studies/${studyId}/arms`);
+                    if (armsRes.ok) {
+                        const fetchedArms = await armsRes.json();
+                        if (Array.isArray(fetchedArms) && fetchedArms.length > 0) {
+                            study.arms = fetchedArms;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Impossibile recuperare i bracci dello studio:", e);
+                }
+            }
 
             // Chiude il modale dettagli
             closeDetailModal();
