@@ -1935,6 +1935,28 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // Bracci dello studio — chip a fianco al setting
+        const modalArmsContainer = document.getElementById("modalArmsContainer");
+        const modalArmsText = document.getElementById("modalArmsText");
+        if (modalArmsText) {
+            const arms = Array.isArray(study.arms) ? study.arms : [];
+            if (arms.length > 1) {
+                if (modalArmsContainer) modalArmsContainer.classList.remove("hidden");
+                const armLabels = arms
+                    .map(a => a.arm_label ? `${a.arm_code} (${a.arm_label})` : a.arm_code)
+                    .filter(Boolean);
+                modalArmsText.textContent = `${arms.length} Bracci: ${armLabels.join(" · ")}`;
+            } else if (arms.length === 1) {
+                if (modalArmsContainer) modalArmsContainer.classList.remove("hidden");
+                const a = arms[0];
+                const labelStr = a.arm_label ? `: ${a.arm_label}` : "";
+                modalArmsText.textContent = `1 Braccio${labelStr}`;
+            } else {
+                if (modalArmsContainer) modalArmsContainer.classList.remove("hidden");
+                modalArmsText.textContent = "1 Braccio";
+            }
+        }
+
         // Stato dello studio — badge inline nel titolo
         if (modalStudyStatusBadge) {
             const status = study.status;
