@@ -551,7 +551,7 @@ app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) =
     await client.query("BEGIN");
 
     // 3) update
-    const jsonCols = ["criteria", "extra_files", "clinical_areas", "specific_clinical_areas"];
+    const jsonCols = ["criteria", "extra_files"];
     const columns = Object.keys(studyData);
     if (columns.length > 0) {
       const setClause = columns
