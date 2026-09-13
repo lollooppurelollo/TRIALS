@@ -21,6 +21,15 @@ document.addEventListener("DOMContentLoaded", () => {
             "Altre vie Urinarie",
         ],
         "Melanoma e Cute": ["Melanoma", "SCC", "Basalioma"],
+        "Testa-Collo": [
+            "Cavo orale: lingua anteriore, labbra, gengive, mucosa buccale, pavimento della bocca, palato duro",
+            "Orofaringe: base della lingua, tonsille palatine, palato molle",
+            "Laringe: sopraglottica, glottide, sottoglottica",
+            "Ipofaringe",
+            "Nasofaringe (o rinofaringe)",
+            "Cavità nasali e seni paranasali: seni mascellari, etmoidali, sfenoidali e frontali",
+            "Ghiandole Salivari: parotide, sottomandibolare, sottolinguale, ghiandole salivari minori",
+        ],
     };
 
     // ----- Selettori per la Pagina Paziente -----
