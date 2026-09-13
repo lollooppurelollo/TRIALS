@@ -173,7 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const passwordModal = document.createElement("div");
     passwordModal.id = "passwordModal";
     passwordModal.className =
-        "fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-50";
+        "fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-[20000]";
+    passwordModal.style.zIndex = "20000";
     passwordModal.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-xl w-80">
             <h3 class="text-lg font-bold mb-4">Inserisci la password</h3>

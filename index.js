@@ -489,8 +489,8 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
 app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const id = req.params.id;
-    const { arms, ...studyData } = req.body;
+    const id = parseInt(req.params.id, 10);
+    const { arms, events, ...rawStudyData } = req.body;
 
     // 1) verifica esistenza
     const existing = await client.query("SELECT id FROM studies WHERE id = $1", [id]);
@@ -500,12 +500,12 @@ app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) =
     }
 
     // 2) validazioni
-    if (studyData.title !== undefined && !toStrOrNull(studyData.title)) {
+    if (rawStudyData.title !== undefined && !toStrOrNull(rawStudyData.title)) {
       client.release();
       return res.status(400).json({ error: "Il titolo dello studio è obbligatorio." });
     }
 
-    const study_code = toStrOrNull(studyData.study_code);
+    const study_code = toStrOrNull(rawStudyData.study_code);
     if (study_code) {
       const dupCheck = await client.query(
         "SELECT id FROM studies WHERE LOWER(study_code) = LOWER($1) AND id <> $2",
@@ -517,16 +517,48 @@ app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) =
       }
     }
 
+    // Gestione file: aggiorna solo se un nuovo file è stato inviato
+    const studyData = { ...rawStudyData };
+
+    if (studyData.protocol_pdf) {
+      studyData.protocol_pdf = await compressPdf(studyData.protocol_pdf);
+    } else {
+      delete studyData.protocol_pdf;
+    }
+
+    if (!studyData.study_schema) {
+      delete studyData.study_schema;
+      delete studyData.study_schema_mime;
+    }
+
+    if (Array.isArray(studyData.extra_files) && studyData.extra_files.length > 0) {
+      for (let i = 0; i < studyData.extra_files.length; i++) {
+        let f = studyData.extra_files[i];
+        if (f.data && f.mime) {
+          if (f.mime.startsWith("image/")) {
+            const comp = await compressExtraImage(f.data, f.mime);
+            f.data = comp.data;
+            f.mime = comp.mime;
+          } else if (f.mime === "application/pdf") {
+            f.data = await compressPdf(f.data);
+          }
+        }
+      }
+    } else {
+      delete studyData.extra_files;
+    }
+
     await client.query("BEGIN");
 
     // 3) update
+    const jsonCols = ["criteria", "extra_files", "clinical_areas", "specific_clinical_areas"];
     const columns = Object.keys(studyData);
     if (columns.length > 0) {
       const setClause = columns
         .map((col, i) => `${col} = $${i + 1}`)
         .join(", ");
       const values = columns.map((c) =>
-        c === "criteria" ? JSON.stringify(studyData[c] ?? []) : studyData[c]
+        jsonCols.includes(c) ? JSON.stringify(studyData[c] ?? []) : studyData[c]
       );
       await client.query(
         `UPDATE studies SET ${setClause} WHERE id = $${columns.length + 1}`,
@@ -556,7 +588,7 @@ app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) =
     if (e.code === "23505") {
       return res.status(400).json({ error: "Codice studio già esistente." });
     }
-    res.status(500).send("Errore aggiornamento studio");
+    res.status(500).json({ error: "Errore aggiornamento studio: " + e.message });
   } finally {
     client.release();
   }

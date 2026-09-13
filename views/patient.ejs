@@ -244,24 +244,33 @@
         <p class="text-sm text-slate-600 font-medium leading-relaxed" id="modalSubtitle"></p>
       </div>
 
-      <!-- Riga 3: chip info cliniche orizzontali -->
-      <div class="flex items-center gap-3 flex-wrap text-[11px]">
-        <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
-          <i class="fas fa-barcode text-emerald-600 text-[10px]"></i>
-          <span class="font-mono font-bold text-emerald-800" id="modalStudyCode">—</span>
-        </div>
-        <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
-          <i class="fas fa-stethoscope text-emerald-600 text-[10px]"></i>
-          <span class="font-semibold text-slate-700" id="modalClinicalAreas">—</span>
-          <span class="text-slate-400 text-[10px]" id="modalSpecificClinicalAreas"></span>
-        </div>
-        <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
-          <i class="fas fa-sliders-h text-emerald-600 text-[10px]"></i>
-          <span class="font-semibold text-slate-700" id="modalTreatmentSetting">—</span>
-          <div id="modalTreatmentLineContainer" class="hidden text-[10px] text-slate-400">
-            · Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-600"></span>
+      <!-- Riga 3: chip info cliniche orizzontali + pulsante Modifica a destra -->
+      <div class="flex items-center justify-between gap-3 flex-wrap text-[11px]">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
+            <i class="fas fa-barcode text-emerald-600 text-[10px]"></i>
+            <span class="font-mono font-bold text-emerald-800" id="modalStudyCode">—</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
+            <i class="fas fa-stethoscope text-emerald-600 text-[10px]"></i>
+            <span class="font-semibold text-slate-700" id="modalClinicalAreas">—</span>
+            <span class="text-slate-400 text-[10px]" id="modalSpecificClinicalAreas"></span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
+            <i class="fas fa-sliders-h text-emerald-600 text-[10px]"></i>
+            <span class="font-semibold text-slate-700" id="modalTreatmentSetting">—</span>
+            <div id="modalTreatmentLineContainer" class="hidden text-[10px] text-slate-400">
+              · Linea: <span id="modalTreatmentLine" class="font-semibold text-slate-600"></span>
+            </div>
           </div>
         </div>
+        <button id="modalEditStudyBtn"
+                type="button"
+                class="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg font-semibold transition-colors text-[11px] ml-auto focus:outline-none"
+                title="Modifica studio">
+          <i class="fas fa-edit text-emerald-600 text-[10px]"></i>
+          <span>Modifica</span>
+        </button>
       </div>
     </div>
 
@@ -344,12 +353,8 @@
 
     <!-- Footer compatto (Vista Paziente) -->
     <div class="px-6 py-2.5 border-t border-slate-100 flex-shrink-0 flex items-center gap-2">
-      <button id="modalEditStudyBtn"
-              class="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors">
-        <i class="fas fa-edit"></i> Modifica
-      </button>
       <button id="checkEligibilityBtn"
-              class="flex-1 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors"
+              class="flex-1 text-white text-sm font-semibold rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors shadow-sm"
               style="background-color:#10b981;"
               onmouseover="this.style.backgroundColor='#059669'"
               onmouseout="this.style.backgroundColor='#10b981'">
