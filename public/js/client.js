@@ -1179,11 +1179,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (opt.val === "manual") {
                     selectEl.dataset.isManual = "true";
                     if (manualContainer) manualContainer.classList.remove("hidden");
-                    if (manualInput) {
-                        manualInput.focus();
-                        const val = parseInt(manualInput.value, 10) || (currentCount > 3 ? currentCount : 4);
-                        selectEl.value = String(val);
+                    let val = 2;
+                    if (manualInput && manualInput.value.trim() !== "") {
+                        val = parseInt(manualInput.value, 10) || 2;
+                    } else if (currentCount > 1) {
+                        val = currentCount;
                     }
+                    if (manualInput) manualInput.value = String(val);
+                    selectEl.value = String(val);
+                    if (manualInput) manualInput.focus();
                 } else {
                     selectEl.dataset.isManual = "false";
                     if (manualContainer) manualContainer.classList.add("hidden");
@@ -1195,16 +1199,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             gridContainerEl.appendChild(card);
         });
-
-        if (manualInput) {
-            manualInput.addEventListener("input", (e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val) && val >= 1) {
-                    selectEl.value = String(val);
-                    selectEl.dispatchEvent(new Event("change"));
-                }
-            });
-        }
     }
 
     /** Sincronizza lo stato visivo delle card Numero Bracci */
@@ -1406,9 +1400,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const studyArmsGrid = document.getElementById("studyArmsCountCardGrid");
+    const manualArmsInput = document.getElementById("manualArmsCountInput");
+
     if (studyArmsCount && studyArmsGrid) {
         renderVisualArmsCountSelector(studyArmsCount, studyArmsGrid);
         studyArmsCount.addEventListener("change", () => syncVisualArmsCountState(studyArmsCount, studyArmsGrid));
+    }
+    if (manualArmsInput && studyArmsCount) {
+        manualArmsInput.addEventListener("input", (e) => {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val < 1) val = 1;
+            studyArmsCount.value = String(val);
+            studyArmsCount.dispatchEvent(new Event("change"));
+        });
     }
     const studyStatusGrid = document.getElementById("studyStatusCardGrid");
     if (studyStatusSelect && studyStatusGrid) {
