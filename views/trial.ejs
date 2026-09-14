@@ -101,12 +101,7 @@
         <label class="block text-sm font-bold text-slate-800">Numero Bracci dello Studio</label>
         <span class="text-xs text-slate-400 font-normal">Seleziona o inserisci manualmente</span>
       </div>
-      <select id="studyArmsCount" class="sr-only">
-        <option value="1" selected>1 (Studio a braccio singolo)</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-      </select>
+      <input type="hidden" id="studyArmsCount" value="1">
       <div id="studyArmsCountCardGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
 
       <!-- Inserimento manuale numero bracci -->
