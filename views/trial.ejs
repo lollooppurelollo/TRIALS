@@ -97,14 +97,14 @@
 
     <!-- NUMERO BRACCI -->
     <div>
-      <label for="studyArmsCount" class="block text-sm font-medium text-slate-700">Numero Bracci</label>
-      <select id="studyArmsCount"
-              class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none">
+      <label class="block text-sm font-bold text-slate-800 mb-2.5">Numero Bracci dello Studio</label>
+      <select id="studyArmsCount" class="sr-only">
         <option value="1" selected>1 (Studio a braccio singolo)</option>
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="4">4</option>
       </select>
+      <div id="studyArmsCountCardGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
     </div>
 
     <!-- CONFIGURAZIONE BRACCI -->
@@ -129,14 +129,14 @@
                     class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none"
                     placeholder="Nome, email e recapiti del Principal Investigator..."></textarea>
         </div>
-        <div>
-          <label for="studyStatus" class="block text-sm font-medium text-slate-700">Stato dello Studio</label>
-          <select id="studyStatus"
-                  class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-bold text-slate-800 mb-2.5">Stato dello Studio</label>
+          <select id="studyStatus" class="sr-only">
             <option value="" selected>— Non Specificato —</option>
             <option value="in_attivazione">🟡 In Attivazione</option>
             <option value="attivo">🟢 Attivo</option>
           </select>
+          <div id="studyStatusCardGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
         </div>
       </div>
     </div>

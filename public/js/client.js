@@ -830,6 +830,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (studyPiContactsInput) studyPiContactsInput.value = study.pi_contacts || "";
         if (studyStatusSelect) studyStatusSelect.value = study.status || "";
 
+        // Sincronizza card per Numero Bracci e Stato Studio
+        const studyArmsGrid = document.getElementById("studyArmsCountCardGrid");
+        if (studyArmsCount && studyArmsGrid) {
+            syncVisualArmsCountState(studyArmsCount, studyArmsGrid);
+        }
+        const studyStatusGrid = document.getElementById("studyStatusCardGrid");
+        if (studyStatusSelect && studyStatusGrid) {
+            syncVisualStudyStatusState(studyStatusSelect, studyStatusGrid);
+        }
+
         // Criteri: svuota e ricrea
         if (criteriaListDiv) criteriaListDiv.innerHTML = "";
         if (study.criteria && study.criteria.length > 0) {
@@ -1131,6 +1141,129 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    /** Inizializza il selettore visivo per Numero Bracci */
+    function renderVisualArmsCountSelector(selectEl, gridContainerEl) {
+        if (!selectEl || !gridContainerEl) return;
+        gridContainerEl.innerHTML = "";
+
+        const options = [
+            { val: "1", title: "1 Braccio", desc: "Studio a braccio singolo" },
+            { val: "2", title: "2 Bracci", desc: "Studio a 2 bracci" },
+            { val: "3", title: "3 Bracci", desc: "Studio a 3 bracci" },
+            { val: "4", title: "4 Bracci", desc: "Studio a 4 bracci" },
+        ];
+
+        options.forEach(opt => {
+            const isSelected = (selectEl.value || "1") === opt.val;
+            const card = document.createElement("button");
+            card.type = "button";
+            card.dataset.value = opt.val;
+            card.className = isSelected
+                ? "visual-arms-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 text-center transition-all duration-200 shadow-xs cursor-pointer select-none"
+                : "visual-arms-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-center transition-all duration-200 cursor-pointer select-none group";
+
+            card.innerHTML = `
+                <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="block text-xs font-bold text-slate-900">${opt.title}</span>
+                    <span class="block text-[10px] text-slate-400 font-normal truncate max-w-full">${opt.desc}</span>
+                </div>
+            `;
+
+            card.addEventListener("click", () => {
+                selectEl.value = opt.val;
+                selectEl.dispatchEvent(new Event("change"));
+                syncVisualArmsCountState(selectEl, gridContainerEl);
+            });
+
+            gridContainerEl.appendChild(card);
+        });
+    }
+
+    /** Sincronizza lo stato visivo delle card Numero Bracci */
+    function syncVisualArmsCountState(selectEl, gridContainerEl) {
+        if (!selectEl || !gridContainerEl) return;
+        const currentVal = selectEl.value || "1";
+
+        gridContainerEl.querySelectorAll(".visual-arms-card").forEach(card => {
+            const val = card.dataset.value;
+            const isSelected = val === currentVal;
+
+            if (isSelected) {
+                card.className = "visual-arms-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 text-center transition-all duration-200 shadow-xs cursor-pointer select-none";
+            } else {
+                card.className = "visual-arms-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-center transition-all duration-200 cursor-pointer select-none group";
+            }
+        });
+    }
+
+    /** Inizializza il selettore visivo per Stato dello Studio */
+    function renderVisualStudyStatusSelector(selectEl, gridContainerEl) {
+        if (!selectEl || !gridContainerEl) return;
+        gridContainerEl.innerHTML = "";
+
+        const statuses = [
+            { val: "", badge: "⚪", title: "Non Specificato", desc: "Nessun dettaglio sullo stato", activeStyle: "border-2 border-slate-600 bg-slate-100 text-slate-900" },
+            { val: "in_attivazione", badge: "🟡", title: "In Attivazione", desc: "Studio in preparazione", activeStyle: "border-2 border-amber-500 bg-amber-50/70 text-amber-950" },
+            { val: "attivo", badge: "🟢", title: "Attivo", desc: "Aperto ed arruolante", activeStyle: "border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950" },
+        ];
+
+        statuses.forEach(st => {
+            const isSelected = (selectEl.value || "") === st.val;
+            const card = document.createElement("button");
+            card.type = "button";
+            card.dataset.value = st.val;
+            card.className = isSelected
+                ? `visual-status-card p-3 rounded-xl ${st.activeStyle} font-semibold text-left transition-all duration-200 shadow-xs cursor-pointer select-none flex items-center justify-between`
+                : "visual-status-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-left transition-all duration-200 cursor-pointer select-none flex items-center justify-between group";
+
+            card.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <span class="text-base">${st.badge}</span>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-900">${st.title}</span>
+                        <span class="block text-[10px] text-slate-500 font-normal">${st.desc}</span>
+                    </div>
+                </div>
+                <i class="fas fa-check-circle ${st.val === 'in_attivazione' ? 'text-amber-600' : 'text-emerald-600'} text-xs ${isSelected ? 'block' : 'hidden'} visual-status-check"></i>
+            `;
+
+            card.addEventListener("click", () => {
+                selectEl.value = st.val;
+                selectEl.dispatchEvent(new Event("change"));
+                syncVisualStudyStatusState(selectEl, gridContainerEl);
+            });
+
+            gridContainerEl.appendChild(card);
+        });
+    }
+
+    /** Sincronizza lo stato visivo delle card Stato Studio */
+    function syncVisualStudyStatusState(selectEl, gridContainerEl) {
+        if (!selectEl || !gridContainerEl) return;
+        const currentVal = selectEl.value || "";
+
+        const statusesMap = {
+            "": "border-2 border-slate-600 bg-slate-100 text-slate-900",
+            "in_attivazione": "border-2 border-amber-500 bg-amber-50/70 text-amber-950",
+            "attivo": "border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950"
+        };
+
+        gridContainerEl.querySelectorAll(".visual-status-card").forEach(card => {
+            const val = card.dataset.value;
+            const isSelected = val === currentVal;
+            const check = card.querySelector(".visual-status-check");
+            const activeStyle = statusesMap[val] || statusesMap[""];
+
+            if (isSelected) {
+                card.className = `visual-status-card p-3 rounded-xl ${activeStyle} font-semibold text-left transition-all duration-200 shadow-xs cursor-pointer select-none flex items-center justify-between`;
+                if (check) check.classList.remove("hidden");
+            } else {
+                card.className = "visual-status-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-left transition-all duration-200 cursor-pointer select-none flex items-center justify-between group";
+                if (check) check.classList.add("hidden");
+            }
+        });
+    }
+
     /** Genera i chip interattivi per la Specifica Area Clinica (Sottotipo) */
     function renderVisualSubtypePills(selectEl, pillGridEl, isMultiple = false) {
         if (!selectEl || !pillGridEl) return;
@@ -1229,6 +1362,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const studySettingGrid = document.getElementById("studyTreatmentSettingCardGrid");
     if (studyTreatmentSettingSelect && studySettingGrid) {
         renderVisualSettingSelector(studyTreatmentSettingSelect, studySettingGrid);
+    }
+
+    const studyArmsGrid = document.getElementById("studyArmsCountCardGrid");
+    if (studyArmsCount && studyArmsGrid) {
+        renderVisualArmsCountSelector(studyArmsCount, studyArmsGrid);
+        studyArmsCount.addEventListener("change", () => syncVisualArmsCountState(studyArmsCount, studyArmsGrid));
+    }
+    const studyStatusGrid = document.getElementById("studyStatusCardGrid");
+    if (studyStatusSelect && studyStatusGrid) {
+        renderVisualStudyStatusSelector(studyStatusSelect, studyStatusGrid);
+        studyStatusSelect.addEventListener("change", () => syncVisualStudyStatusState(studyStatusSelect, studyStatusGrid));
     }
 
     if (clinicalAreaSelect) {
