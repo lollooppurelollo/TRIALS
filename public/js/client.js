@@ -1864,7 +1864,55 @@ document.addEventListener("DOMContentLoaded", () => {
         return params;
     }
 
-    /** Analizza lo studio CT.gov restituendo i centri in Italia e la verifica testuale dei criteri */
+    const CTGOV_REGEX_MAP = {
+        // Polmone / Istologie & Biomarcatori
+        "ADK": /\b(adenocarcinoma|adenocarcinomas|ADK|glandular carcinoma)\b/i,
+        "SCC": /\b(squamous|squamous cell|squamous cell carcinoma|SCC|epidermoid)\b/i,
+        "PDL1": /\b(PD-L1|PDL1|PD L1|CD274|programmed death-ligand 1|programmed cell death ligand 1)\b/i,
+        "EGFR": /\b(EGFR|ERBB1|epidermal growth factor receptor)\b/i,
+        "ALK": /\b(ALK|anaplastic lymphoma kinase)\b/i,
+        "KRAS": /\b(KRAS|K-RAS|K-ras)\b/i,
+        "ROS1": /\b(ROS1|ROS-1)\b/i,
+        "BRAF-V600": /\b(BRAF|B-RAF|V600|V600E|V600K|BRAF-V600)\b/i,
+        "RET": /\b(RET|RET-rearranged|RET rearrangement|RET fusion)\b/i,
+        "NTRK": /\b(NTRK|NTRK1|NTRK2|NTRK3|neurotrophic tyrosine receptor kinase)\b/i,
+        "HER2": /\b(HER2|HER-2|HER 2|ERBB2|human epidermal growth factor receptor 2|neu)\b/i,
+        "MET": /\b(MET|c-MET|cMET|MET exon 14)\b/i,
+        "EGFR ex20ins": /\b(exon 20|ex20ins|exon 20 insertion|ex20)\b/i,
+
+        // Mesotelioma
+        "Epitelioide": /\b(epithelioid|epithelial mesothelioma)\b/i,
+        "Bifasico": /\b(biphasic|mixed mesothelioma)\b/i,
+        "Sarcomatoide": /\b(sarcomatoid|sarcomatous)\b/i,
+
+        // Mammella
+        "Duttale": /\b(ductal|ductal carcinoma|IDC)\b/i,
+        "Lobulare": /\b(lobular|lobular carcinoma|ILC)\b/i,
+        "ESR1mut": /\b(ESR1|ESR-1|estrogen receptor 1)\b/i,
+        "PIK3CAmut": /\b(PIK3CA|PI3K|PI3Kalpha)\b/i,
+        "AKTmut": /\b(AKT|AKT1|AKT1 E17K)\b/i,
+        "PTENmut": /\b(PTEN)\b/i,
+        "BRCA1/2mut": /\b(BRCA|BRCA1|BRCA2|BRCA-1|BRCA-2)\b/i,
+        "PALB2": /\b(PALB2)\b/i,
+        "HER2 low": /\b(HER2 low|HER2-low|HER2 1\+|HER2 2\+)\b/i,
+        "HER2 ultra-low": /\b(HER2 ultra-low|HER2-ultralow|HER2 ultralow)\b/i,
+
+        // Linee
+        1: /\b(first-line|first line|1st-line|1st line|1L|front-line|untreated|naive)\b/i,
+        2: /\b(second-line|second line|2nd-line|2nd line|2L|previously treated|prior therapy|relapsed|refractory)\b/i,
+        3: /\b(third-line|third line|3rd-line|3rd line|3L|heavily pretreated)\b/i,
+
+        // Testa-Collo
+        "Cavo orale": /\b(oral cavity|oral|tongue|mouth|buccal|gingival|lip|floor of mouth)\b/i,
+        "Orofaringe": /\b(oropharynx|oropharyngeal|tonsil|tonsillar|base of tongue|soft palate)\b/i,
+        "Laringe": /\b(larynx|laryngeal|glottic|supraglottic|subglottic)\b/i,
+        "Ipofaringe": /\b(hypopharynx|hypopharyngeal)\b/i,
+        "Nasofaringe": /\b(nasopharynx|nasopharyngeal|rhinopharynx|rhinopharyngeal)\b/i,
+        "Cavità nasali e seni paranasali": /\b(nasal cavity|paranasal|maxillary sinus|ethmoid|sphenoid|frontal sinus)\b/i,
+        "Ghiandole Salivari": /\b(salivary gland|salivary|parotid|submandibular|sublingual)\b/i,
+    };
+
+    /** Analizza lo studio CT.gov restituendo i centri in Italia e la verifica testuale dei criteri con Regex a confini di parola */
     function analyzeCtgovStudy(study, patientData, enabledParams) {
         const proto = study.protocolSection || {};
         const idMod = proto.identificationModule || {};
@@ -1881,40 +1929,39 @@ document.addEventListener("DOMContentLoaded", () => {
             (descMod.briefSummary || "") + " " +
             (eligMod.eligibilityCriteria || "") + " " +
             (condMod.conditions ? condMod.conditions.join(" ") : "")
-        ).toLowerCase();
+        );
 
         const confirmed = [];
         const unconfirmed = [];
         const enabled = enabledParams || {};
 
         // Linea di trattamento
-        if (enabled.line !== false && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
+        if (enabled.line === true && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
             const l = patientData.treatmentLine;
-            const matches = text.includes("line") || text.includes("first-line") || text.includes("1l") || text.includes("2l") || text.includes("3l");
-            if (matches) confirmed.push(`${l}ª linea`);
+            const rx = CTGOV_REGEX_MAP[l] || new RegExp(`\\b${l}\\b`, "i");
+            if (rx.test(text)) confirmed.push(`${l}ª linea`);
             else unconfirmed.push(`${l}ª linea`);
         }
 
         // Sottotipo
         if (enabled.specific !== false && patientData.specificClinicalAreas) {
-            const sca = patientData.specificClinicalAreas.toLowerCase();
-            if (text.includes(sca) || text.includes("nsclc") || text.includes("sclc") || text.includes("triple negative") || text.includes("her2")) {
-                confirmed.push(patientData.specificClinicalAreas);
-            } else {
-                unconfirmed.push(patientData.specificClinicalAreas);
-            }
+            const sca = patientData.specificClinicalAreas;
+            const rx = CTGOV_REGEX_MAP[sca] || new RegExp(`\\b${sca.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, "i");
+            if (rx.test(text)) confirmed.push(sca);
+            else unconfirmed.push(sca);
         }
 
-        // Specifiche Ulteriori
-        if (enabled.further && typeof enabled.further === "object" && patientData.furtherSpecifics) {
-            Object.entries(patientData.furtherSpecifics).forEach(([k, v]) => {
-                if (enabled.further[k] !== false) {
+        // Specifiche Ulteriori (solo quelle attive / spuntate dal medico)
+        if (enabled.further && typeof enabled.further === "object") {
+            Object.entries(enabled.further).forEach(([k, isEnabled]) => {
+                if (isEnabled === true) {
+                    const patientVal = patientData.furtherSpecifics ? patientData.furtherSpecifics[k] : undefined;
                     let label = k;
-                    if (k === "PDL1" || (v && typeof v === "object")) label = formatPDL1Value(v);
-                    else if (typeof v === "number") label = `${k}: ${v}`;
+                    if (k === "PDL1" || (patientVal && typeof patientVal === "object")) label = formatPDL1Value(patientVal);
+                    else if (typeof patientVal === "number") label = `${k}: ${patientVal}`;
 
-                    const kLower = k.toLowerCase();
-                    if (text.includes(kLower) || (kLower === "pdl1" && (text.includes("pd-l1") || text.includes("pdl1")))) {
+                    const rx = CTGOV_REGEX_MAP[k] || new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, "i");
+                    if (rx.test(text)) {
                         confirmed.push(label);
                     } else {
                         unconfirmed.push(label);
