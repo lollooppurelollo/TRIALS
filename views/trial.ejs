@@ -33,11 +33,11 @@
       </div>
 
       <!-- AREA CLINICA -->
-      <div>
-        <label for="studyClinicalAreas" class="block text-sm font-medium text-slate-700">Area Clinica di interesse</label>
-        <select id="studyClinicalAreas" multiple
-                class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none"
-                required>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-bold text-slate-800 mb-2.5">
+          Area Clinica di interesse <span class="text-xs text-slate-400 font-normal">(Multi-selezione per lo studio)</span>
+        </label>
+        <select id="studyClinicalAreas" multiple class="sr-only" required>
           <option value="Mammella">Mammella</option>
           <option value="Polmone">Polmone</option>
           <option value="Gastro-Intestinale">Gastro-Intestinale</option>
@@ -48,34 +48,36 @@
           <option value="Fase 1">Fase 1</option>
           <option value="Altro">Altro</option>
         </select>
+        <div id="studyClinicalAreasCardGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
       </div>
 
       <!-- SPECIFICA AREA CLINICA -->
-      <div id="studySpecificClinicalAreaContainer" class="hidden">
-        <label for="studySpecificClinicalAreas" class="block text-sm font-medium text-slate-700">Specifica Area Clinica di interesse</label>
-        <select id="studySpecificClinicalAreas" multiple
-                class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none"></select>
+      <div id="studySpecificClinicalAreaContainer" class="hidden md:col-span-2">
+        <label class="block text-sm font-bold text-slate-800 mb-2">
+          Specifica Area Clinica / Sottotipo <span class="text-xs text-slate-400 font-normal">(Multi-selezione opzionale)</span>
+        </label>
+        <select id="studySpecificClinicalAreas" multiple class="sr-only"></select>
+        <div id="studySpecificClinicalAreasPillGrid" class="flex flex-wrap gap-2 pt-1"></div>
       </div>
 
       <!-- SPECIFICHE ULTERIORI -->
-      <div id="studyFurtherSpecificsContainer" class="hidden">
-        <label class="block text-sm font-medium text-slate-700 mb-1">
+      <div id="studyFurtherSpecificsContainer" class="hidden md:col-span-2">
+        <label class="block text-sm font-bold text-slate-800 mb-2">
           Specifiche Ulteriori Richieste dallo Studio <span class="text-xs text-slate-400 font-normal">(Opzionali / Multi-selezione)</span>
         </label>
-        <div id="studyFurtherSpecificsList" class="flex flex-wrap gap-2 p-3 border border-slate-200 rounded-lg bg-slate-50/50 min-h-[42px]"></div>
+        <div id="studyFurtherSpecificsList" class="flex flex-wrap gap-2 p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 min-h-[48px]"></div>
       </div>
 
       <!-- SETTING DEL TRATTAMENTO -->
-      <div>
-        <label for="studyTreatmentSetting" class="block text-sm font-medium text-slate-700">Setting del Trattamento</label>
-        <select id="studyTreatmentSetting"
-                class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none"
-                required>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-bold text-slate-800 mb-2.5">Setting del Trattamento</label>
+        <select id="studyTreatmentSetting" class="sr-only" required>
           <option value="" disabled selected>Seleziona un setting</option>
           <option value="Metastatico">Metastatico</option>
           <option value="Adiuvante">Adiuvante</option>
           <option value="Neo-adiuvante">Neo-adiuvante</option>
         </select>
+        <div id="studyTreatmentSettingCardGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
       </div>
 
       <!-- LINEA DI TRATTAMENTO -->

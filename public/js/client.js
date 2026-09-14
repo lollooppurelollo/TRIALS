@@ -794,6 +794,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (studyTreatmentSettingSelect)
             studyTreatmentSettingSelect.value = study.treatment_setting || "";
 
+        // Sincronizza lo stato visivo delle card e dei chip
+        const studyAreaGrid = document.getElementById("studyClinicalAreasCardGrid");
+        if (studyClinicalAreasSelect && studyAreaGrid) {
+            syncVisualAreaState(studyClinicalAreasSelect, studyAreaGrid, true);
+        }
+        const studySettingGrid = document.getElementById("studyTreatmentSettingCardGrid");
+        if (studyTreatmentSettingSelect && studySettingGrid) {
+            syncVisualSettingState(studyTreatmentSettingSelect, studySettingGrid);
+        }
+        const studyPillGrid = document.getElementById("studySpecificClinicalAreasPillGrid");
+        if (studySpecificClinicalAreasSelect && studyPillGrid) {
+            renderVisualSubtypePills(studySpecificClinicalAreasSelect, studyPillGrid, true);
+        }
+
         // Linee
         if (study.treatment_setting === "Metastatico") {
             if (studyTreatmentLineContainer)
@@ -960,9 +974,198 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =====================================================
-    // Da qui in giù rimane la logica precedente invariata:
-    // gestione dropdown, criteri, form studi, ricerca pazienti
+    // SELETTORI VISIVI CUSTOM (CARD GRID & PILLS)
     // =====================================================
+
+    const CLINICAL_AREA_CONFIG = {
+        "Mammella": { icon: "fas fa-ribbon", bg: "bg-pink-50 text-pink-700 border-pink-200 hover:border-pink-300", activeBg: "bg-pink-600 text-white border-pink-600 shadow-md ring-2 ring-pink-500/20" },
+        "Polmone": { icon: "fas fa-lungs", bg: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:border-cyan-300", activeBg: "bg-cyan-600 text-white border-cyan-600 shadow-md ring-2 ring-cyan-500/20" },
+        "Gastro-Intestinale": { icon: "fas fa-utensils", bg: "bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300", activeBg: "bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-500/20" },
+        "Ginecologico": { icon: "fas fa-venus", bg: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 hover:border-fuchsia-300", activeBg: "bg-fuchsia-600 text-white border-fuchsia-600 shadow-md ring-2 ring-fuchsia-500/20" },
+        "Prostata e Vie Urinarie": { icon: "fas fa-dna", bg: "bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-300", activeBg: "bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-500/20" },
+        "Melanoma e Cute": { icon: "fas fa-sun", bg: "bg-orange-50 text-orange-700 border-orange-200 hover:border-orange-300", activeBg: "bg-orange-600 text-white border-orange-600 shadow-md ring-2 ring-orange-500/20" },
+        "Testa-Collo": { icon: "fas fa-user-nurse", bg: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-300", activeBg: "bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-500/20" },
+        "Fase 1": { icon: "fas fa-bolt", bg: "bg-violet-50 text-violet-700 border-violet-200 hover:border-violet-300", activeBg: "bg-violet-600 text-white border-violet-600 shadow-md ring-2 ring-violet-500/20" },
+        "Altro": { icon: "fas fa-folder-open", bg: "bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300", activeBg: "bg-slate-800 text-white border-slate-800 shadow-md ring-2 ring-slate-800/20" },
+    };
+
+    const SETTING_CONFIG = {
+        "Metastatico": { icon: "fas fa-disease", badge: "💥", title: "Metastatico", desc: "Fase avanzata / IV stadio" },
+        "Adiuvante": { icon: "fas fa-shield-alt", badge: "🛡️", title: "Adiuvante", desc: "Post-operatorio" },
+        "Neo-adiuvante": { icon: "fas fa-rocket", badge: "🚀", title: "Neo-adiuvante", desc: "Pre-operatorio" },
+    };
+
+    /** Inizializza la griglia visiva di card per Area Clinica */
+    function renderVisualAreaSelector(selectEl, gridContainerEl, isMultiple = false) {
+        if (!selectEl || !gridContainerEl) return;
+        gridContainerEl.innerHTML = "";
+
+        const areas = [
+            "Mammella", "Polmone", "Gastro-Intestinale", "Ginecologico",
+            "Prostata e Vie Urinarie", "Melanoma e Cute", "Testa-Collo", "Fase 1", "Altro"
+        ];
+
+        areas.forEach(area => {
+            const cfg = CLINICAL_AREA_CONFIG[area] || CLINICAL_AREA_CONFIG["Altro"];
+            const card = document.createElement("button");
+            card.type = "button";
+            card.dataset.value = area;
+
+            const isSelected = isMultiple
+                ? Array.from(selectEl.selectedOptions).some(o => o.value === area)
+                : selectEl.value === area;
+
+            card.className = isSelected
+                ? `visual-area-card relative p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all duration-200 cursor-pointer select-none ${cfg.activeBg}`
+                : `visual-area-card relative p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all duration-200 cursor-pointer select-none group ${cfg.bg}`;
+
+            card.innerHTML = `
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-white/70 text-slate-700 shadow-2xs group-hover:scale-105 transition-transform'}">
+                    <i class="${cfg.icon} text-xs"></i>
+                </div>
+                <div class="flex-grow min-w-0">
+                    <span class="block text-xs font-bold leading-snug truncate">${area}</span>
+                </div>
+                <div class="visual-check-icon ${isSelected ? 'block' : 'hidden'} text-xs">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            `;
+
+            card.addEventListener("click", () => {
+                if (isMultiple) {
+                    const opt = Array.from(selectEl.options).find(o => o.value === area);
+                    if (opt) opt.selected = !opt.selected;
+                } else {
+                    selectEl.value = area;
+                }
+                selectEl.dispatchEvent(new Event("change"));
+                syncVisualAreaState(selectEl, gridContainerEl, isMultiple);
+            });
+
+            gridContainerEl.appendChild(card);
+        });
+    }
+
+    /** Sincronizza lo stato evidenziato delle card Area Clinica */
+    function syncVisualAreaState(selectEl, gridContainerEl, isMultiple = false) {
+        if (!selectEl || !gridContainerEl) return;
+        const selectedValues = isMultiple
+            ? new Set(Array.from(selectEl.selectedOptions).map(o => o.value))
+            : new Set([selectEl.value]);
+
+        gridContainerEl.querySelectorAll(".visual-area-card").forEach(card => {
+            const val = card.dataset.value;
+            const isSelected = selectedValues.has(val);
+            const cfg = CLINICAL_AREA_CONFIG[val] || CLINICAL_AREA_CONFIG["Altro"];
+            const iconBox = card.querySelector("div:first-child");
+            const checkIcon = card.querySelector(".visual-check-icon");
+
+            if (isSelected) {
+                card.className = `visual-area-card relative p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all duration-200 cursor-pointer select-none ${cfg.activeBg}`;
+                if (iconBox) iconBox.className = "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/20 text-white";
+                if (checkIcon) checkIcon.classList.remove("hidden");
+            } else {
+                card.className = `visual-area-card relative p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all duration-200 cursor-pointer select-none group ${cfg.bg}`;
+                if (iconBox) iconBox.className = "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/70 text-slate-700 shadow-2xs group-hover:scale-105 transition-transform";
+                if (checkIcon) checkIcon.classList.add("hidden");
+            }
+        });
+    }
+
+    /** Inizializza i selettori visivi a schede per Setting del Trattamento */
+    function renderVisualSettingSelector(selectEl, gridContainerEl) {
+        if (!selectEl || !gridContainerEl) return;
+        gridContainerEl.innerHTML = "";
+
+        const settings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+
+        settings.forEach(setting => {
+            const cfg = SETTING_CONFIG[setting];
+            const isSelected = selectEl.value === setting;
+
+            const card = document.createElement("button");
+            card.type = "button";
+            card.dataset.value = setting;
+            card.className = isSelected
+                ? "visual-setting-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 font-semibold text-left transition-all duration-200 shadow-xs cursor-pointer select-none flex items-center justify-between"
+                : "visual-setting-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-left transition-all duration-200 cursor-pointer select-none flex items-center justify-between group";
+
+            card.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <span class="text-base">${cfg.badge}</span>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-900">${cfg.title}</span>
+                        <span class="block text-[10px] text-slate-500 font-normal">${cfg.desc}</span>
+                    </div>
+                </div>
+                <i class="fas fa-check-circle text-emerald-600 text-xs ${isSelected ? 'block' : 'hidden'} visual-setting-check"></i>
+            `;
+
+            card.addEventListener("click", () => {
+                selectEl.value = setting;
+                selectEl.dispatchEvent(new Event("change"));
+                syncVisualSettingState(selectEl, gridContainerEl);
+            });
+
+            gridContainerEl.appendChild(card);
+        });
+    }
+
+    /** Sincronizza lo stato visivo delle card Setting */
+    function syncVisualSettingState(selectEl, gridContainerEl) {
+        if (!selectEl || !gridContainerEl) return;
+        const currentVal = selectEl.value;
+
+        gridContainerEl.querySelectorAll(".visual-setting-card").forEach(card => {
+            const val = card.dataset.value;
+            const isSelected = val === currentVal;
+            const check = card.querySelector(".visual-setting-check");
+
+            if (isSelected) {
+                card.className = "visual-setting-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 font-semibold text-left transition-all duration-200 shadow-xs cursor-pointer select-none flex items-center justify-between";
+                if (check) check.classList.remove("hidden");
+            } else {
+                card.className = "visual-setting-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-left transition-all duration-200 cursor-pointer select-none flex items-center justify-between group";
+                if (check) check.classList.add("hidden");
+            }
+        });
+    }
+
+    /** Genera i chip interattivi per la Specifica Area Clinica (Sottotipo) */
+    function renderVisualSubtypePills(selectEl, pillGridEl, isMultiple = false) {
+        if (!selectEl || !pillGridEl) return;
+        pillGridEl.innerHTML = "";
+
+        const options = Array.from(selectEl.options).filter(o => o.value !== "");
+        if (options.length === 0) return;
+
+        options.forEach(opt => {
+            const val = opt.value;
+            const isSelected = opt.selected;
+
+            const pill = document.createElement("button");
+            pill.type = "button";
+            pill.dataset.value = val;
+            pill.className = isSelected
+                ? "px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white border border-emerald-600 shadow-xs transition-all cursor-pointer select-none flex items-center gap-1.5"
+                : "px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer select-none flex items-center gap-1.5";
+
+            pill.innerHTML = `<span>${escapeHtml(val)}</span> <i class="fas fa-check text-[10px] ${isSelected ? 'inline-block' : 'hidden'}"></i>`;
+
+            pill.addEventListener("click", () => {
+                if (isMultiple) {
+                    opt.selected = !opt.selected;
+                } else {
+                    Array.from(selectEl.options).forEach(o => o.selected = (o.value === val));
+                    selectEl.value = val;
+                }
+                selectEl.dispatchEvent(new Event("change"));
+                renderVisualSubtypePills(selectEl, pillGridEl, isMultiple);
+            });
+
+            pillGridEl.appendChild(pill);
+        });
+    }
 
     function updateSpecificAreasDropdown(
         selectedAreas,
@@ -995,9 +1198,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectElement.appendChild(option);
             });
             container.classList.remove("hidden");
+
+            // Aggiorna anche la griglia visiva dei chip per il sottotipo
+            if (selectElement.id === "specificClinicalAreas") {
+                const pillGrid = document.getElementById("specificClinicalAreasPillGrid");
+                renderVisualSubtypePills(selectElement, pillGrid, false);
+            } else if (selectElement.id === "studySpecificClinicalAreas") {
+                const pillGrid = document.getElementById("studySpecificClinicalAreasPillGrid");
+                renderVisualSubtypePills(selectElement, pillGrid, true);
+            }
         } else {
             container.classList.add("hidden");
         }
+    }
+
+    // Inizializza i selettori visivi al caricamento del DOM
+    const patientAreaGrid = document.getElementById("clinicalAreaCardGrid");
+    if (clinicalAreaSelect && patientAreaGrid) {
+        renderVisualAreaSelector(clinicalAreaSelect, patientAreaGrid, false);
+    }
+    const patientSettingGrid = document.getElementById("treatmentSettingCardGrid");
+    if (treatmentSettingSelect && patientSettingGrid) {
+        renderVisualSettingSelector(treatmentSettingSelect, patientSettingGrid);
+    }
+
+    const studyAreaGrid = document.getElementById("studyClinicalAreasCardGrid");
+    if (studyClinicalAreasSelect && studyAreaGrid) {
+        renderVisualAreaSelector(studyClinicalAreasSelect, studyAreaGrid, true);
+    }
+    const studySettingGrid = document.getElementById("studyTreatmentSettingCardGrid");
+    if (studyTreatmentSettingSelect && studySettingGrid) {
+        renderVisualSettingSelector(studyTreatmentSettingSelect, studySettingGrid);
     }
 
     if (clinicalAreaSelect) {
@@ -1010,12 +1241,15 @@ document.addEventListener("DOMContentLoaded", () => {
             // Aggiorna / nasconde le specifiche ulteriori del paziente
             const currentVal = specificClinicalAreasSelect ? specificClinicalAreasSelect.value : "";
             updatePatientFurtherSpecifics(currentVal, {});
+            syncVisualAreaState(clinicalAreaSelect, patientAreaGrid, false);
         });
     }
     // Aggiorna specifiche ulteriori paziente quando cambia specifica area clinica
     if (specificClinicalAreasSelect) {
         specificClinicalAreasSelect.addEventListener("change", (e) => {
             updatePatientFurtherSpecifics(e.target.value, {});
+            const pillGrid = document.getElementById("specificClinicalAreasPillGrid");
+            renderVisualSubtypePills(specificClinicalAreasSelect, pillGrid, false);
         });
     }
     if (studyClinicalAreasSelect) {
@@ -1031,6 +1265,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? Array.from(studySpecificClinicalAreasSelect.selectedOptions).map((o) => o.value)
                 : [];
             autoGenerateStudyCode(selectedAreas, selectedSpecific);
+            syncVisualAreaState(studyClinicalAreasSelect, studyAreaGrid, true);
         });
     }
     // Rigenera il codice anche quando cambia la Specifica Area Clinica
@@ -1044,6 +1279,8 @@ document.addEventListener("DOMContentLoaded", () => {
             autoGenerateStudyCode(selectedAreas, selectedSpecific);
             // Aggiorna specifiche ulteriori basandosi sulla specifica area clinica
             updateStudyFurtherSpecifics(selectedSpecific, {});
+            const pillGrid = document.getElementById("studySpecificClinicalAreasPillGrid");
+            renderVisualSubtypePills(studySpecificClinicalAreasSelect, pillGrid, true);
         });
     }
     if (studyCodeInput) {
@@ -1081,6 +1318,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 treatmentLineContainer.classList.add("hidden");
                 patientTreatmentLineInput.value = "";
             }
+            syncVisualSettingState(treatmentSettingSelect, patientSettingGrid);
         });
     }
     if (studyTreatmentSettingSelect) {
@@ -1092,6 +1330,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 minTreatmentLineInput.value = "";
                 maxTreatmentLineInput.value = "";
             }
+            syncVisualSettingState(studyTreatmentSettingSelect, studySettingGrid);
         });
     }
 
