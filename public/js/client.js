@@ -1564,35 +1564,23 @@ document.addEventListener("DOMContentLoaded", () => {
             renderSearchResults(filteredStudies, "patient");
             // Mostra la sezione CT.gov e memorizza i dati del paziente
             window._ctgovPatientData = patientData;
+            window._ctgovEnabledParams = {
+                area: true,
+                setting: true,
+                line: patientData.treatmentLine !== null && patientData.treatmentLine !== undefined,
+                specific: !!patientData.specificClinicalAreas,
+                further: {}
+            };
+            if (patientData.furtherSpecifics) {
+                Object.keys(patientData.furtherSpecifics).forEach(k => {
+                    window._ctgovEnabledParams.further[k] = true;
+                });
+            }
+
             const ctgovSection = document.getElementById("ctgovSection");
             if (ctgovSection) {
                 ctgovSection.classList.remove("hidden");
-                // Aggiorna le label dinamiche con i parametri reali del paziente
-                const valArea = document.getElementById("ctgovValArea");
-                const valSetting = document.getElementById("ctgovValSetting");
-                const valSpecific = document.getElementById("ctgovValSpecific");
-                
-                if (valArea) valArea.textContent = patientData.clinicalAreas || "N/A";
-                if (valSetting) valSetting.textContent = patientData.treatmentSetting || "N/A";
-                
-                const labelSpecific = document.getElementById("ctgovLabelSpecific");
-                if (valSpecific) {
-                    if (patientData.specificClinicalAreas) {
-                        valSpecific.textContent = patientData.specificClinicalAreas;
-                        if (labelSpecific) labelSpecific.classList.remove("hidden");
-                    } else {
-                        valSpecific.textContent = "Nessuno";
-                        if (labelSpecific) labelSpecific.classList.add("hidden");
-                    }
-                }
-                
-                // Resetta le checkbox a true/attive
-                const incArea = document.getElementById("ctgovIncArea");
-                const incSetting = document.getElementById("ctgovIncSetting");
-                const incSpecific = document.getElementById("ctgovIncSpecific");
-                if (incArea) { incArea.checked = true; document.getElementById("ctgovLabelArea")?.classList.add("active"); }
-                if (incSetting) { incSetting.checked = true; document.getElementById("ctgovLabelSetting")?.classList.add("active"); }
-                if (incSpecific) { incSpecific.checked = true; document.getElementById("ctgovLabelSpecific")?.classList.add("active"); }
+                renderCtgovActivePills();
             }
             // Reset risultati precedenti
             const ctgovResults = document.getElementById("ctgovResults");
@@ -1604,7 +1592,11 @@ document.addEventListener("DOMContentLoaded", () => {
     //  CLINICALTRIALS.GOV INTEGRATION
     // =========================================================
 
-    // Mappa area clinica italiana → sinonimi inglesi per CT.gov con operatori booleani
+    // =========================================================
+    //  CLINICALTRIALS.GOV INTEGRATION
+    // =========================================================
+
+    // Mappe di sinonimi arricchite per ricerca booleana su CT.gov API v2
     const CTGOV_AREA_MAP = {
         "Mammella": '"breast cancer" OR "breast carcinoma" OR "breast neoplasm" OR "breast tumor" OR "breast tumour" OR "mammary"',
         "Polmone": '"lung cancer" OR "lung carcinoma" OR "lung neoplasm" OR "lung tumor" OR "lung tumour" OR "pulmonary" OR "thoracic cancer"',
@@ -1616,18 +1608,19 @@ document.addEventListener("DOMContentLoaded", () => {
         "Fase 1": '"solid tumor" OR "advanced cancer" OR "metastatic cancer" OR "refractory solid tumor"',
         "Altro": '"cancer" OR "tumor" OR "tumour" OR "neoplasm" OR "malignancy"',
     };
+
     const CTGOV_SETTING_MAP = {
         "Metastatico": '"metastatic" OR "advanced" OR "stage IV" OR "disseminated" OR "stage 4"',
         "Adiuvante": '"adjuvant" OR "postoperative" OR "post-operative" OR "post-resection" OR "post resection"',
         "Neo-adiuvante": '"neoadjuvant" OR "preoperative" OR "pre-operative" OR "induction chemotherapy" OR "primary systemic therapy"',
     };
+
     const CTGOV_LINE_MAP = {
-        1: "first-line 1L",
-        2: "second-line 2L",
-        3: "third-line 3L",
+        1: '"first-line" OR "1st-line" OR "1L" OR "front-line" OR "untreated" OR "first line"',
+        2: '"second-line" OR "2nd-line" OR "2L" OR "previously treated" OR "second line"',
+        3: '"third-line" OR "3rd-line" OR "3L" OR "heavily pretreated" OR "third line"',
     };
 
-    // Mappa le aree cliniche specifiche in termini inglesi ed equivalenti clinici (es. recettori ormonali per luminale)
     const CTGOV_SPECIFIC_MAP = {
         "Luminali": '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent" OR "HR+/HER2-" OR "HR+/HER2" OR "HR+ / HER2-"',
         "TNBC": '"TNBC" OR "triple negative" OR "triple-negative"',
@@ -1657,33 +1650,139 @@ document.addEventListener("DOMContentLoaded", () => {
         "Basalioma": '"basal cell skin" OR "basal cell carcinoma"',
     };
 
-    /** Costruisce i parametri query per l'API CT.gov v2 */
+    const CTGOV_FURTHER_MAP = {
+        // Polmone / Generali
+        "ADK": '"adenocarcinoma" OR "ADK"',
+        "SCC": '"squamous cell" OR "squamous" OR "SCC"',
+        "PDL1": '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "programmed cell death ligand 1"',
+        "EGFR": '"EGFR" OR "epidermal growth factor receptor"',
+        "ALK": '"ALK" OR "anaplastic lymphoma kinase"',
+        "KRAS": '"KRAS"',
+        "ROS1": '"ROS1"',
+        "BRAF-V600": '"BRAF" OR "V600E" OR "BRAF-V600" OR "BRAF V600"',
+        "RET": '"RET"',
+        "NTRK": '"NTRK"',
+        "HER2": '"HER2" OR "ERBB2"',
+        "MET": '"MET"',
+        "EGFR ex20ins": '"EGFR exon 20" OR "ex20ins" OR "exon 20 insertion"',
+
+        // Mesotelioma
+        "Epitelioide": '"epithelioid"',
+        "Bifasico": '"biphasic"',
+        "Sarcomatoide": '"sarcomatoid"',
+
+        // Mammella
+        "Duttale": '"ductal"',
+        "Lobulare": '"lobular"',
+        "ESR1mut": '"ESR1"',
+        "PIK3CAmut": '"PIK3CA"',
+        "AKTmut": '"AKT1" OR "AKT"',
+        "PTENmut": '"PTEN"',
+        "BRCA1/2mut": '"BRCA1" OR "BRCA2" OR "BRCA"',
+        "PALB2": '"PALB2"',
+        "HER2 low": '"HER2 low" OR "HER2-low" OR "HER2 1+" OR "HER2 2+"',
+        "HER2 ultra-low": '"HER2 ultra-low" OR "HER2-ultralow" OR "HER2 ultralow"',
+
+        // Testa-Collo
+        "Cavo orale": '"oral cavity" OR "tongue" OR "mouth"',
+        "Orofaringe": '"oropharynx" OR "tonsil"',
+        "Laringe": '"laryngeal" OR "larynx"',
+        "Ipofaringe": '"hypopharynx"',
+        "Nasofaringe": '"nasopharynx" OR "nasopharyngeal"',
+        "Cavità nasali e seni paranasali": '"nasal cavity" OR "paranasal"',
+        "Ghiandole Salivari": '"salivary gland" OR "parotid"',
+    };
+
+    /** Genera i tag pillola interattivi e rimovibili per la ricerca CT.gov */
+    function renderCtgovActivePills() {
+        const container = document.getElementById("ctgovActivePillsContainer");
+        if (!container) return;
+        container.innerHTML = "";
+        const data = window._ctgovPatientData;
+        const enabled = window._ctgovEnabledParams;
+        if (!data || !enabled) return;
+
+        const createPill = (icon, label, isEnabled, onClick) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = isEnabled
+                ? "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-white shadow-xs hover:bg-slate-700 transition-all select-none"
+                : "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-400 border border-slate-200 line-through opacity-60 hover:bg-slate-200 transition-all select-none";
+            btn.innerHTML = `${icon} <span>${escapeHtml(label)}</span> <i class="fas ${isEnabled ? 'fa-check-circle text-emerald-400' : 'fa-times-circle text-slate-400'} ml-0.5"></i>`;
+            btn.addEventListener("click", onClick);
+            return btn;
+        };
+
+        if (data.clinicalAreas) {
+            container.appendChild(createPill("🏢 Area:", data.clinicalAreas, enabled.area !== false, () => {
+                enabled.area = !enabled.area;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        }
+        if (data.treatmentSetting) {
+            container.appendChild(createPill("⚙️ Setting:", data.treatmentSetting, enabled.setting !== false, () => {
+                enabled.setting = !enabled.setting;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        }
+        if (data.treatmentLine !== null && data.treatmentLine !== undefined) {
+            container.appendChild(createPill("🔢 Linea:", `${data.treatmentLine}ª linea`, enabled.line !== false, () => {
+                enabled.line = !enabled.line;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        }
+        if (data.specificClinicalAreas) {
+            container.appendChild(createPill("🧬 Sottotipo:", data.specificClinicalAreas, enabled.specific !== false, () => {
+                enabled.specific = !enabled.specific;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        }
+        if (data.furtherSpecifics) {
+            Object.entries(data.furtherSpecifics).forEach(([k, v]) => {
+                let text = k;
+                if (k === "PDL1" || (v && typeof v === "object")) text = formatPDL1Value(v);
+                else if (typeof v === "number") text = `${k}: ${v}`;
+
+                const isEnabled = enabled.further ? enabled.further[k] !== false : true;
+                container.appendChild(createPill("🧪 Specificazione:", text, isEnabled, () => {
+                    if (!enabled.further) enabled.further = {};
+                    enabled.further[k] = !isEnabled;
+                    renderCtgovActivePills();
+                    runCtgovSearch(false);
+                }));
+            });
+        }
+    }
+
+    /** Costruisce i parametri query per l'API CT.gov v2 incorporando tutte le informazioni paziente e sinonimi */
     function buildCtgovParams(patientData, countryFilter, statusFilter, studyTypeFilter) {
         const queryParts = [];
-        
-        // Leggi lo stato delle checkbox di inclusione parametri
-        const incArea = document.getElementById("ctgovIncArea")?.checked !== false; // default true
-        const incSetting = document.getElementById("ctgovIncSetting")?.checked !== false; // default true
-        const incSpecific = document.getElementById("ctgovIncSpecific")?.checked !== false; // default true
+        const enabled = window._ctgovEnabledParams || {};
 
         // 1. Area Clinica Principale
-        if (incArea) {
+        if (enabled.area !== false && patientData.clinicalAreas) {
             const areaSynonyms = CTGOV_AREA_MAP[patientData.clinicalAreas];
-            if (areaSynonyms) {
-                queryParts.push(`(${areaSynonyms})`);
-            }
+            if (areaSynonyms) queryParts.push(`(${areaSynonyms})`);
         }
-        
+
         // 2. Setting del Trattamento
-        if (incSetting) {
+        if (enabled.setting !== false && patientData.treatmentSetting) {
             const settingSynonyms = CTGOV_SETTING_MAP[patientData.treatmentSetting];
-            if (settingSynonyms) {
-                queryParts.push(`(${settingSynonyms})`);
-            }
+            if (settingSynonyms) queryParts.push(`(${settingSynonyms})`);
         }
-        
-        // 3. Sottotipo Specifico
-        if (incSpecific && patientData.specificClinicalAreas) {
+
+        // 3. Linea di trattamento
+        if (enabled.line !== false && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
+            const lineSynonyms = CTGOV_LINE_MAP[patientData.treatmentLine];
+            if (lineSynonyms) queryParts.push(`(${lineSynonyms})`);
+        }
+
+        // 4. Sottotipo Specifico
+        if (enabled.specific !== false && patientData.specificClinicalAreas) {
             const specificSynonyms = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
             if (specificSynonyms) {
                 queryParts.push(`(${specificSynonyms})`);
@@ -1692,16 +1791,30 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Filtro tipo studio tramite query syntax (AREA[StudyType]INTERVENTIONAL)
+        // 5. Specifiche Ulteriori (PDL1, mutazioni, istologie)
+        if (enabled.further && typeof enabled.further === "object" && patientData.furtherSpecifics) {
+            Object.entries(patientData.furtherSpecifics).forEach(([key, val]) => {
+                if (enabled.further[key] !== false) {
+                    const syn = CTGOV_FURTHER_MAP[key];
+                    if (syn) {
+                        queryParts.push(`(${syn})`);
+                    } else {
+                        queryParts.push(`("${key}")`);
+                    }
+                }
+            });
+        }
+
+        // Filtro tipo studio tramite query syntax
         if (studyTypeFilter === "INTERVENTIONAL") {
             queryParts.push("AREA[StudyType]INTERVENTIONAL");
         }
 
-        const queryTerm = queryParts.join(" AND ") || "cancer"; // fallback per non far fallire la query se vuota
+        const queryTerm = queryParts.join(" AND ") || "cancer";
 
         const params = new URLSearchParams({
             "query.term": queryTerm,
-            "pageSize": "15",
+            "pageSize": "50",
             "format": "json",
         });
         if (statusFilter !== "all") params.set("filter.overallStatus", statusFilter);
@@ -1709,15 +1822,71 @@ document.addEventListener("DOMContentLoaded", () => {
         return params;
     }
 
-    /** Determina quali parametri paziente non sono verificabili nei dati strutturati CT.gov */
-    function buildCtgovNote(patientData) {
-        const unverifiable = [];
-        if (patientData.treatmentLine !== null && patientData.treatmentLine !== undefined)
-            unverifiable.push(`linea di trattamento ${patientData.treatmentLine}`);
-        if (patientData.specificClinicalAreas)
-            unverifiable.push(`sottotipo "${patientData.specificClinicalAreas}"`);
-        if (unverifiable.length === 0) return null;
-        return `Parametri non verificabili automaticamente: ${unverifiable.join(", ")}. Controllare manualmente i criteri di eleggibilità dello studio.`;
+    /** Analizza lo studio CT.gov restituendo i centri in Italia e la verifica testuale dei criteri */
+    function analyzeCtgovStudy(study, patientData, enabledParams) {
+        const proto = study.protocolSection || {};
+        const idMod = proto.identificationModule || {};
+        const descMod = proto.descriptionModule || {};
+        const locMod = proto.contactsLocationsModule || {};
+        const eligMod = proto.eligibilityModule || {};
+        const condMod = proto.conditionsModule || {};
+
+        const locations = locMod.locations || [];
+        const hasItalySite = locations.some(l => l.country && (l.country.toLowerCase() === "italy" || l.country.toLowerCase() === "italia"));
+
+        const text = (
+            (idMod.briefTitle || "") + " " +
+            (descMod.briefSummary || "") + " " +
+            (eligMod.eligibilityCriteria || "") + " " +
+            (condMod.conditions ? condMod.conditions.join(" ") : "")
+        ).toLowerCase();
+
+        const confirmed = [];
+        const unconfirmed = [];
+        const enabled = enabledParams || {};
+
+        // Linea di trattamento
+        if (enabled.line !== false && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
+            const l = patientData.treatmentLine;
+            const matches = text.includes("line") || text.includes("first-line") || text.includes("1l") || text.includes("2l") || text.includes("3l");
+            if (matches) confirmed.push(`${l}ª linea`);
+            else unconfirmed.push(`${l}ª linea`);
+        }
+
+        // Sottotipo
+        if (enabled.specific !== false && patientData.specificClinicalAreas) {
+            const sca = patientData.specificClinicalAreas.toLowerCase();
+            if (text.includes(sca) || text.includes("nsclc") || text.includes("sclc") || text.includes("triple negative") || text.includes("her2")) {
+                confirmed.push(patientData.specificClinicalAreas);
+            } else {
+                unconfirmed.push(patientData.specificClinicalAreas);
+            }
+        }
+
+        // Specifiche Ulteriori
+        if (enabled.further && typeof enabled.further === "object" && patientData.furtherSpecifics) {
+            Object.entries(patientData.furtherSpecifics).forEach(([k, v]) => {
+                if (enabled.further[k] !== false) {
+                    let label = k;
+                    if (k === "PDL1" || (v && typeof v === "object")) label = formatPDL1Value(v);
+                    else if (typeof v === "number") label = `${k}: ${v}`;
+
+                    const kLower = k.toLowerCase();
+                    if (text.includes(kLower) || (kLower === "pdl1" && (text.includes("pd-l1") || text.includes("pdl1")))) {
+                        confirmed.push(label);
+                    } else {
+                        unconfirmed.push(label);
+                    }
+                }
+            });
+        }
+
+        return {
+            hasItalySite,
+            confirmed,
+            unconfirmed,
+            isCompleteMatch: unconfirmed.length === 0,
+        };
     }
 
     /** Tronca il testo a maxLen caratteri con ellissi */
@@ -1726,8 +1895,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return text.substring(0, maxLen).trimEnd() + "…";
     }
 
-    /** Crea una card HTML per un singolo risultato CT.gov */
-    function createCtgovCard(study, patientData) {
+    /** Crea una card HTML per un singolo risultato CT.gov con stato corrispondenza e warning per criteri non confermati */
+    function createCtgovCard(study, patientData, analysis) {
         const proto = study.protocolSection || {};
         const idMod = proto.identificationModule || {};
         const statusMod = proto.statusModule || {};
@@ -1761,10 +1930,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (italianLocs.length > 0) {
                 const shown = italianLocs.map(l => {
                     const parts = [l.facility, l.city, l.country].filter(Boolean);
-                    return `<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">${escapeHtml(parts.join(", "))}</span>`;
+                    return `<span class="inline-block text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">🇮🇹 ${escapeHtml(parts.join(", "))}</span>`;
                 });
                 const extraCount = locations.length - italianLocs.length;
-                const extra = extraCount > 0 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${extraCount} altri</span>` : "";
+                const extra = extraCount > 0 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${extraCount} altri esteri</span>` : "";
                 centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
             } else {
                 const shown = locations.slice(0, 4).map(l => {
@@ -1776,11 +1945,27 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Nota di attenzione per parametri non verificabili
-        const noteText = buildCtgovNote(patientData);
-        const noteHtml = noteText
-            ? `<div class="ctgov-note"><span style="font-size:1rem;">⚠️</span><span>${escapeHtml(noteText)}</span></div>`
-            : "";
+        // Badge di verifica e avviso per criteri non confermati nel testo
+        let matchBadgeHtml = "";
+        if (analysis) {
+            if (analysis.isCompleteMatch) {
+                matchBadgeHtml = `
+                    <div class="mt-2.5 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 flex items-center gap-2">
+                        <span>✅</span> <strong class="font-semibold">Corrispondenza Completa:</strong> tutti i criteri attivi del paziente sono stati confermati o inclusi nella ricerca.
+                    </div>`;
+            } else {
+                matchBadgeHtml = `
+                    <div class="mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                        <div class="flex items-center gap-1.5 font-bold mb-1">
+                            <span>⚠️</span> <span>Criteri da verificare manualmente nel protocollo:</span>
+                        </div>
+                        <p class="text-amber-800 text-[11px]">
+                            Non è stato possibile verificare esplicitamente nel testo sintetico: <strong>${escapeHtml(analysis.unconfirmed.join(", "))}</strong>. 
+                            Verificare i criteri di inclusione dettagliati su ClinicalTrials.gov.
+                        </p>
+                    </div>`;
+            }
+        }
 
         const card = document.createElement("div");
         card.className = "ctgov-card";
@@ -1791,6 +1976,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="ctgov-badge">ClinicalTrials.gov</span>
                         <span class="text-[10px] font-mono text-slate-400">${escapeHtml(nctId)}</span>
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#eff6ff;color:${statusColor}">${statusLabel}</span>
+                        ${analysis?.hasItalySite ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">🇮🇹 Centro in Italia</span>` : ""}
                     </div>
                     <h3 class="font-bold text-slate-800 text-sm leading-snug">${title}</h3>
                     ${sponsor ? `<p class="text-xs text-slate-500 mt-0.5">${sponsor}</p>` : ""}
@@ -1822,12 +2008,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Centri disponibili</span>
                 ${centersHtml}
             </div>
-            ${noteHtml}
+            ${matchBadgeHtml}
         `;
         return card;
     }
 
-    /** Aggiorna dinamicamente i link ai registri esterni (EU CTR) basandosi sulle scelte correnti */
+    /** Aggiorna dinamicamente i link ai registri esterni (EU CTR) */
     function updateExternalRegistryLinks() {
         const patientData = window._ctgovPatientData;
         if (!patientData) return;
@@ -1835,35 +2021,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const euctrLink = document.getElementById("euctrSearchLink");
         if (!euctrLink) return;
 
-        const queryParts = [];
-        const incArea = document.getElementById("ctgovIncArea")?.checked !== false;
-        const incSetting = document.getElementById("ctgovIncSetting")?.checked !== false;
-        const incSpecific = document.getElementById("ctgovIncSpecific")?.checked !== false;
-
-        if (incArea) {
-            const area = CTGOV_AREA_MAP[patientData.clinicalAreas];
-            if (area) queryParts.push(`(${area})`);
-        }
-        if (incSetting) {
-            const setting = CTGOV_SETTING_MAP[patientData.treatmentSetting];
-            if (setting) queryParts.push(`(${setting})`);
-        }
-        if (incSpecific && patientData.specificClinicalAreas) {
-            const specific = CTGOV_SPECIFIC_MAP[patientData.specificClinicalAreas];
-            if (specific) {
-                queryParts.push(`(${specific})`);
-            } else {
-                queryParts.push(`("${patientData.specificClinicalAreas}")`);
-            }
-        }
-
-        const queryTerm = queryParts.join(" AND ") || "cancer";
+        const params = buildCtgovParams(patientData, "all", "all", "INTERVENTIONAL");
+        const queryTerm = params.get("query.term") || "cancer";
         
-        // Imposta l'URL del registro europeo filtrato per l'Italia
         euctrLink.href = `https://www.clinicaltrialsregister.eu/ctr-search/search?query=${encodeURIComponent(queryTerm)}&country=it`;
     }
 
-    /** Esegue la ricerca su CT.gov e inietta i risultati nel DOM. Supporta la paginazione 'loadMore'. */
+    /** Esegue la ricerca su CT.gov, ordina e raggruppa in 4 sezioni gerarchiche */
     async function runCtgovSearch(loadMore = false) {
         const patientData = window._ctgovPatientData;
         if (!patientData) return;
@@ -1874,18 +2038,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const loadMoreContainer = document.getElementById("ctgovLoadMoreContainer");
         const loadMoreBtn = document.getElementById("ctgovLoadMoreBtn");
 
-        // Leggi filtri selezionati
         const countryFilter = document.querySelector("input[name='ctgov_country']:checked")?.value || "Italy";
         const statusFilter  = document.querySelector("input[name='ctgov_status']:checked")?.value  || "RECRUITING";
         const studyTypeFilter = document.querySelector("input[name='ctgov_studytype']:checked")?.value || "INTERVENTIONAL";
 
-        // Aggiorna il link del portale europeo basandosi sulle impostazioni attuali
         updateExternalRegistryLinks();
 
         let tempSpinner = null;
 
         if (!loadMore) {
-            // Ricerca iniziale
             ctgovResults.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-10 text-slate-400 gap-3">
                     <svg class="animate-spin w-8 h-8" style="color:#1a3a5c;" fill="none" viewBox="0 0 24 24">
@@ -1897,7 +2058,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (loadMoreContainer) loadMoreContainer.classList.add("hidden");
             window._ctgovNextPageToken = null;
         } else {
-            // Carica altri
             if (loadMoreBtn) loadMoreBtn.disabled = true;
             tempSpinner = document.createElement("div");
             tempSpinner.className = "flex justify-center py-4";
@@ -1912,7 +2072,6 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const params = buildCtgovParams(patientData, countryFilter, statusFilter, studyTypeFilter);
             
-            // Se stiamo paginando, aggiungiamo il token della pagina successiva
             if (loadMore && window._ctgovNextPageToken) {
                 params.set("pageToken", window._ctgovNextPageToken);
             }
@@ -1920,9 +2079,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch(`https://clinicaltrials.gov/api/v2/studies?${params.toString()}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            const studies = data.studies || [];
+            const rawStudies = data.studies || [];
 
-            // Rimuovi lo spinner temporaneo in caso di paginazione
             if (tempSpinner && tempSpinner.parentNode) {
                 tempSpinner.parentNode.removeChild(tempSpinner);
             }
@@ -1932,28 +2090,70 @@ document.addEventListener("DOMContentLoaded", () => {
                 ctgovResults.innerHTML = "";
             }
 
-            if (studies.length === 0 && !loadMore) {
+            if (rawStudies.length === 0 && !loadMore) {
                 ctgovResults.innerHTML = `
                     <div class="p-6 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">
                         <i class="fas fa-search-minus text-2xl mb-2 text-slate-300"></i>
                         <p class="text-sm font-medium">Nessuno studio trovato su ClinicalTrials.gov con questi filtri.</p>
-                        <p class="text-xs text-slate-400 mt-1">Prova a cambiare i filtri o ad allargare la ricerca deselezionando alcuni parametri.</p>
+                        <p class="text-xs text-slate-400 mt-1">Prova a deselezionare alcuni tag in alto per allargare la ricerca.</p>
                     </div>`;
                 return;
             }
 
-            // Mostra il numero dei risultati trovati solo sulla prima pagina
+            // Analizza e ordina gli studi in 4 gruppi gerarchici
+            const enabledParams = window._ctgovEnabledParams || {};
+            const italyComplete = [];
+            const italyPartial  = [];
+            const intlComplete  = [];
+            const intlPartial   = [];
+
+            rawStudies.forEach(s => {
+                const analysis = analyzeCtgovStudy(s, patientData, enabledParams);
+                s._analysis = analysis;
+                if (analysis.hasItalySite) {
+                    if (analysis.isCompleteMatch) italyComplete.push(s);
+                    else italyPartial.push(s);
+                } else {
+                    if (analysis.isCompleteMatch) intlComplete.push(s);
+                    else intlPartial.push(s);
+                }
+            });
+
+            const groups = [
+                { title: "🇮🇹 Studi con Centri in Italia — Corrispondenza Completa", subtitle: "Soddisfano tutti i criteri specificati", items: italyComplete, badgeBg: "bg-emerald-100 text-emerald-900 border-emerald-300" },
+                { title: "🇮🇹 Studi con Centri in Italia — Criteri Parziali / Da Verificare", subtitle: "Centri italiani presenti; alcuni sottocriteri richiedono verifica manuale", items: italyPartial, badgeBg: "bg-amber-100 text-amber-900 border-amber-300" },
+                { title: "🌍 Studi Internazionali — Corrispondenza Completa", subtitle: "Studi esteri che soddisfano tutti i criteri", items: intlComplete, badgeBg: "bg-blue-100 text-blue-900 border-blue-300" },
+                { title: "🌐 Studi Internazionali — Criteri Parziali / Da Verificare", subtitle: "Studi esteri con requisiti da verificare nel protocollo", items: intlPartial, badgeBg: "bg-slate-100 text-slate-800 border-slate-300" },
+            ];
+
+            let countTotal = rawStudies.length;
             if (!loadMore) {
-                const header = document.createElement("p");
-                header.className = "text-xs text-slate-500 mb-2";
-                header.textContent = `${studies.length}${data.nextPageToken ? '+' : ''} studi trovati su ClinicalTrials.gov`;
+                const header = document.createElement("div");
+                header.className = "mb-4 flex items-center justify-between";
+                header.innerHTML = `<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">${countTotal}${data.nextPageToken ? '+' : ''} studi recuperati da ClinicalTrials.gov (raggruppati per priorità)</span>`;
                 ctgovResults.appendChild(header);
             }
 
-            // Aggiungi le card dei risultati
-            studies.forEach(s => ctgovResults.appendChild(createCtgovCard(s, patientData)));
+            groups.forEach(g => {
+                if (g.items.length === 0) return;
+                const groupSection = document.createElement("div");
+                groupSection.className = "mb-6 space-y-3";
+                groupSection.innerHTML = `
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">${g.title}</h3>
+                            <p class="text-[11px] text-slate-500">${g.subtitle}</p>
+                        </div>
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${g.badgeBg}">${g.items.length} ${g.items.length === 1 ? 'studio' : 'studi'}</span>
+                    </div>
+                `;
+                const container = document.createElement("div");
+                container.className = "space-y-4 mt-2";
+                g.items.forEach(s => container.appendChild(createCtgovCard(s, patientData, s._analysis)));
+                groupSection.appendChild(container);
+                ctgovResults.appendChild(groupSection);
+            });
 
-            // Memorizza e gestisci il token per la pagina successiva
             if (data.nextPageToken) {
                 window._ctgovNextPageToken = data.nextPageToken;
                 if (loadMoreContainer) loadMoreContainer.classList.remove("hidden");
@@ -2001,11 +2201,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     .forEach(l => l.classList.remove("active"));
             label.classList.add("active");
             
-            // Trova e seleziona il radio button interno
             const radio = label.querySelector("input[type='radio']");
             if (radio) {
                 radio.checked = true;
-                // Riesegui la ricerca per aggiornare con i nuovi filtri
                 runCtgovSearch(false);
             }
         });
