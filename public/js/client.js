@@ -1565,17 +1565,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // Mostra la sezione CT.gov e memorizza i dati del paziente
             window._ctgovPatientData = patientData;
             window._ctgovEnabledParams = {
-                area: true,
-                setting: true,
-                line: patientData.treatmentLine !== null && patientData.treatmentLine !== undefined,
-                specific: !!patientData.specificClinicalAreas,
-                further: {}
+                area: true,        // Selezionato di default
+                specific: !!patientData.specificClinicalAreas, // Selezionato di default se presente
+                setting: true,     // Selezionato di default
+                line: false,       // Deselezionato di default (selezionabile a scelta del medico)
+                further: {}        // Tutti deselezionati di default (selezionabili a scelta del medico)
             };
-            if (patientData.furtherSpecifics) {
-                Object.keys(patientData.furtherSpecifics).forEach(k => {
-                    window._ctgovEnabledParams.further[k] = true;
-                });
-            }
 
             const ctgovSection = document.getElementById("ctgovSection");
             if (ctgovSection) {
@@ -1734,6 +1729,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return btn;
         };
 
+        // 1. Area Clinica (Default: ATTIVA)
         if (data.clinicalAreas) {
             container.appendChild(createPill("🏢 Area:", data.clinicalAreas, enabled.area !== false, () => {
                 enabled.area = !enabled.area;
@@ -1741,20 +1737,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 runCtgovSearch(false);
             }));
         }
-        if (data.treatmentSetting) {
-            container.appendChild(createPill("⚙️ Setting:", data.treatmentSetting, enabled.setting !== false, () => {
-                enabled.setting = !enabled.setting;
-                renderCtgovActivePills();
-                runCtgovSearch(false);
-            }));
-        }
-        if (data.treatmentLine !== null && data.treatmentLine !== undefined) {
-            container.appendChild(createPill("🔢 Linea:", `${data.treatmentLine}ª linea`, enabled.line !== false, () => {
-                enabled.line = !enabled.line;
-                renderCtgovActivePills();
-                runCtgovSearch(false);
-            }));
-        }
+
+        // 2. Specifica Area Clinica / Sottotipo (Default: ATTIVA)
         if (data.specificClinicalAreas) {
             container.appendChild(createPill("🧬 Sottotipo:", data.specificClinicalAreas, enabled.specific !== false, () => {
                 enabled.specific = !enabled.specific;
@@ -1762,21 +1746,60 @@ document.addEventListener("DOMContentLoaded", () => {
                 runCtgovSearch(false);
             }));
         }
-        if (data.furtherSpecifics) {
-            Object.entries(data.furtherSpecifics).forEach(([k, v]) => {
-                let text = k;
-                if (k === "PDL1" || (v && typeof v === "object")) text = formatPDL1Value(v);
-                else if (typeof v === "number") text = `${k}: ${v}`;
 
-                const isEnabled = enabled.further ? enabled.further[k] !== false : true;
-                container.appendChild(createPill("🧪 Specificazione:", text, isEnabled, () => {
-                    if (!enabled.further) enabled.further = {};
-                    enabled.further[k] = !isEnabled;
-                    renderCtgovActivePills();
-                    runCtgovSearch(false);
-                }));
+        // 3. Setting del Trattamento (Default: ATTIVA)
+        if (data.treatmentSetting) {
+            container.appendChild(createPill("⚙️ Setting:", data.treatmentSetting, enabled.setting !== false, () => {
+                enabled.setting = !enabled.setting;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        }
+
+        // 4. Linea di trattamento del paziente (Default: DESELEZIONATA)
+        if (data.treatmentLine !== null && data.treatmentLine !== undefined) {
+            container.appendChild(createPill("🔢 Linea:", `${data.treatmentLine}ª linea`, enabled.line === true, () => {
+                enabled.line = !enabled.line;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        }
+
+        // 5. TUTTE le Specifiche Ulteriori dell'area specifica selezionata (es. ADK, SCC, PDL1, EGFR, ALK, KRAS, ROS1, etc.)
+        const areaOptions = furtherSpecificsMap[data.specificClinicalAreas] || [];
+        const optionMap = new Map();
+        areaOptions.forEach(opt => optionMap.set(opt.id, opt));
+
+        // Includi anche eventuali opzioni aggiuntive presenti nei dati del paziente
+        if (data.furtherSpecifics) {
+            Object.keys(data.furtherSpecifics).forEach(k => {
+                if (!optionMap.has(k)) {
+                    optionMap.set(k, { id: k, label: k });
+                }
             });
         }
+
+        optionMap.forEach((opt, key) => {
+            const patientVal = data.furtherSpecifics ? data.furtherSpecifics[key] : undefined;
+            let labelText = opt.label || key;
+            if (patientVal !== undefined) {
+                if (key === "PDL1" || (patientVal && typeof patientVal === "object")) {
+                    labelText = formatPDL1Value(patientVal);
+                } else if (typeof patientVal === "number") {
+                    labelText = `${key}: ${patientVal}`;
+                }
+            }
+
+            // Default: DESELEZIONATE (false) tranne se il medico le clicca manualmente per attivarle
+            const isEnabled = enabled.further ? enabled.further[key] === true : false;
+
+            container.appendChild(createPill("🧪 Specificazione:", labelText, isEnabled, () => {
+                if (!enabled.further) enabled.further = {};
+                enabled.further[key] = !isEnabled;
+                renderCtgovActivePills();
+                runCtgovSearch(false);
+            }));
+        });
     }
 
     /** Costruisce i parametri query per l'API CT.gov v2 incorporando tutte le informazioni paziente e sinonimi */
