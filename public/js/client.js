@@ -1616,82 +1616,103 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const CTGOV_LINE_MAP = {
-        1: '"first-line" OR "1st-line" OR "1L" OR "front-line" OR "untreated" OR "first line"',
-        2: '"second-line" OR "2nd-line" OR "2L" OR "previously treated" OR "second line"',
-        3: '"third-line" OR "3rd-line" OR "3L" OR "heavily pretreated" OR "third line"',
+        1: '"first-line" OR "first line" OR "1st-line" OR "1st line" OR "1-line" OR "1L" OR "front-line" OR "front line" OR "previously untreated" OR "untreated" OR "treatment-naive" OR "naive"',
+        2: '"second-line" OR "second line" OR "2nd-line" OR "2nd line" OR "2-line" OR "2L" OR "previously treated" OR "prior therapy" OR "relapsed" OR "refractory"',
+        3: '"third-line" OR "third line" OR "3rd-line" OR "3rd line" OR "3-line" OR "3L" OR "heavily pretreated"',
     };
 
     const CTGOV_SPECIFIC_MAP = {
         "Luminali": '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent" OR "HR+/HER2-" OR "HR+/HER2" OR "HR+ / HER2-"',
-        "TNBC": '"TNBC" OR "triple negative" OR "triple-negative"',
-        "HER2 positive": '"HER2 positive" OR "HER2-positive" OR "HER2+" OR "HER2 amplified"',
-        "Mesotelioma": '"mesothelioma"',
-        "NSCLC": '"NSCLC" OR "non-small cell lung cancer"',
-        "SCLC": '"SCLC" OR "small cell lung cancer"',
-        "Esofago": '"esophagus" OR "esophageal"',
-        "Stomaco": '"gastric" OR "stomach"',
+        "TNBC": '"TNBC" OR "triple negative" OR "triple-negative" OR "triple negative breast"',
+        "HER2 positive": '"HER2 positive" OR "HER2-positive" OR "HER-2 positive" OR "HER-2-positive" OR "HER2+" OR "HER2 amplified" OR "HER2-overexpressing"',
+        "Mesotelioma": '"mesothelioma" OR "pleural mesothelioma"',
+        "NSCLC": '"NSCLC" OR "non-small cell lung cancer" OR "non small cell lung cancer" OR "non-small-cell lung"',
+        "SCLC": '"SCLC" OR "small cell lung cancer" OR "small-cell lung cancer"',
+        "Esofago": '"esophagus" OR "esophageal" OR "esophageal cancer"',
+        "Stomaco": '"gastric" OR "stomach" OR "gastric cancer"',
         "Colon": '"colon" OR "colonic" OR "colorectal"',
         "Retto": '"rectum" OR "rectal" OR "colorectal"',
         "Ano": '"anal" OR "anus"',
         "Vie biliari": '"biliary" OR "cholangiocarcinoma" OR "gallbladder"',
-        "Pancreas": '"pancreas" OR "pancreatic"',
+        "Pancreas": '"pancreas" OR "pancreatic" OR "pancreatic ductal adenocarcinoma"',
         "Fegato": '"liver" OR "hepatocellular" OR "HCC"',
         "Endometrio": '"endometrial" OR "endometrium"',
         "Ovaio": '"ovarian" OR "ovary"',
         "Cervice": '"cervical" OR "cervix"',
         "Vulva": '"vulvar" OR "vulva"',
         "Altri": "",
-        "Prostata": '"prostate" OR "prostatic"',
-        "Rene": '"renal" OR "kidney"',
-        "Vescica": '"bladder" OR "urothelial"',
+        "Prostata": '"prostate" OR "prostatic" OR "prostate cancer"',
+        "Rene": '"renal" OR "kidney" OR "renal cell carcinoma" OR "RCC"',
+        "Vescica": '"bladder" OR "urothelial" OR "urothelial carcinoma"',
         "Altre vie Urinarie": '"urinary" OR "urothelial"',
-        "Melanoma": '"melanoma"',
-        "SCC": '"squamous cell skin" OR "cutaneous squamous cell"',
-        "Basalioma": '"basal cell skin" OR "basal cell carcinoma"',
+        "Melanoma": '"melanoma" OR "cutaneous melanoma"',
+        "SCC": '"squamous cell skin" OR "cutaneous squamous cell" OR "cSCC"',
+        "Basalioma": '"basal cell skin" OR "basal cell carcinoma" OR "BCC"',
     };
 
     const CTGOV_FURTHER_MAP = {
-        // Polmone / Generali
-        "ADK": '"adenocarcinoma" OR "ADK"',
-        "SCC": '"squamous cell" OR "squamous" OR "SCC"',
-        "PDL1": '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "programmed cell death ligand 1"',
-        "EGFR": '"EGFR" OR "epidermal growth factor receptor"',
-        "ALK": '"ALK" OR "anaplastic lymphoma kinase"',
-        "KRAS": '"KRAS"',
-        "ROS1": '"ROS1"',
-        "BRAF-V600": '"BRAF" OR "V600E" OR "BRAF-V600" OR "BRAF V600"',
-        "RET": '"RET"',
-        "NTRK": '"NTRK"',
-        "HER2": '"HER2" OR "ERBB2"',
-        "MET": '"MET"',
-        "EGFR ex20ins": '"EGFR exon 20" OR "ex20ins" OR "exon 20 insertion"',
+        // Polmone / Istologie & Biomarcatori Generali
+        "ADK": '"adenocarcinoma" OR "adenocarcinomas" OR "ADK" OR "glandular carcinoma"',
+        "SCC": '"squamous" OR "squamous cell" OR "squamous cell carcinoma" OR "SCC" OR "epidermoid" OR "epidermoid carcinoma"',
+        "PDL1": '"PD-L1" OR "PDL1" OR "PD L1" OR "CD274" OR "programmed death-ligand 1" OR "programmed cell death ligand 1" OR "programmed death ligand 1"',
+        "EGFR": '"EGFR" OR "E.G.F.R." OR "ERBB1" OR "ERBB-1" OR "ERBB 1" OR "epidermal growth factor receptor"',
+        "ALK": '"ALK" OR "A.L.K." OR "anaplastic lymphoma kinase" OR "ALK-positive" OR "ALK positive" OR "ALK rearrangement" OR "ALK fusion"',
+        "KRAS": '"KRAS" OR "K-RAS" OR "K RAS" OR "K-ras proto-oncogene"',
+        "ROS1": '"ROS1" OR "ROS-1" OR "ROS 1" OR "ROS proto-oncogene 1"',
+        "BRAF-V600": '"BRAF" OR "B-RAF" OR "B RAF" OR "V600" OR "V600E" OR "V600K" OR "BRAF-V600" OR "BRAF V600" OR "BRAF-V600E"',
+        "RET": '"RET" OR "RET-rearranged" OR "RET rearrangement" OR "RET fusion" OR "RET proto-oncogene"',
+        "NTRK": '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "neurotrophic tyrosine receptor kinase" OR "NTRK fusion"',
+        "HER2": '"HER2" OR "HER-2" OR "HER 2" OR "ERBB2" OR "ERBB-2" OR "ERBB 2" OR "human epidermal growth factor receptor 2" OR "neu"',
+        "MET": '"MET" OR "c-MET" OR "cMET" OR "c-Met" OR "MET exon 14" OR "MET amplification" OR "hepatocyte growth factor receptor"',
+        "EGFR ex20ins": '"EGFR exon 20" OR "EGFR-exon-20" OR "EGFR ex20ins" OR "exon 20 insertion" OR "exon 20 ins" OR "exon 20 ins EGFR"',
 
         // Mesotelioma
-        "Epitelioide": '"epithelioid"',
-        "Bifasico": '"biphasic"',
-        "Sarcomatoide": '"sarcomatoid"',
+        "Epitelioide": '"epithelioid" OR "epithelial mesothelioma" OR "epithelioid mesothelioma"',
+        "Bifasico": '"biphasic" OR "mixed mesothelioma" OR "biphasic mesothelioma"',
+        "Sarcomatoide": '"sarcomatoid" OR "sarcomatous" OR "sarcomatoid mesothelioma"',
 
         // Mammella
-        "Duttale": '"ductal"',
-        "Lobulare": '"lobular"',
-        "ESR1mut": '"ESR1"',
-        "PIK3CAmut": '"PIK3CA"',
-        "AKTmut": '"AKT1" OR "AKT"',
-        "PTENmut": '"PTEN"',
-        "BRCA1/2mut": '"BRCA1" OR "BRCA2" OR "BRCA"',
-        "PALB2": '"PALB2"',
-        "HER2 low": '"HER2 low" OR "HER2-low" OR "HER2 1+" OR "HER2 2+"',
-        "HER2 ultra-low": '"HER2 ultra-low" OR "HER2-ultralow" OR "HER2 ultralow"',
+        "Duttale": '"ductal" OR "ductal carcinoma" OR "infiltrating ductal" OR "invasive ductal" OR "IDC"',
+        "Lobulare": '"lobular" OR "lobular carcinoma" OR "infiltrating lobular" OR "invasive lobular" OR "ILC"',
+        "ESR1mut": '"ESR1" OR "ESR-1" OR "ESR 1" OR "estrogen receptor 1" OR "ESR1 mutation" OR "ESR1 mutated"',
+        "PIK3CAmut": '"PIK3CA" OR "PIK3-CA" OR "PI3K" OR "PI3Kalpha" OR "phosphatidylinositol-4,5-bisphosphate 3-kinase catalytic subunit alpha"',
+        "AKTmut": '"AKT" OR "AKT1" OR "AKT-1" OR "AKT 1" OR "AKT1 E17K" OR "protein kinase B"',
+        "PTENmut": '"PTEN" OR "phosphatase and tensin homolog"',
+        "BRCA1/2mut": '"BRCA" OR "BRCA1" OR "BRCA-1" OR "BRCA 1" OR "BRCA2" OR "BRCA-2" OR "BRCA 2" OR "breast cancer gene" OR "BRCA mutated" OR "BRCA mutation"',
+        "PALB2": '"PALB2" OR "PALB-2" OR "partner and localizer of BRCA2"',
+        "HER2 low": '"HER2 low" OR "HER2-low" OR "HER-2 low" OR "HER-2-low" OR "HER 2 low" OR "HER2 1+" OR "HER2 2+" OR "HER2 1-plus" OR "HER2 2-plus"',
+        "HER2 ultra-low": '"HER2 ultra-low" OR "HER2-ultralow" OR "HER2 ultralow" OR "HER-2 ultra low" OR "HER-2 ultralow" OR "HER-2-ultralow"',
 
         // Testa-Collo
-        "Cavo orale": '"oral cavity" OR "tongue" OR "mouth"',
-        "Orofaringe": '"oropharynx" OR "tonsil"',
-        "Laringe": '"laryngeal" OR "larynx"',
-        "Ipofaringe": '"hypopharynx"',
-        "Nasofaringe": '"nasopharynx" OR "nasopharyngeal"',
-        "Cavità nasali e seni paranasali": '"nasal cavity" OR "paranasal"',
-        "Ghiandole Salivari": '"salivary gland" OR "parotid"',
+        "Cavo orale": '"oral cavity" OR "oral" OR "tongue" OR "mouth" OR "buccal" OR "gingival" OR "lip" OR "floor of mouth"',
+        "Orofaringe": '"oropharynx" OR "oropharyngeal" OR "tonsil" OR "tonsillar" OR "base of tongue" OR "soft palate"',
+        "Laringe": '"larynx" OR "laryngeal" OR "glottic" OR "supraglottic" OR "subglottic"',
+        "Ipofaringe": '"hypopharynx" OR "hypopharyngeal"',
+        "Nasofaringe": '"nasopharynx" OR "nasopharyngeal" OR "rhinopharynx" OR "rhinopharyngeal"',
+        "Cavità nasali e seni paranasali": '"nasal cavity" OR "paranasal" OR "maxillary sinus" OR "ethmoid" OR "sphenoid" OR "frontal sinus"',
+        "Ghiandole Salivari": '"salivary gland" OR "salivary" OR "parotid" OR "submandibular" OR "sublingual"',
     };
+
+    /** Restituisce i sinonimi ampliati per una chiave, con fallback generatore dinamico per chiavi future */
+    function getExpandedSynonyms(key, map) {
+        if (map && map[key]) return map[key];
+
+        // Generatore dinamico per chiavi non ancora mappate a mano:
+        const terms = new Set();
+        const cleanKey = key.replace(/mut$/i, "").replace(/pos$/i, "").trim();
+        terms.add(`"${key}"`);
+        terms.add(`"${cleanKey}"`);
+
+        if (cleanKey.includes("-")) {
+            terms.add(`"${cleanKey.replace(/-/g, " ")}"`);
+        } else if (cleanKey.includes(" ")) {
+            terms.add(`"${cleanKey.replace(/ /g, "-")}"`);
+        }
+        terms.add(`"${cleanKey} mutation"`);
+        terms.add(`"${cleanKey} mutated"`);
+
+        return Array.from(terms).join(" OR ");
+    }
 
     /** Genera i tag pillola interattivi e rimovibili per la ricerca CT.gov */
     function renderCtgovActivePills() {
@@ -1791,15 +1812,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // 5. Specifiche Ulteriori (PDL1, mutazioni, istologie)
+        // 5. Specifiche Ulteriori (PDL1, mutazioni, istologie) con generatore sinonimi dinamico
         if (enabled.further && typeof enabled.further === "object" && patientData.furtherSpecifics) {
             Object.entries(patientData.furtherSpecifics).forEach(([key, val]) => {
                 if (enabled.further[key] !== false) {
-                    const syn = CTGOV_FURTHER_MAP[key];
+                    const syn = getExpandedSynonyms(key, CTGOV_FURTHER_MAP);
                     if (syn) {
                         queryParts.push(`(${syn})`);
-                    } else {
-                        queryParts.push(`("${key}")`);
                     }
                 }
             });
