@@ -2052,17 +2052,39 @@ document.addEventListener("DOMContentLoaded", () => {
             : study.status === "in_attivazione"
             ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">In attivazione</span>`
             : "";
+
+        let furtherSpecificsBadge = "";
+        const fs = study.further_specifics;
+        if (fs && typeof fs === "object" && Object.keys(fs).length > 0) {
+            const parts = Object.entries(fs).map(([k, v]) => {
+                if (v === true) return k;
+                if (k === "PDL1" || (v && typeof v === "object")) return formatPDL1Value(v);
+                if (typeof v === "number") return `${k}: ${v}`;
+                return k;
+            });
+            if (parts.length > 0) {
+                furtherSpecificsBadge = `
+                    <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-100/90 text-purple-900 border border-purple-200/80 shadow-xs">
+                            <span class="text-xs">🧬</span> ${parts.join(" · ")}
+                        </span>
+                    </div>`;
+            }
+        }
+
         let content = `
             <div>
                 <div class="mb-1">${codeBadge}${statusBadge}<h4 class="inline font-bold text-dark-gray ml-1">${safeTitle}</h4></div>
-                <p class="text-sm text-gray-600">${safeSubtitle}</p>
+                ${safeSubtitle ? `<p class="text-sm text-gray-600">${safeSubtitle}</p>` : ""}
+                ${furtherSpecificsBadge}
             </div>`;
         if (page === "trial") {
             content = `
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-start">
                     <div>
                         <div class="mb-1">${codeBadge}${statusBadge}<h4 class="inline font-bold text-dark-gray ml-1">${safeTitle}</h4></div>
-                        <p class="text-sm text-gray-600">${safeSubtitle}</p>
+                        ${safeSubtitle ? `<p class="text-sm text-gray-600">${safeSubtitle}</p>` : ""}
+                        ${furtherSpecificsBadge}
                     </div>
                     <button class="remove-study-btn text-red-400 hover:text-red-600 transition-colors ml-3 flex-shrink-0" data-id="${study.id}"><i class="fas fa-trash-alt"></i></button>
                 </div>`;
