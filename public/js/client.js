@@ -2015,41 +2015,29 @@ document.addEventListener("DOMContentLoaded", () => {
             }));
         }
 
-        // 5. TUTTE le Specifiche Ulteriori dell'area specifica selezionata (es. ADK, SCC, PDL1, EGFR, ALK, KRAS, ROS1, etc.)
-        const areaOptions = furtherSpecificsMap[data.specificClinicalAreas] || [];
-        const optionMap = new Map();
-        areaOptions.forEach(opt => optionMap.set(opt.id, opt));
+        // 5. Mostra SOLO le Specifiche Ulteriori effettivamente inserite/selezionate per questo specifico paziente
+        if (data.furtherSpecifics && typeof data.furtherSpecifics === "object") {
+            Object.entries(data.furtherSpecifics).forEach(([key, patientVal]) => {
+                if (patientVal === undefined || patientVal === null || patientVal === "") return;
 
-        // Includi anche eventuali opzioni aggiuntive presenti nei dati del paziente
-        if (data.furtherSpecifics) {
-            Object.keys(data.furtherSpecifics).forEach(k => {
-                if (!optionMap.has(k)) {
-                    optionMap.set(k, { id: k, label: k });
-                }
-            });
-        }
-
-        optionMap.forEach((opt, key) => {
-            const patientVal = data.furtherSpecifics ? data.furtherSpecifics[key] : undefined;
-            let labelText = opt.label || key;
-            if (patientVal !== undefined) {
+                let labelText = key;
                 if (key === "PDL1" || (patientVal && typeof patientVal === "object")) {
                     labelText = formatPDL1Value(patientVal);
                 } else if (typeof patientVal === "number") {
                     labelText = `${key}: ${patientVal}`;
                 }
-            }
 
-            // Default: DESELEZIONATE (false) tranne se il medico le clicca manualmente per attivarle
-            const isEnabled = enabled.further ? enabled.further[key] === true : false;
+                // Default: DESELEZIONATE (false) tranne se il medico le clicca manualmente per attivarle
+                const isEnabled = enabled.further ? enabled.further[key] === true : false;
 
-            container.appendChild(createPill("🧪", labelText, isEnabled, () => {
-                if (!enabled.further) enabled.further = {};
-                enabled.further[key] = !isEnabled;
-                renderCtgovActivePills();
-                runCtgovSearch(false);
-            }));
-        });
+                container.appendChild(createPill("🧪", labelText, isEnabled, () => {
+                    if (!enabled.further) enabled.further = {};
+                    enabled.further[key] = !isEnabled;
+                    renderCtgovActivePills();
+                    runCtgovSearch(false);
+                }));
+            });
+        }
     }
 
     /** Costruisce i parametri query per l'API CT.gov v2 incorporando tutte le informazioni paziente e sinonimi */
