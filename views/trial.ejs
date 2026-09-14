@@ -57,6 +57,14 @@
                 class="mt-1 p-2 w-full border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none"></select>
       </div>
 
+      <!-- SPECIFICHE ULTERIORI -->
+      <div id="studyFurtherSpecificsContainer" class="hidden">
+        <label class="block text-sm font-medium text-slate-700 mb-1">
+          Specifiche Ulteriori Richieste dallo Studio <span class="text-xs text-slate-400 font-normal">(Opzionali / Multi-selezione)</span>
+        </label>
+        <div id="studyFurtherSpecificsList" class="flex flex-wrap gap-2 p-3 border border-slate-200 rounded-lg bg-slate-50/50 min-h-[42px]"></div>
+      </div>
+
       <!-- SETTING DEL TRATTAMENTO -->
       <div>
         <label for="studyTreatmentSetting" class="block text-sm font-medium text-slate-700">Setting del Trattamento</label>
@@ -315,6 +323,10 @@
           <div id="modalArmsContainer" class="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2.5 py-1 border border-slate-100">
             <i class="fas fa-code-branch text-emerald-600 text-[10px]"></i>
             <span class="font-semibold text-slate-700" id="modalArmsText">—</span>
+          </div>
+          <div id="modalFurtherSpecificsContainer" class="hidden flex items-center gap-1.5 bg-purple-50 rounded-lg px-2.5 py-1 border border-purple-100">
+            <i class="fas fa-dna text-purple-600 text-[10px]"></i>
+            <span class="font-semibold text-purple-900" id="modalFurtherSpecificsText">—</span>
           </div>
         </div>
         <button id="modalEditStudyBtn"

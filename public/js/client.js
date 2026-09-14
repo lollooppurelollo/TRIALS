@@ -32,6 +32,167 @@ document.addEventListener("DOMContentLoaded", () => {
         ],
     };
 
+    // ---- Mappa delle Specifiche Ulteriori per Specifica Area Clinica ----
+    // Ogni chiave è la specifica area clinica; il valore è un array di opzioni.
+    // Le opzioni PDL1 usano type:"number" con range 0-100.
+    const BASE_MAMMELLA = [
+        { id: "Duttale", label: "Duttale" },
+        { id: "Lobulare", label: "Lobulare" },
+        { id: "ESR1mut", label: "ESR1mut" },
+        { id: "PIK3CAmut", label: "PIK3CAmut" },
+        { id: "AKTmut", label: "AKTmut" },
+        { id: "PTENmut", label: "PTENmut" },
+        { id: "BRCA1/2mut", label: "BRCA1/2mut" },
+        { id: "PALB2", label: "PALB2" },
+    ];
+    const HER2_LOW_OPTIONS = [
+        { id: "HER2 low", label: "HER2 low" },
+        { id: "HER2 ultra-low", label: "HER2 ultra-low" },
+    ];
+
+    const furtherSpecificsMap = {
+        // Mammella
+        "HER2 positive": [...BASE_MAMMELLA],
+        "Luminali": [...BASE_MAMMELLA, ...HER2_LOW_OPTIONS],
+        "TNBC": [...BASE_MAMMELLA, ...HER2_LOW_OPTIONS],
+        // Polmone
+        "NSCLC": [
+            { id: "ADK", label: "ADK (Adenocarcinoma)" },
+            { id: "SCC", label: "SCC (Squamoso)" },
+            { id: "PDL1", label: "PDL1 (%)", type: "number", min: 0, max: 100, placeholder: "0-100%" },
+            { id: "EGFR", label: "EGFR" },
+            { id: "ALK", label: "ALK" },
+            { id: "KRAS", label: "KRAS" },
+            { id: "ROS1", label: "ROS1" },
+            { id: "BRAF-V600", label: "BRAF-V600" },
+            { id: "RET", label: "RET" },
+            { id: "NTRK", label: "NTRK" },
+            { id: "HER2", label: "HER2" },
+            { id: "MET", label: "MET" },
+            { id: "EGFR ex20ins", label: "EGFR ex20ins" },
+        ],
+        // SCLC: nessuna specifica ulteriore
+        "Mesotelioma": [
+            { id: "Epitelioide", label: "Epitelioide" },
+            { id: "Bifasico", label: "Bifasico" },
+            { id: "Sarcomatoide", label: "Sarcomatoide" },
+        ],
+    };
+
+    /**
+     * Costruisce i checkbox/numeric input di "Specifiche Ulteriori"
+     * nel container passato, in base alle specifiche aree selezionate.
+     * savedValues: oggetto {id: true} per checkbox, {id: number} per numerici
+     */
+    function renderFurtherSpecifics(containerEl, selectedSpecificAreas, savedValues) {
+        if (!containerEl) return;
+        containerEl.innerHTML = "";
+
+        // Raccoglie tutte le opzioni uniche per le aree selezionate
+        const seen = new Set();
+        const allOptions = [];
+        (Array.isArray(selectedSpecificAreas) ? selectedSpecificAreas : [selectedSpecificAreas])
+            .forEach(area => {
+                const opts = furtherSpecificsMap[area] || [];
+                opts.forEach(opt => {
+                    if (!seen.has(opt.id)) {
+                        seen.add(opt.id);
+                        allOptions.push(opt);
+                    }
+                });
+            });
+
+        if (allOptions.length === 0) return;
+
+        allOptions.forEach(opt => {
+            if (opt.type === "number") {
+                // Campo numerico (es. PDL1)
+                const wrapper = document.createElement("div");
+                wrapper.className = "flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-[11px]";
+                const savedNum = savedValues && savedValues[opt.id] !== undefined ? savedValues[opt.id] : "";
+                wrapper.innerHTML = `
+                    <label class="font-semibold text-slate-700 whitespace-nowrap">${opt.label}</label>
+                    <input type="number"
+                           class="further-specific-number w-16 p-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-400"
+                           data-id="${opt.id}"
+                           min="${opt.min}" max="${opt.max}"
+                           placeholder="${opt.placeholder || ''}"
+                           value="${savedNum !== "" ? savedNum : ""}">
+                `;
+                containerEl.appendChild(wrapper);
+            } else {
+                // Checkbox
+                const isChecked = savedValues && savedValues[opt.id] === true;
+                const wrapper = document.createElement("label");
+                wrapper.className = `flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-lg border text-[11px] font-semibold select-none transition-colors ${isChecked ? "bg-purple-100 border-purple-300 text-purple-900" : "bg-white border-slate-200 text-slate-600 hover:border-purple-200 hover:bg-purple-50"}`;
+                wrapper.innerHTML = `
+                    <input type="checkbox" class="further-specific-cb hidden" data-id="${opt.id}" ${isChecked ? "checked" : ""}>
+                    <span>${opt.label}</span>
+                `;
+                // Toggle visual state on click
+                wrapper.addEventListener("click", () => {
+                    const cb = wrapper.querySelector("input[type=checkbox]");
+                    // toggling happens after click
+                    setTimeout(() => {
+                        if (cb.checked) {
+                            wrapper.className = "flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-lg border text-[11px] font-semibold select-none transition-colors bg-purple-100 border-purple-300 text-purple-900";
+                        } else {
+                            wrapper.className = "flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-lg border text-[11px] font-semibold select-none transition-colors bg-white border-slate-200 text-slate-600 hover:border-purple-200 hover:bg-purple-50";
+                        }
+                    }, 0);
+                });
+                containerEl.appendChild(wrapper);
+            }
+        });
+    }
+
+    /** Legge i valori delle Specifiche Ulteriori da un container */
+    function collectFurtherSpecifics(containerEl) {
+        const result = {};
+        if (!containerEl) return result;
+        containerEl.querySelectorAll(".further-specific-cb").forEach(cb => {
+            if (cb.checked) result[cb.dataset.id] = true;
+        });
+        containerEl.querySelectorAll(".further-specific-number").forEach(inp => {
+            const v = inp.value.trim();
+            if (v !== "") result[inp.dataset.id] = parseFloat(v);
+        });
+        return result;
+    }
+
+    /** Mostra/nasconde e popola il container specifiche ulteriori per il form Trial */
+    function updateStudyFurtherSpecifics(selectedSpecificAreas, savedValues) {
+        const container = document.getElementById("studyFurtherSpecificsContainer");
+        const list = document.getElementById("studyFurtherSpecificsList");
+        if (!container || !list) return;
+        const hasFurther = (Array.isArray(selectedSpecificAreas) ? selectedSpecificAreas : [selectedSpecificAreas])
+            .some(a => furtherSpecificsMap[a] && furtherSpecificsMap[a].length > 0);
+        if (hasFurther) {
+            container.classList.remove("hidden");
+            renderFurtherSpecifics(list, selectedSpecificAreas, savedValues || {});
+        } else {
+            container.classList.add("hidden");
+            list.innerHTML = "";
+        }
+    }
+
+    /** Mostra/nasconde e popola il container specifiche ulteriori per il form Paziente */
+    function updatePatientFurtherSpecifics(selectedSpecificArea, savedValues) {
+        const container = document.getElementById("patientFurtherSpecificsContainer");
+        const list = document.getElementById("patientFurtherSpecificsList");
+        if (!container || !list) return;
+        const areas = selectedSpecificArea ? [selectedSpecificArea] : [];
+        const hasFurther = areas.some(a => furtherSpecificsMap[a] && furtherSpecificsMap[a].length > 0);
+        if (hasFurther) {
+            container.classList.remove("hidden");
+            renderFurtherSpecifics(list, areas, savedValues || {});
+        } else {
+            container.classList.add("hidden");
+            list.innerHTML = "";
+        }
+    }
+
+
     // ----- Selettori per la Pagina Paziente -----
     const searchForm = document.getElementById("searchForm");
     const clinicalAreaSelect = document.getElementById("clinicalArea");
@@ -586,6 +747,15 @@ document.addEventListener("DOMContentLoaded", () => {
         window._importedStudyEvents = Array.isArray(study.events) ? study.events : [];
         window._importedTotalWeeks = study.total_weeks || null;
         window._importedCycleWeeks = study.cycle_weeks || null;
+
+        // Specifiche Ulteriori: pre-popola in base a specific_clinical_areas e further_specifics salvati
+        {
+            const specificAreas = Array.isArray(study.specific_clinical_areas)
+                ? study.specific_clinical_areas
+                : (study.specific_clinical_areas ? [study.specific_clinical_areas] : []);
+            const savedFS = study.further_specifics || {};
+            updateStudyFurtherSpecifics(specificAreas, savedFS);
+        }
     }
 
     const areaPrefixes = {
@@ -721,6 +891,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 specificClinicalAreasSelect,
                 specificClinicalAreaContainer,
             );
+            // Resetta specifiche ulteriori paziente quando cambia area
+            updatePatientFurtherSpecifics(null, {});
+        });
+    }
+    // Aggiorna specifiche ulteriori paziente quando cambia specifica area clinica
+    if (specificClinicalAreasSelect) {
+        specificClinicalAreasSelect.addEventListener("change", (e) => {
+            updatePatientFurtherSpecifics(e.target.value, {});
         });
     }
     if (studyClinicalAreasSelect) {
@@ -739,6 +917,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     // Rigenera il codice anche quando cambia la Specifica Area Clinica
+    // E mostra/nasconde le Specifiche Ulteriori
     if (studySpecificClinicalAreasSelect) {
         studySpecificClinicalAreasSelect.addEventListener("change", () => {
             const selectedAreas = studyClinicalAreasSelect
@@ -746,6 +925,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 : [];
             const selectedSpecific = Array.from(studySpecificClinicalAreasSelect.selectedOptions).map((o) => o.value);
             autoGenerateStudyCode(selectedAreas, selectedSpecific);
+            // Aggiorna specifiche ulteriori basandosi sulla specifica area clinica
+            updateStudyFurtherSpecifics(selectedSpecific, {});
         });
     }
     if (studyCodeInput) {
@@ -1099,6 +1280,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   subtitle: studySubtitleInput.value,
                   clinical_areas: selectedClinicalAreas,
                   specific_clinical_areas: selectedSpecificClinicalAreas,
+                  further_specifics: collectFurtherSpecifics(document.getElementById("studyFurtherSpecificsList")),
                   treatment_setting: studyTreatmentSettingSelect.value,
                   min_treatment_line:
                     studyTreatmentSettingSelect.value === "Metastatico"
@@ -1185,6 +1367,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 treatmentLine: patientTreatmentLineInput.value
                     ? parseInt(patientTreatmentLineInput.value)
                     : null,
+                furtherSpecifics: collectFurtherSpecifics(document.getElementById("patientFurtherSpecificsList")),
             };
             const response = await fetch("/api/studies");
             const studies = await response.json();
@@ -1211,12 +1394,35 @@ document.addEventListener("DOMContentLoaded", () => {
                         patientData.treatmentLine >= minLine &&
                         patientData.treatmentLine <= maxLine;
                 }
+                // Specifiche Ulteriori: se lo studio richiede specifiche ulteriori,
+                // il paziente deve averle selezionate.
+                // Se lo studio non ne ha (further_specifics vuoto/null) → nessun filtro aggiuntivo.
+                let furtherSpecificsMatch = true;
+                const studyFS = study.further_specifics;
+                if (studyFS && typeof studyFS === "object" && Object.keys(studyFS).length > 0) {
+                    // Ogni specifica richiesta dallo studio deve essere presente nel paziente
+                    furtherSpecificsMatch = Object.keys(studyFS).every(key => {
+                        const studyVal = studyFS[key];
+                        const patientVal = patientData.furtherSpecifics[key];
+                        if (studyVal === true) {
+                            // Booleano: il paziente deve averlo selezionato
+                            return patientVal === true;
+                        }
+                        if (typeof studyVal === "number") {
+                            // Numerico (es. PDL1 ≥ soglia dello studio)
+                            return typeof patientVal === "number" && patientVal >= studyVal;
+                        }
+                        return true;
+                    });
+                }
                 return (
                     clinicalAreaMatch &&
                     specificClinicalAreaMatch &&
                     treatmentSettingMatch &&
-                    treatmentLineMatch
+                    treatmentLineMatch &&
+                    furtherSpecificsMatch
                 );
+
             });
             renderSearchResults(filteredStudies, "patient");
             // Mostra la sezione CT.gov e memorizza i dati del paziente
@@ -1963,6 +2169,24 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 if (modalArmsContainer) modalArmsContainer.classList.remove("hidden");
                 modalArmsText.textContent = "1 Braccio";
+            }
+        }
+
+        // Specifiche Ulteriori — pill viola se lo studio le ha richieste
+        {
+            const fsContainer = document.getElementById("modalFurtherSpecificsContainer");
+            const fsText = document.getElementById("modalFurtherSpecificsText");
+            const fs = study.further_specifics;
+            if (fsContainer && fsText && fs && typeof fs === "object" && Object.keys(fs).length > 0) {
+                const parts = Object.entries(fs).map(([k, v]) => {
+                    if (v === true) return k;
+                    if (typeof v === "number") return `${k}: ${v}%`;
+                    return k;
+                });
+                fsText.textContent = parts.join(" · ");
+                fsContainer.classList.remove("hidden");
+            } else if (fsContainer) {
+                fsContainer.classList.add("hidden");
             }
         }
 

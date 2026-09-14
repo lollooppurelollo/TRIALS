@@ -60,6 +60,10 @@ async function initDbSchema() {
     `);
     await pool.query(`
       ALTER TABLE studies 
+      ADD COLUMN IF NOT EXISTS further_specifics JSONB DEFAULT '{}'::jsonb;
+    `);
+    await pool.query(`
+      ALTER TABLE studies 
       ALTER COLUMN status DROP DEFAULT;
     `);
     console.log("✅ Schema database verificato con successo.");
@@ -334,7 +338,7 @@ app.post("/api/studies", editAuthLimiter, requireEditAuth, async (req, res) => {
     };
     const columns = Object.keys(fullData);
     const values = columns.map((c) =>
-      (c === "criteria" || c === "extra_files") ? JSON.stringify(fullData[c] ?? []) : fullData[c],
+      (c === "criteria" || c === "extra_files" || c === "further_specifics") ? JSON.stringify(fullData[c] ?? (c === "further_specifics" ? {} : [])) : fullData[c],
     );
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
 
@@ -564,7 +568,7 @@ app.put("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res) =
     await client.query("BEGIN");
 
     // 3) update
-    const jsonCols = ["criteria", "extra_files"];
+    const jsonCols = ["criteria", "extra_files", "further_specifics"];
     const columns = Object.keys(studyData);
     if (columns.length > 0) {
       const setClause = columns
