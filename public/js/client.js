@@ -433,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const defaultCodes = ["A", "B", "C", "D"];
 
         for (let i = 0; i < count; i++) {
-          const code = defaultCodes[i] || `ARM${i+1}`;
+          const code = defaultCodes[i] || String.fromCharCode(65 + i) || `ARM${i+1}`;
           const labelVal = existingLabels[i] || "";
 
           const div = document.createElement("div");
@@ -1141,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    /** Inizializza il selettore visivo per Numero Bracci */
+    /** Inizializza il selettore visivo per Numero Bracci con opzione Inserimento Manuale */
     function renderVisualArmsCountSelector(selectEl, gridContainerEl) {
         if (!selectEl || !gridContainerEl) return;
         gridContainerEl.innerHTML = "";
@@ -1150,16 +1150,22 @@ document.addEventListener("DOMContentLoaded", () => {
             { val: "1", title: "1 Braccio", desc: "Studio a braccio singolo" },
             { val: "2", title: "2 Bracci", desc: "Studio a 2 bracci" },
             { val: "3", title: "3 Bracci", desc: "Studio a 3 bracci" },
-            { val: "4", title: "4 Bracci", desc: "Studio a 4 bracci" },
+            { val: "manual", title: "✏️ Manuale", desc: "Inserisci numero a scelta" },
         ];
 
+        const currentCount = parseInt(selectEl.value, 10) || 1;
+        const manualContainer = document.getElementById("manualArmsInputContainer");
+        const manualInput = document.getElementById("manualArmsCountInput");
+
         options.forEach(opt => {
-            const isSelected = (selectEl.value || "1") === opt.val;
+            const isManualSelected = opt.val === "manual" && (currentCount > 3 || selectEl.dataset.isManual === "true");
+            const isSelected = opt.val === "manual" ? isManualSelected : (currentCount === parseInt(opt.val, 10) && !isManualSelected);
+
             const card = document.createElement("button");
             card.type = "button";
             card.dataset.value = opt.val;
             card.className = isSelected
-                ? "visual-arms-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 text-center transition-all duration-200 shadow-xs cursor-pointer select-none"
+                ? "visual-arms-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold text-center transition-all duration-200 shadow-xs cursor-pointer select-none"
                 : "visual-arms-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-center transition-all duration-200 cursor-pointer select-none group";
 
             card.innerHTML = `
@@ -1170,26 +1176,61 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             card.addEventListener("click", () => {
-                selectEl.value = opt.val;
+                if (opt.val === "manual") {
+                    selectEl.dataset.isManual = "true";
+                    if (manualContainer) manualContainer.classList.remove("hidden");
+                    if (manualInput) {
+                        manualInput.focus();
+                        const val = parseInt(manualInput.value, 10) || (currentCount > 3 ? currentCount : 4);
+                        selectEl.value = String(val);
+                    }
+                } else {
+                    selectEl.dataset.isManual = "false";
+                    if (manualContainer) manualContainer.classList.add("hidden");
+                    selectEl.value = opt.val;
+                }
                 selectEl.dispatchEvent(new Event("change"));
                 syncVisualArmsCountState(selectEl, gridContainerEl);
             });
 
             gridContainerEl.appendChild(card);
         });
+
+        if (manualInput) {
+            manualInput.addEventListener("input", (e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 1) {
+                    selectEl.value = String(val);
+                    selectEl.dispatchEvent(new Event("change"));
+                }
+            });
+        }
     }
 
     /** Sincronizza lo stato visivo delle card Numero Bracci */
     function syncVisualArmsCountState(selectEl, gridContainerEl) {
         if (!selectEl || !gridContainerEl) return;
-        const currentVal = selectEl.value || "1";
+        const currentVal = parseInt(selectEl.value, 10) || 1;
+        const isManual = selectEl.dataset.isManual === "true" || currentVal > 3;
+
+        const manualContainer = document.getElementById("manualArmsInputContainer");
+        const manualInput = document.getElementById("manualArmsCountInput");
+
+        if (isManual) {
+            if (manualContainer) manualContainer.classList.remove("hidden");
+            if (manualInput && document.activeElement !== manualInput) {
+                manualInput.value = String(currentVal);
+            }
+        } else {
+            if (manualContainer) manualContainer.classList.add("hidden");
+        }
 
         gridContainerEl.querySelectorAll(".visual-arms-card").forEach(card => {
             const val = card.dataset.value;
-            const isSelected = val === currentVal;
+            const isSelected = val === "manual" ? isManual : (currentVal === parseInt(val, 10) && !isManual);
 
             if (isSelected) {
-                card.className = "visual-arms-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 text-center transition-all duration-200 shadow-xs cursor-pointer select-none";
+                card.className = "visual-arms-card p-3 rounded-xl border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold text-center transition-all duration-200 shadow-xs cursor-pointer select-none";
             } else {
                 card.className = "visual-arms-card p-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 text-center transition-all duration-200 cursor-pointer select-none group";
             }
