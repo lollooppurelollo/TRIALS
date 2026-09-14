@@ -1515,11 +1515,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 // vengono verificate solo se il paziente ha inserito/selezionato una specifica nel form di ricerca.
                 // Se il paziente NON specifica un valore (patientVal === undefined), lo studio viene comunque incluso.
                 let furtherSpecificsMatch = true;
-                const studyFS = study.further_specifics;
+                let studyFS = study.further_specifics;
+                if (typeof studyFS === "string") {
+                    try { studyFS = JSON.parse(studyFS); } catch(e) { studyFS = {}; }
+                }
                 if (studyFS && typeof studyFS === "object" && Object.keys(studyFS).length > 0) {
                     furtherSpecificsMatch = Object.keys(studyFS).every(key => {
                         const studyVal = studyFS[key];
                         const patientVal = patientData.furtherSpecifics ? patientData.furtherSpecifics[key] : undefined;
+
+                        // Se lo studio richiede un'istologia incompatibile con quella del paziente, lo studio non è idoneo
+                        if (studyVal === true) {
+                            if (key === "SCC" && patientData.furtherSpecifics?.ADK === true && !patientVal) return false;
+                            if (key === "ADK" && patientData.furtherSpecifics?.SCC === true && !patientVal) return false;
+                            if (key === "Duttale" && patientData.furtherSpecifics?.Lobulare === true && !patientVal) return false;
+                            if (key === "Lobulare" && patientData.furtherSpecifics?.Duttale === true && !patientVal) return false;
+                        }
 
                         // Se il paziente NON ha specificato nulla per questa opzione, non escludiamo lo studio
                         if (patientVal === undefined || patientVal === "" || patientVal === null) {
@@ -1793,7 +1804,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Default: DESELEZIONATE (false) tranne se il medico le clicca manualmente per attivarle
             const isEnabled = enabled.further ? enabled.further[key] === true : false;
 
-            container.appendChild(createPill("🧪 Specificazione:", labelText, isEnabled, () => {
+            container.appendChild(createPill("🧪", labelText, isEnabled, () => {
                 if (!enabled.further) enabled.further = {};
                 enabled.further[key] = !isEnabled;
                 renderCtgovActivePills();
