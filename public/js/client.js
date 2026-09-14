@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "NSCLC": [
             { id: "ADK", label: "ADK (Adenocarcinoma)" },
             { id: "SCC", label: "SCC (Squamoso)" },
-            { id: "PDL1", label: "PDL1 (%)", type: "number", min: 0, max: 100, placeholder: "0-100%" },
+            { id: "PDL1", label: "PDL1 (%)", type: "pdl1_range" },
             { id: "EGFR", label: "EGFR" },
             { id: "ALK", label: "ALK" },
             { id: "KRAS", label: "KRAS" },
@@ -82,10 +82,13 @@ document.addEventListener("DOMContentLoaded", () => {
     /**
      * Costruisce i checkbox/numeric input di "Specifiche Ulteriori"
      * nel container passato, in base alle specifiche aree selezionate.
-     * savedValues: oggetto {id: true} per checkbox, {id: number} per numerici
+     * savedValues: oggetto {id: true} per checkbox, {id: number} per numerici paziente,
+     *              {id: {op:">=",val:1}} / {id:{op:"range",min:1,max:49}} per pdl1_range studio.
+     * mode: "study" (default) | "patient"
      */
-    function renderFurtherSpecifics(containerEl, selectedSpecificAreas, savedValues) {
+    function renderFurtherSpecifics(containerEl, selectedSpecificAreas, savedValues, mode) {
         if (!containerEl) return;
+        const isStudy = (mode !== "patient");
         containerEl.innerHTML = "";
 
         // Raccoglie tutte le opzioni uniche per le aree selezionate
@@ -105,8 +108,71 @@ document.addEventListener("DOMContentLoaded", () => {
         if (allOptions.length === 0) return;
 
         allOptions.forEach(opt => {
-            if (opt.type === "number") {
-                // Campo numerico (es. PDL1)
+            if (opt.type === "pdl1_range") {
+                if (isStudy) {
+                    // --- STUDIO: operatore + valore(i) ---
+                    const saved = savedValues && savedValues[opt.id];
+                    const savedOp  = (saved && saved.op)  ? saved.op  : ">=";
+                    const savedVal = (saved && saved.val !== undefined) ? saved.val : "";
+                    const savedMin = (saved && saved.min !== undefined) ? saved.min : "";
+                    const savedMax = (saved && saved.max !== undefined) ? saved.max : "";
+
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-[11px] flex-wrap";
+                    wrapper.dataset.pdlId = opt.id;
+
+                    wrapper.innerHTML = `
+                        <span class="font-semibold text-slate-700 whitespace-nowrap">PDL1 (%):</span>
+                        <select class="pdl1-op-select text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-purple-400 cursor-pointer" data-id="${opt.id}">
+                            <option value=">=" ${savedOp === ">=" ? "selected" : ""}>≥ (almeno)</option>
+                            <option value="<=" ${savedOp === "<=" ? "selected" : ""}>≤ (al massimo)</option>
+                            <option value="range" ${savedOp === "range" ? "selected" : ""}>Compreso tra</option>
+                        </select>
+                        <input type="number" class="pdl1-val-input w-14 p-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-400 ${savedOp === "range" ? "hidden" : ""}"
+                               data-id="${opt.id}" min="0" max="100" placeholder="%" value="${savedVal}">
+                        <span class="pdl1-range-sep text-slate-400 ${savedOp !== "range" ? "hidden" : ""}">Min:</span>
+                        <input type="number" class="pdl1-min-input w-14 p-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-400 ${savedOp !== "range" ? "hidden" : ""}"
+                               data-id="${opt.id}" min="0" max="100" placeholder="%" value="${savedMin}">
+                        <span class="pdl1-range-sep2 text-slate-400 ${savedOp !== "range" ? "hidden" : ""}">Max:</span>
+                        <input type="number" class="pdl1-max-input w-14 p-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-400 ${savedOp !== "range" ? "hidden" : ""}"
+                               data-id="${opt.id}" min="0" max="100" placeholder="%" value="${savedMax}">
+                        <span class="text-slate-400 text-[10px] ml-0.5">%</span>
+                    `;
+                    containerEl.appendChild(wrapper);
+
+                    // Mostra/nasconde i campi in base all'operatore selezionato
+                    const opSel  = wrapper.querySelector(".pdl1-op-select");
+                    const valInp = wrapper.querySelector(".pdl1-val-input");
+                    const sep1   = wrapper.querySelector(".pdl1-range-sep");
+                    const minInp = wrapper.querySelector(".pdl1-min-input");
+                    const sep2   = wrapper.querySelector(".pdl1-range-sep2");
+                    const maxInp = wrapper.querySelector(".pdl1-max-input");
+                    opSel.addEventListener("change", () => {
+                        const isRange = opSel.value === "range";
+                        valInp.classList.toggle("hidden", isRange);
+                        sep1.classList.toggle("hidden", !isRange);
+                        minInp.classList.toggle("hidden", !isRange);
+                        sep2.classList.toggle("hidden", !isRange);
+                        maxInp.classList.toggle("hidden", !isRange);
+                    });
+                } else {
+                    // --- PAZIENTE: campo numerico semplice (valore reale del paziente) ---
+                    const savedNum = savedValues && savedValues[opt.id] !== undefined ? savedValues[opt.id] : "";
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-[11px]";
+                    wrapper.innerHTML = `
+                        <label class="font-semibold text-slate-700 whitespace-nowrap">PDL1 (%):</label>
+                        <input type="number"
+                               class="further-specific-number w-16 p-1 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-400"
+                               data-id="${opt.id}"
+                               min="0" max="100" placeholder="0-100"
+                               value="${savedNum !== "" ? savedNum : ""}">
+                        <span class="text-slate-400 text-[10px]">%</span>
+                    `;
+                    containerEl.appendChild(wrapper);
+                }
+            } else if (opt.type === "number") {
+                // Campo numerico generico
                 const wrapper = document.createElement("div");
                 wrapper.className = "flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-[11px]";
                 const savedNum = savedValues && savedValues[opt.id] !== undefined ? savedValues[opt.id] : "";
@@ -132,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Toggle visual state on click
                 wrapper.addEventListener("click", () => {
                     const cb = wrapper.querySelector("input[type=checkbox]");
-                    // toggling happens after click
                     setTimeout(() => {
                         if (cb.checked) {
                             wrapper.className = "flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-lg border text-[11px] font-semibold select-none transition-colors bg-purple-100 border-purple-300 text-purple-900";
@@ -146,18 +211,62 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    /** Legge i valori delle Specifiche Ulteriori da un container */
+    /**
+     * Legge i valori delle Specifiche Ulteriori da un container.
+     * Per pdl1_range (studio): ritorna {op, val} o {op:"range", min, max}
+     * Per numerico semplice (paziente): ritorna il numero
+     */
     function collectFurtherSpecifics(containerEl) {
         const result = {};
         if (!containerEl) return result;
+
+        // Checkbox
         containerEl.querySelectorAll(".further-specific-cb").forEach(cb => {
             if (cb.checked) result[cb.dataset.id] = true;
         });
+
+        // Numerici semplici (paziente o generico)
         containerEl.querySelectorAll(".further-specific-number").forEach(inp => {
             const v = inp.value.trim();
             if (v !== "") result[inp.dataset.id] = parseFloat(v);
         });
+
+        // PDL1 range (studio): ogni wrapper con data-pdl-id
+        containerEl.querySelectorAll("[data-pdl-id]").forEach(wrapper => {
+            const id = wrapper.dataset.pdlId;
+            const opSel  = wrapper.querySelector(".pdl1-op-select");
+            const valInp = wrapper.querySelector(".pdl1-val-input");
+            const minInp = wrapper.querySelector(".pdl1-min-input");
+            const maxInp = wrapper.querySelector(".pdl1-max-input");
+            if (!opSel) return;
+            const op = opSel.value;
+            if (op === "range") {
+                const min = minInp && minInp.value.trim() !== "" ? parseFloat(minInp.value) : undefined;
+                const max = maxInp && maxInp.value.trim() !== "" ? parseFloat(maxInp.value) : undefined;
+                if (min !== undefined || max !== undefined) result[id] = { op: "range", min, max };
+            } else {
+                const val = valInp && valInp.value.trim() !== "" ? parseFloat(valInp.value) : undefined;
+                if (val !== undefined) result[id] = { op, val };
+            }
+        });
+
         return result;
+    }
+
+    /** Formatta un valore PDL1 per la pill del modale */
+    function formatPDL1Value(v) {
+        if (typeof v === "number") return `PDL1: ${v}%`;
+        if (v && typeof v === "object") {
+            if (v.op === ">=") return `PDL1 ≥ ${v.val}%`;
+            if (v.op === "<=") return `PDL1 ≤ ${v.val}%`;
+            if (v.op === "range") {
+                const parts = [];
+                if (v.min !== undefined) parts.push(`≥${v.min}%`);
+                if (v.max !== undefined) parts.push(`≤${v.max}%`);
+                return `PDL1 ${parts.join(" e ")}`;
+            }
+        }
+        return "PDL1";
     }
 
     /** Mostra/nasconde e popola il container specifiche ulteriori per il form Trial */
@@ -169,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .some(a => furtherSpecificsMap[a] && furtherSpecificsMap[a].length > 0);
         if (hasFurther) {
             container.classList.remove("hidden");
-            renderFurtherSpecifics(list, selectedSpecificAreas, savedValues || {});
+            renderFurtherSpecifics(list, selectedSpecificAreas, savedValues || {}, "study");
         } else {
             container.classList.add("hidden");
             list.innerHTML = "";
@@ -185,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const hasFurther = areas.some(a => furtherSpecificsMap[a] && furtherSpecificsMap[a].length > 0);
         if (hasFurther) {
             container.classList.remove("hidden");
-            renderFurtherSpecifics(list, areas, savedValues || {});
+            renderFurtherSpecifics(list, areas, savedValues || {}, "patient");
         } else {
             container.classList.add("hidden");
             list.innerHTML = "";
@@ -1409,8 +1518,23 @@ document.addEventListener("DOMContentLoaded", () => {
                             return patientVal === true;
                         }
                         if (typeof studyVal === "number") {
-                            // Numerico (es. PDL1 ≥ soglia dello studio)
+                            // Numerico legacy (es. PDL1 ≥ soglia dello studio)
                             return typeof patientVal === "number" && patientVal >= studyVal;
+                        }
+                        if (studyVal && typeof studyVal === "object") {
+                            // Oggetto con operatore (es. { op: ">=", val: 45 }, { op: "<=", val: 50 }, { op: "range", min: 1, max: 49 })
+                            if (typeof patientVal !== "number") return false;
+                            if (studyVal.op === ">=") {
+                                return studyVal.val !== undefined ? patientVal >= studyVal.val : true;
+                            }
+                            if (studyVal.op === "<=") {
+                                return studyVal.val !== undefined ? patientVal <= studyVal.val : true;
+                            }
+                            if (studyVal.op === "range") {
+                                const minOk = studyVal.min !== undefined ? patientVal >= studyVal.min : true;
+                                const maxOk = studyVal.max !== undefined ? patientVal <= studyVal.max : true;
+                                return minOk && maxOk;
+                            }
                         }
                         return true;
                     });
@@ -2180,7 +2304,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (fsContainer && fsText && fs && typeof fs === "object" && Object.keys(fs).length > 0) {
                 const parts = Object.entries(fs).map(([k, v]) => {
                     if (v === true) return k;
-                    if (typeof v === "number") return `${k}: ${v}%`;
+                    if (k === "PDL1" || (v && typeof v === "object")) return formatPDL1Value(v);
+                    if (typeof v === "number") return `${k}: ${v}`;
                     return k;
                 });
                 fsText.textContent = parts.join(" · ");
