@@ -981,6 +981,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         selectElement.innerHTML = "";
         if (allSpecificAreas.size > 0) {
+            if (!selectElement.multiple) {
+                const defaultOpt = document.createElement("option");
+                defaultOpt.value = "";
+                defaultOpt.textContent = "Seleziona un'area specifica (opzionale)";
+                defaultOpt.selected = true;
+                selectElement.appendChild(defaultOpt);
+            }
             Array.from(allSpecificAreas).forEach((area) => {
                 const option = document.createElement("option");
                 option.value = area;
@@ -1000,8 +1007,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 specificClinicalAreasSelect,
                 specificClinicalAreaContainer,
             );
-            // Resetta specifiche ulteriori paziente quando cambia area
-            updatePatientFurtherSpecifics(null, {});
+            // Aggiorna / nasconde le specifiche ulteriori del paziente
+            const currentVal = specificClinicalAreasSelect ? specificClinicalAreasSelect.value : "";
+            updatePatientFurtherSpecifics(currentVal, {});
         });
     }
     // Aggiorna specifiche ulteriori paziente quando cambia specifica area clinica
@@ -1504,17 +1512,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         patientData.treatmentLine <= maxLine;
                 }
                 // Specifiche Ulteriori: se lo studio richiede specifiche ulteriori,
-                // il paziente deve averle selezionate.
-                // Se lo studio non ne ha (further_specifics vuoto/null) → nessun filtro aggiuntivo.
+                // vengono verificate solo se il paziente ha inserito/selezionato una specifica nel form di ricerca.
+                // Se il paziente NON specifica un valore (patientVal === undefined), lo studio viene comunque incluso.
                 let furtherSpecificsMatch = true;
                 const studyFS = study.further_specifics;
                 if (studyFS && typeof studyFS === "object" && Object.keys(studyFS).length > 0) {
-                    // Ogni specifica richiesta dallo studio deve essere presente nel paziente
                     furtherSpecificsMatch = Object.keys(studyFS).every(key => {
                         const studyVal = studyFS[key];
-                        const patientVal = patientData.furtherSpecifics[key];
+                        const patientVal = patientData.furtherSpecifics ? patientData.furtherSpecifics[key] : undefined;
+
+                        // Se il paziente NON ha specificato nulla per questa opzione, non escludiamo lo studio
+                        if (patientVal === undefined || patientVal === "" || patientVal === null) {
+                            return true;
+                        }
+
                         if (studyVal === true) {
-                            // Booleano: il paziente deve averlo selezionato
+                            // Booleano (es. ADK): se il paziente ha specificato la spunta, deve essere true
                             return patientVal === true;
                         }
                         if (typeof studyVal === "number") {
@@ -1522,8 +1535,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             return typeof patientVal === "number" && patientVal >= studyVal;
                         }
                         if (studyVal && typeof studyVal === "object") {
-                            // Oggetto con operatore (es. { op: ">=", val: 45 }, { op: "<=", val: 50 }, { op: "range", min: 1, max: 49 })
-                            if (typeof patientVal !== "number") return false;
+                            // Oggetto con operatore (es. { op: ">=", val: 50 }, { op: "<=", val: 1 }, { op: "range", min: 1, max: 49 })
+                            if (typeof patientVal !== "number") return true;
                             if (studyVal.op === ">=") {
                                 return studyVal.val !== undefined ? patientVal >= studyVal.val : true;
                             }
