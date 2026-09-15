@@ -34,7 +34,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ---- Mappa delle Specifiche Ulteriori per Specifica Area Clinica ----
     // Ogni chiave è la specifica area clinica; il valore è un array di opzioni.
-    // Le opzioni PDL1 usano type:"number" con range 0-100.
+    // Le opzioni PDL1 usano type:"pdl1_range" con range 0-100.
+
+    // --- BASE MAMMELLA (condivisa tra sottotipi) ---
     const BASE_MAMMELLA = [
         { id: "Duttale", label: "Duttale" },
         { id: "Lobulare", label: "Lobulare" },
@@ -50,15 +52,40 @@ document.addEventListener("DOMContentLoaded", () => {
         { id: "HER2 ultra-low", label: "HER2 ultra-low" },
     ];
 
+    // --- BASE GI (biomarcatori agnostici condivisi nel GI) ---
+    const BASE_GI_AGNOSTIC = [
+        { id: "MSI-H-gi", label: "MSI-H / dMMR" },
+        { id: "NTRK-gi", label: "NTRK" },
+    ];
+
+    // --- BASE TESTA-COLLO (condivisa tra sottosedi HNSCC) ---
+    const BASE_HNSCC = [
+        { id: "SCC-HNSCC", label: "Carcinoma Squamocellulare (SCC)" },
+        { id: "PDL1-CPS-HNSCC", label: "PDL1 CPS (%)", type: "pdl1_range" },
+        { id: "EGFR-over-HNSCC", label: "EGFR overespresso" },
+        { id: "MSI-H-HNSCC", label: "MSI-H / dMMR" },
+        { id: "platino-eligible-HNSCC", label: "Platino-eligible" },
+        { id: "platino-refrattario-HNSCC", label: "Platino-refrattario" },
+        { id: "resecabile-HNSCC", label: "Resecabile" },
+        { id: "non-resecabile-HNSCC", label: "Non resecabile" },
+        { id: "R-M-HNSCC", label: "Recidivante / Metastatico (R/M)" },
+    ];
+
     const furtherSpecificsMap = {
-        // Mammella
+
+        // ============================================================
+        // MAMMELLA
+        // ============================================================
         "HER2 positive": [...BASE_MAMMELLA],
         "Luminali": [...BASE_MAMMELLA, ...HER2_LOW_OPTIONS],
         "TNBC": [...BASE_MAMMELLA, ...HER2_LOW_OPTIONS],
-        // Polmone
+
+        // ============================================================
+        // POLMONE
+        // ============================================================
         "NSCLC": [
             { id: "ADK", label: "ADK (Adenocarcinoma)" },
-            { id: "SCC", label: "SCC (Squamoso)" },
+            { id: "SCC-NSCLC", label: "SCC (Squamoso)" },
             { id: "PDL1", label: "PDL1 (%)", type: "pdl1_range" },
             { id: "EGFR", label: "EGFR" },
             { id: "ALK", label: "ALK" },
@@ -76,6 +103,286 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "Epitelioide", label: "Epitelioide" },
             { id: "Bifasico", label: "Bifasico" },
             { id: "Sarcomatoide", label: "Sarcomatoide" },
+        ],
+
+        // ============================================================
+        // GASTRO-INTESTINALE
+        // ============================================================
+        "Esofago": [
+            { id: "Adenocarcinoma-AEG", label: "Adenocarcinoma / AEG" },
+            { id: "SCC-esofago", label: "Carcinoma Squamocellulare (SCC)" },
+            { id: "HER2-esofago", label: "HER2 positivo" },
+            { id: "PDL1-CPS-esofago", label: "PDL1 CPS (%)", type: "pdl1_range" },
+            { id: "MSI-H-esofago", label: "MSI-H / dMMR" },
+            { id: "NTRK-esofago", label: "NTRK" },
+        ],
+        "Stomaco": [
+            { id: "Adenocarcinoma-gastrico", label: "Adenocarcinoma" },
+            { id: "Signet-ring-gastrico", label: "Cellule ad anello con castone" },
+            { id: "HER2-stomaco", label: "HER2 positivo" },
+            { id: "PDL1-CPS-stomaco", label: "PDL1 CPS (%)", type: "pdl1_range" },
+            { id: "FGFR2b", label: "FGFR2b positivo" },
+            { id: "CLDN18-2", label: "CLDN18.2 positivo" },
+            { id: "EBV-stomaco", label: "EBV positivo" },
+            { id: "MSI-H-stomaco", label: "MSI-H / dMMR" },
+            { id: "NTRK-stomaco", label: "NTRK" },
+        ],
+        "Colon": [
+            { id: "MSI-H-colon", label: "MSI-H / dMMR" },
+            { id: "RAS-wt-colon", label: "RAS wild-type" },
+            { id: "RAS-mut-colon", label: "RAS mutato" },
+            { id: "KRAS-G12C-colon", label: "KRAS G12C" },
+            { id: "BRAF-V600E-colon", label: "BRAF V600E" },
+            { id: "HER2-colon", label: "HER2 amplificazione" },
+            { id: "NTRK-colon", label: "NTRK" },
+            { id: "lato-dx-colon", label: "Colon destro" },
+            { id: "lato-sx-colon", label: "Colon sinistro" },
+            { id: "mucinoso-colon", label: "Mucinoso" },
+            { id: "signet-ring-colon", label: "Cellule ad anello con castone" },
+        ],
+        "Retto": [
+            { id: "MSI-H-retto", label: "MSI-H / dMMR" },
+            { id: "RAS-wt-retto", label: "RAS wild-type" },
+            { id: "RAS-mut-retto", label: "RAS mutato" },
+            { id: "KRAS-G12C-retto", label: "KRAS G12C" },
+            { id: "BRAF-V600E-retto", label: "BRAF V600E" },
+            { id: "HER2-retto", label: "HER2 amplificazione" },
+            { id: "NTRK-retto", label: "NTRK" },
+            { id: "LA-retto", label: "Localmente avanzato" },
+            { id: "cT3T4-retto", label: "cT3-T4 / N+" },
+            { id: "ultralow-retto", label: "Retto ultralow" },
+        ],
+        "Ano": [
+            { id: "SCC-anale", label: "Carcinoma Squamocellulare anale" },
+            { id: "HPV-ano", label: "HPV correlato" },
+            { id: "PDL1-ano", label: "PDL1 (%)", type: "pdl1_range" },
+            { id: "MSI-H-ano", label: "MSI-H / dMMR" },
+        ],
+        "Vie biliari": [
+            { id: "CCA-intraepatico", label: "Colangiocarcinoma intraepatico" },
+            { id: "CCA-ilare", label: "Colangiocarcinoma ilare (Klatskin)" },
+            { id: "CCA-distale", label: "Colangiocarcinoma distale" },
+            { id: "Colecisti", label: "Colecisti" },
+            { id: "FGFR2-fus", label: "FGFR2 fusione / riarrangiamento" },
+            { id: "IDH1mut", label: "IDH1 mut" },
+            { id: "IDH2mut", label: "IDH2 mut" },
+            { id: "BRAF-V600E-vb", label: "BRAF V600E" },
+            { id: "HER2-vb", label: "HER2 amplificazione" },
+            { id: "ERBB2mut-vb", label: "ERBB2 mut" },
+            { id: "PDL1-vb", label: "PDL1 (%)", type: "pdl1_range" },
+            { id: "MSI-H-vb", label: "MSI-H / dMMR" },
+            { id: "NTRK-vb", label: "NTRK" },
+        ],
+        "Pancreas": [
+            { id: "PDAC", label: "Adenocarcinoma duttale (PDAC)" },
+            { id: "pNET", label: "Tumore neuroendocrino (pNET)" },
+            { id: "BRCA1-panc", label: "BRCA1 mut" },
+            { id: "BRCA2-panc", label: "BRCA2 mut" },
+            { id: "PALB2-panc", label: "PALB2 mut" },
+            { id: "ATM-panc", label: "ATM mut" },
+            { id: "KRAS-G12C-panc", label: "KRAS G12C" },
+            { id: "MSI-H-panc", label: "MSI-H / dMMR" },
+            { id: "NTRK-panc", label: "NTRK" },
+            { id: "resecabile-panc", label: "Resecabile" },
+            { id: "borderline-panc", label: "Borderline resecabile" },
+            { id: "LA-panc", label: "Localmente avanzato" },
+            { id: "met-panc", label: "Metastatico" },
+        ],
+        "Fegato": [
+            { id: "HCC", label: "Epatocarcinoma (HCC)" },
+            { id: "CCA-intra-fegato", label: "Colangiocarcinoma intraepatico" },
+            { id: "Child-Pugh-A", label: "Child-Pugh A" },
+            { id: "Child-Pugh-B7", label: "Child-Pugh B (score 7)" },
+            { id: "HBV", label: "HBV correlato" },
+            { id: "HCV", label: "HCV correlato" },
+            { id: "BCLC-A", label: "BCLC A" },
+            { id: "BCLC-B", label: "BCLC B" },
+            { id: "BCLC-C", label: "BCLC C" },
+            { id: "MVI", label: "Invasione vascolare macroscopica (MVI)" },
+            { id: "AFP-alto", label: "AFP elevata (>400 ng/mL)" },
+        ],
+
+        // ============================================================
+        // GINECOLOGICO
+        // ============================================================
+        "Endometrio": [
+            { id: "Endometrioide-end", label: "Endometrioide" },
+            { id: "Sieroso-end", label: "Sieroso" },
+            { id: "CelluleChiare-end", label: "A cellule chiare" },
+            { id: "Carcinosarcoma-end", label: "Carcinosarcoma" },
+            { id: "MSI-H-end", label: "MSI-H / dMMR" },
+            { id: "p53mut-end", label: "p53 mutato (TCGA IV)" },
+            { id: "POLEmut-end", label: "POLE mutato (TCGA I)" },
+            { id: "HER2-end", label: "HER2 positivo" },
+            { id: "FGFR2mut-end", label: "FGFR2 mut" },
+            { id: "ERPR-end", label: "ER/PR positivo" },
+        ],
+        "Ovaio": [
+            { id: "HGSOC", label: "Sieroso alto grado (HGSOC)" },
+            { id: "LGSOC", label: "Sieroso basso grado (LGSOC)" },
+            { id: "Mucinoso-ov", label: "Mucinoso" },
+            { id: "Endometrioide-ov", label: "Endometrioide" },
+            { id: "CelluleChiare-ov", label: "A cellule chiare" },
+            { id: "BRCA1-ov", label: "BRCA1 mut" },
+            { id: "BRCA2-ov", label: "BRCA2 mut" },
+            { id: "HRD-pos-ov", label: "HRD positivo (non BRCA)" },
+            { id: "HRD-neg-ov", label: "HRD negativo" },
+            { id: "platino-sens-ov", label: "Platino-sensibile" },
+            { id: "platino-res-ov", label: "Platino-resistente" },
+            { id: "platino-refr-ov", label: "Platino-refrattaria" },
+            { id: "FRalfa-ov", label: "FRα positivo (FOLR1)" },
+        ],
+        "Cervice": [
+            { id: "SCC-cervice", label: "Carcinoma Squamocellulare" },
+            { id: "Adenocarcinoma-cervice", label: "Adenocarcinoma" },
+            { id: "HPV-cervice", label: "HPV correlato" },
+            { id: "PDL1-CPS-cervice", label: "PDL1 CPS (%)", type: "pdl1_range" },
+            { id: "MSI-H-cervice", label: "MSI-H / dMMR" },
+            { id: "LA-cervice", label: "Localmente avanzato" },
+            { id: "met-cervice", label: "Metastatico / recidivante" },
+        ],
+        "Vulva": [
+            { id: "SCC-vulva", label: "Carcinoma Squamocellulare" },
+            { id: "HPV-vulva", label: "HPV correlato" },
+            { id: "HPV-indip-vulva", label: "HPV indipendente (TP53 mut)" },
+            { id: "PDL1-vulva", label: "PDL1 (%)", type: "pdl1_range" },
+        ],
+
+        // ============================================================
+        // PROSTATA E VIE URINARIE
+        // ============================================================
+        "Prostata": [
+            { id: "Adenocarcinoma-prost", label: "Adenocarcinoma" },
+            { id: "NEPC-prost", label: "Carcinoma neuroendocrino / piccole cellule" },
+            { id: "CRPC-prost", label: "CRPC (castrazione resistente)" },
+            { id: "mHSPC-prost", label: "mHSPC (metastatico ormono-sensibile)" },
+            { id: "BRCA1-prost", label: "BRCA1 mut" },
+            { id: "BRCA2-prost", label: "BRCA2 mut" },
+            { id: "ATM-prost", label: "ATM mut" },
+            { id: "CDK12-prost", label: "CDK12 mut" },
+            { id: "MSI-H-prost", label: "MSI-H / dMMR" },
+            { id: "PTEN-loss-prost", label: "PTEN loss" },
+            { id: "Gleason8plus-prost", label: "Gleason \u22658 / ISUP \u22654" },
+        ],
+        "Rene": [
+            { id: "ccRCC", label: "Cellule chiare (ccRCC)" },
+            { id: "pRCC1", label: "Papillare tipo 1 (MET driven)" },
+            { id: "pRCC2", label: "Papillare tipo 2 (FH mut)" },
+            { id: "chRCC", label: "Cromofobo" },
+            { id: "Oncocitoma-rene", label: "Oncocitoma" },
+            { id: "DottiCollettori-rene", label: "Dotti collettori" },
+            { id: "VHL-rene", label: "VHL mut" },
+            { id: "PBRM1-rene", label: "PBRM1 mut" },
+            { id: "BAP1-rene", label: "BAP1 mut" },
+            { id: "FH-rene", label: "FH mut" },
+            { id: "IMDC-fav", label: "IMDC favorevole" },
+            { id: "IMDC-int", label: "IMDC intermedio" },
+            { id: "IMDC-sfav", label: "IMDC sfavorevole" },
+        ],
+        "Vescica": [
+            { id: "Uroteliale-vesc", label: "Carcinoma uroteliale" },
+            { id: "SCC-vesc", label: "Carcinoma Squamocellulare" },
+            { id: "Adenocarcinoma-vesc", label: "Adenocarcinoma" },
+            { id: "PDL1-IC-vesc", label: "PDL1 IC (%)", type: "pdl1_range" },
+            { id: "PDL1-CPS-vesc", label: "PDL1 CPS (%)", type: "pdl1_range" },
+            { id: "FGFR3-vesc", label: "FGFR3 alterazione" },
+            { id: "FGFR2-fus-vesc", label: "FGFR2 fusione" },
+            { id: "HER2-vesc", label: "HER2 amplificazione" },
+            { id: "MSI-H-vesc", label: "MSI-H / dMMR" },
+            { id: "platino-elig-vesc", label: "Platino-eligible" },
+            { id: "platino-inelig-vesc", label: "Platino-ineligible" },
+            { id: "NMIBC-vesc", label: "Non muscle-invasive (NMIBC)" },
+            { id: "MIBC-vesc", label: "Muscle-invasive (MIBC)" },
+        ],
+        "Altre vie Urinarie": [
+            { id: "Uroteliale-pelvi", label: "Carcinoma uroteliale della pelvi renale" },
+            { id: "Uroteliale-uretere", label: "Carcinoma uroteliale dell'uretere" },
+            { id: "Carcinoma-uretrale", label: "Carcinoma uretrale" },
+            { id: "FGFR3-altreVU", label: "FGFR3 alterazione" },
+            { id: "MSI-H-altreVU", label: "MSI-H / dMMR" },
+        ],
+
+        // ============================================================
+        // MELANOMA E CUTE
+        // ============================================================
+        "Melanoma": [
+            { id: "Cutaneo-mel", label: "Cutaneo" },
+            { id: "Mucosale-mel", label: "Mucosale" },
+            { id: "Uveale-mel", label: "Uveale / Oculare" },
+            { id: "Acrale-mel", label: "Acrale" },
+            { id: "BRAF-V600E-mel", label: "BRAF V600E" },
+            { id: "BRAF-V600K-mel", label: "BRAF V600K" },
+            { id: "BRAF-wt-mel", label: "BRAF wild-type" },
+            { id: "NRAS-mel", label: "NRAS mut" },
+            { id: "KIT-mel", label: "KIT mut" },
+            { id: "PDL1-mel", label: "PDL1 (%)", type: "pdl1_range" },
+            { id: "MSI-H-mel", label: "MSI-H / dMMR" },
+            { id: "StadioIII-mel", label: "Stadio III (adiuvante)" },
+            { id: "StadioIV-M1c-mel", label: "Stadio IV M1c/M1d" },
+            { id: "LDH-elevata-mel", label: "LDH elevata" },
+        ],
+        "SCC": [
+            { id: "SCC-cut-LA", label: "Localmente avanzato" },
+            { id: "SCC-cut-met", label: "Metastatico" },
+            { id: "PDL1-SCC-cut", label: "PDL1 (%)", type: "pdl1_range" },
+            { id: "Immunosoppresso-SCC", label: "Immunosoppresso (trapianto)" },
+            { id: "EGFR-SCC-cut", label: "EGFR mutato / overespresso" },
+        ],
+        "Basalioma": [
+            { id: "BCC-LA", label: "Localmente avanzato" },
+            { id: "BCC-met", label: "Metastatico" },
+            { id: "PTCH1mut", label: "PTCH1 mut (Hedgehog)" },
+            { id: "SMOmut", label: "SMO mut" },
+            { id: "Gorlin", label: "Sindrome di Gorlin (BCNS)" },
+        ],
+
+        // ============================================================
+        // TESTA-COLLO (specifiche per singola sottosede)
+        // ============================================================
+        "Cavo orale: lingua anteriore, labbra, gengive, mucosa buccale, pavimento della bocca, palato duro": [
+            ...BASE_HNSCC,
+            { id: "Adenocarcinoma-CO", label: "Adenocarcinoma" },
+            { id: "Mucoepidermoide-CO", label: "Carcinoma mucoepidermoide" },
+        ],
+        "Orofaringe: base della lingua, tonsille palatine, palato molle": [
+            ...BASE_HNSCC,
+            { id: "HPV-p16-OF", label: "HPV positivo (p16+)" },
+            { id: "HPV-neg-OF", label: "HPV negativo" },
+            { id: "DeEscalation-OF", label: "De-escalation (trial)" },
+        ],
+        "Laringe: sopraglottica, glottide, sottoglottica": [
+            ...BASE_HNSCC,
+            { id: "Sovraglottica-LAR", label: "Sovraglottica" },
+            { id: "Glottide-LAR", label: "Glottide" },
+            { id: "Sottoglottica-LAR", label: "Sottoglottica" },
+            { id: "PreservazOrgano-LAR", label: "Preservazione d'organo" },
+        ],
+        "Ipofaringe": [
+            ...BASE_HNSCC,
+            { id: "PreservazOrgano-IF", label: "Preservazione d'organo" },
+        ],
+        "Nasofaringe (o rinofaringe)": [
+            ...BASE_HNSCC,
+            { id: "EBV-NPC", label: "EBV positivo" },
+            { id: "WHO-I-NPC", label: "WHO tipo I (cheratinizzante)" },
+            { id: "WHO-II-NPC", label: "WHO tipo II/III (non cheratinizzante)" },
+            { id: "Endemico-NPC", label: "Area endemica" },
+        ],
+        "Cavità nasali e seni paranasali: seni mascellari, etmoidali, sfenoidali e frontali": [
+            ...BASE_HNSCC,
+            { id: "Adenocarcinoma-SNS", label: "Adenocarcinoma (intestinal-type)" },
+            { id: "Esthesioneuroblastoma", label: "Esthesioneuroblastoma" },
+            { id: "SNUC", label: "Carcinoma sinonasale indifferenziato (SNUC)" },
+        ],
+        "Ghiandole Salivari: parotide, sottomandibolare, sottolinguale, ghiandole salivari minori": [
+            ...BASE_HNSCC,
+            { id: "Mucoepidermoide-GS", label: "Carcinoma mucoepidermoide" },
+            { id: "Adenoidocistico-GS", label: "Carcinoma adenoidocistico" },
+            { id: "Acinico-GS", label: "Carcinoma acinico" },
+            { id: "HER2-GS", label: "HER2 positivo" },
+            { id: "NTRK-GS", label: "NTRK" },
+            { id: "HRAS-GS", label: "HRAS mut" },
+            { id: "MYBL1-NFIB-GS", label: "Fusione MYBL1-NFIB" },
         ],
     };
 
