@@ -66,9 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
         { id: "MSI-H-HNSCC", label: "MSI-H / dMMR" },
         { id: "platino-eligible-HNSCC", label: "Platino-eligible" },
         { id: "platino-refrattario-HNSCC", label: "Platino-refrattario" },
-        { id: "resecabile-HNSCC", label: "Resecabile" },
-        { id: "non-resecabile-HNSCC", label: "Non resecabile" },
-        { id: "R-M-HNSCC", label: "Recidivante / Metastatico (R/M)" },
     ];
 
     const furtherSpecificsMap = {
@@ -109,8 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // GASTRO-INTESTINALE
         // ============================================================
         "Esofago": [
-            { id: "Adenocarcinoma-AEG", label: "Adenocarcinoma / AEG" },
-            { id: "SCC-esofago", label: "Carcinoma Squamocellulare (SCC)" },
+            { id: "Adenocarcinoma-esofago", label: "Adenocarcinoma" },
+            { id: "SCC-esofago", label: "Squamocellulare" },
             { id: "HER2-esofago", label: "HER2 positivo" },
             { id: "PDL1-CPS-esofago", label: "PDL1 CPS (%)", type: "pdl1_range" },
             { id: "MSI-H-esofago", label: "MSI-H / dMMR" },
@@ -129,28 +126,25 @@ document.addEventListener("DOMContentLoaded", () => {
         ],
         "Colon": [
             { id: "MSI-H-colon", label: "MSI-H / dMMR" },
-            { id: "RAS-wt-colon", label: "RAS wild-type" },
-            { id: "RAS-mut-colon", label: "RAS mutato" },
+            { id: "KRAS-colon", label: "KRAS" },
             { id: "KRAS-G12C-colon", label: "KRAS G12C" },
             { id: "BRAF-V600E-colon", label: "BRAF V600E" },
             { id: "HER2-colon", label: "HER2 amplificazione" },
             { id: "NTRK-colon", label: "NTRK" },
             { id: "lato-dx-colon", label: "Colon destro" },
             { id: "lato-sx-colon", label: "Colon sinistro" },
-            { id: "mucinoso-colon", label: "Mucinoso" },
             { id: "signet-ring-colon", label: "Cellule ad anello con castone" },
         ],
         "Retto": [
             { id: "MSI-H-retto", label: "MSI-H / dMMR" },
-            { id: "RAS-wt-retto", label: "RAS wild-type" },
-            { id: "RAS-mut-retto", label: "RAS mutato" },
+            { id: "KRAS-retto", label: "KRAS" },
             { id: "KRAS-G12C-retto", label: "KRAS G12C" },
             { id: "BRAF-V600E-retto", label: "BRAF V600E" },
             { id: "HER2-retto", label: "HER2 amplificazione" },
             { id: "NTRK-retto", label: "NTRK" },
-            { id: "LA-retto", label: "Localmente avanzato" },
-            { id: "cT3T4-retto", label: "cT3-T4 / N+" },
-            { id: "ultralow-retto", label: "Retto ultralow" },
+            { id: "retto-alto", label: "Retto alto" },
+            { id: "retto-medio", label: "Retto medio" },
+            { id: "retto-basso", label: "Retto basso" },
         ],
         "Ano": [
             { id: "SCC-anale", label: "Carcinoma Squamocellulare anale" },
@@ -180,25 +174,16 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "BRCA2-panc", label: "BRCA2 mut" },
             { id: "PALB2-panc", label: "PALB2 mut" },
             { id: "ATM-panc", label: "ATM mut" },
+            { id: "KRAS-panc", label: "KRAS" },
             { id: "KRAS-G12C-panc", label: "KRAS G12C" },
             { id: "MSI-H-panc", label: "MSI-H / dMMR" },
             { id: "NTRK-panc", label: "NTRK" },
-            { id: "resecabile-panc", label: "Resecabile" },
-            { id: "borderline-panc", label: "Borderline resecabile" },
-            { id: "LA-panc", label: "Localmente avanzato" },
-            { id: "met-panc", label: "Metastatico" },
         ],
         "Fegato": [
-            { id: "HCC", label: "Epatocarcinoma (HCC)" },
-            { id: "CCA-intra-fegato", label: "Colangiocarcinoma intraepatico" },
             { id: "Child-Pugh-A", label: "Child-Pugh A" },
             { id: "Child-Pugh-B7", label: "Child-Pugh B (score 7)" },
             { id: "HBV", label: "HBV correlato" },
             { id: "HCV", label: "HCV correlato" },
-            { id: "BCLC-A", label: "BCLC A" },
-            { id: "BCLC-B", label: "BCLC B" },
-            { id: "BCLC-C", label: "BCLC C" },
-            { id: "MVI", label: "Invasione vascolare macroscopica (MVI)" },
             { id: "AFP-alto", label: "AFP elevata (>400 ng/mL)" },
         ],
 
@@ -223,8 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "Mucinoso-ov", label: "Mucinoso" },
             { id: "Endometrioide-ov", label: "Endometrioide" },
             { id: "CelluleChiare-ov", label: "A cellule chiare" },
-            { id: "BRCA1-ov", label: "BRCA1 mut" },
-            { id: "BRCA2-ov", label: "BRCA2 mut" },
+            { id: "BRCA1/2-ov", label: "BRCA1/2 mut" },
             { id: "HRD-pos-ov", label: "HRD positivo (non BRCA)" },
             { id: "HRD-neg-ov", label: "HRD negativo" },
             { id: "platino-sens-ov", label: "Platino-sensibile" },
@@ -238,13 +222,11 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "HPV-cervice", label: "HPV correlato" },
             { id: "PDL1-CPS-cervice", label: "PDL1 CPS (%)", type: "pdl1_range" },
             { id: "MSI-H-cervice", label: "MSI-H / dMMR" },
-            { id: "LA-cervice", label: "Localmente avanzato" },
-            { id: "met-cervice", label: "Metastatico / recidivante" },
         ],
         "Vulva": [
             { id: "SCC-vulva", label: "Carcinoma Squamocellulare" },
             { id: "HPV-vulva", label: "HPV correlato" },
-            { id: "HPV-indip-vulva", label: "HPV indipendente (TP53 mut)" },
+            { id: "TP53mut-vulva", label: "TP53 mutato" },
             { id: "PDL1-vulva", label: "PDL1 (%)", type: "pdl1_range" },
         ],
 
@@ -256,49 +238,39 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "NEPC-prost", label: "Carcinoma neuroendocrino / piccole cellule" },
             { id: "CRPC-prost", label: "CRPC (castrazione resistente)" },
             { id: "mHSPC-prost", label: "mHSPC (metastatico ormono-sensibile)" },
-            { id: "BRCA1-prost", label: "BRCA1 mut" },
-            { id: "BRCA2-prost", label: "BRCA2 mut" },
+            { id: "BRCA1/2-prost", label: "BRCA1/2 mut" },
             { id: "ATM-prost", label: "ATM mut" },
-            { id: "CDK12-prost", label: "CDK12 mut" },
             { id: "MSI-H-prost", label: "MSI-H / dMMR" },
             { id: "PTEN-loss-prost", label: "PTEN loss" },
-            { id: "Gleason8plus-prost", label: "Gleason \u22658 / ISUP \u22654" },
+            { id: "Gleason-prost", label: "Gleason Score", type: "number", min: 6, max: 10, placeholder: "6-10" },
         ],
         "Rene": [
             { id: "ccRCC", label: "Cellule chiare (ccRCC)" },
             { id: "pRCC1", label: "Papillare tipo 1 (MET driven)" },
             { id: "pRCC2", label: "Papillare tipo 2 (FH mut)" },
             { id: "chRCC", label: "Cromofobo" },
-            { id: "Oncocitoma-rene", label: "Oncocitoma" },
-            { id: "DottiCollettori-rene", label: "Dotti collettori" },
             { id: "VHL-rene", label: "VHL mut" },
-            { id: "PBRM1-rene", label: "PBRM1 mut" },
-            { id: "BAP1-rene", label: "BAP1 mut" },
-            { id: "FH-rene", label: "FH mut" },
-            { id: "IMDC-fav", label: "IMDC favorevole" },
-            { id: "IMDC-int", label: "IMDC intermedio" },
-            { id: "IMDC-sfav", label: "IMDC sfavorevole" },
         ],
         "Vescica": [
             { id: "Uroteliale-vesc", label: "Carcinoma uroteliale" },
             { id: "SCC-vesc", label: "Carcinoma Squamocellulare" },
             { id: "Adenocarcinoma-vesc", label: "Adenocarcinoma" },
-            { id: "PDL1-IC-vesc", label: "PDL1 IC (%)", type: "pdl1_range" },
-            { id: "PDL1-CPS-vesc", label: "PDL1 CPS (%)", type: "pdl1_range" },
+            { id: "PDL1-vesc", label: "PDL1 (%)", type: "pdl1_range" },
             { id: "FGFR3-vesc", label: "FGFR3 alterazione" },
             { id: "FGFR2-fus-vesc", label: "FGFR2 fusione" },
             { id: "HER2-vesc", label: "HER2 amplificazione" },
             { id: "MSI-H-vesc", label: "MSI-H / dMMR" },
             { id: "platino-elig-vesc", label: "Platino-eligible" },
             { id: "platino-inelig-vesc", label: "Platino-ineligible" },
-            { id: "NMIBC-vesc", label: "Non muscle-invasive (NMIBC)" },
-            { id: "MIBC-vesc", label: "Muscle-invasive (MIBC)" },
         ],
         "Altre vie Urinarie": [
             { id: "Uroteliale-pelvi", label: "Carcinoma uroteliale della pelvi renale" },
             { id: "Uroteliale-uretere", label: "Carcinoma uroteliale dell'uretere" },
             { id: "Carcinoma-uretrale", label: "Carcinoma uretrale" },
             { id: "FGFR3-altreVU", label: "FGFR3 alterazione" },
+            { id: "PDL1-altreVU", label: "PDL1 (%)", type: "pdl1_range" },
+            { id: "HER2-altreVU", label: "HER2 amplificazione" },
+            { id: "FGFR2-fus-altreVU", label: "FGFR2 fusione" },
             { id: "MSI-H-altreVU", label: "MSI-H / dMMR" },
         ],
 
@@ -312,29 +284,17 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: "Acrale-mel", label: "Acrale" },
             { id: "BRAF-V600E-mel", label: "BRAF V600E" },
             { id: "BRAF-V600K-mel", label: "BRAF V600K" },
-            { id: "BRAF-wt-mel", label: "BRAF wild-type" },
             { id: "NRAS-mel", label: "NRAS mut" },
             { id: "KIT-mel", label: "KIT mut" },
             { id: "PDL1-mel", label: "PDL1 (%)", type: "pdl1_range" },
             { id: "MSI-H-mel", label: "MSI-H / dMMR" },
-            { id: "StadioIII-mel", label: "Stadio III (adiuvante)" },
-            { id: "StadioIV-M1c-mel", label: "Stadio IV M1c/M1d" },
+            { id: "met-encefaliche-mel", label: "Metastasi encefaliche" },
             { id: "LDH-elevata-mel", label: "LDH elevata" },
         ],
         "SCC": [
-            { id: "SCC-cut-LA", label: "Localmente avanzato" },
-            { id: "SCC-cut-met", label: "Metastatico" },
             { id: "PDL1-SCC-cut", label: "PDL1 (%)", type: "pdl1_range" },
-            { id: "Immunosoppresso-SCC", label: "Immunosoppresso (trapianto)" },
-            { id: "EGFR-SCC-cut", label: "EGFR mutato / overespresso" },
         ],
-        "Basalioma": [
-            { id: "BCC-LA", label: "Localmente avanzato" },
-            { id: "BCC-met", label: "Metastatico" },
-            { id: "PTCH1mut", label: "PTCH1 mut (Hedgehog)" },
-            { id: "SMOmut", label: "SMO mut" },
-            { id: "Gorlin", label: "Sindrome di Gorlin (BCNS)" },
-        ],
+        "Basalioma": [],
 
         // ============================================================
         // TESTA-COLLO (specifiche per singola sottosede)
@@ -348,25 +308,19 @@ document.addEventListener("DOMContentLoaded", () => {
             ...BASE_HNSCC,
             { id: "HPV-p16-OF", label: "HPV positivo (p16+)" },
             { id: "HPV-neg-OF", label: "HPV negativo" },
-            { id: "DeEscalation-OF", label: "De-escalation (trial)" },
         ],
         "Laringe: sopraglottica, glottide, sottoglottica": [
             ...BASE_HNSCC,
             { id: "Sovraglottica-LAR", label: "Sovraglottica" },
             { id: "Glottide-LAR", label: "Glottide" },
             { id: "Sottoglottica-LAR", label: "Sottoglottica" },
-            { id: "PreservazOrgano-LAR", label: "Preservazione d'organo" },
         ],
         "Ipofaringe": [
             ...BASE_HNSCC,
-            { id: "PreservazOrgano-IF", label: "Preservazione d'organo" },
         ],
         "Nasofaringe (o rinofaringe)": [
             ...BASE_HNSCC,
             { id: "EBV-NPC", label: "EBV positivo" },
-            { id: "WHO-I-NPC", label: "WHO tipo I (cheratinizzante)" },
-            { id: "WHO-II-NPC", label: "WHO tipo II/III (non cheratinizzante)" },
-            { id: "Endemico-NPC", label: "Area endemica" },
         ],
         "Cavità nasali e seni paranasali: seni mascellari, etmoidali, sfenoidali e frontali": [
             ...BASE_HNSCC,
@@ -2363,75 +2317,341 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const CTGOV_SPECIFIC_MAP = {
-        "Luminali": '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent" OR "HR+/HER2-" OR "HR+/HER2" OR "HR+ / HER2-"',
-        "TNBC": '"TNBC" OR "triple negative" OR "triple-negative" OR "triple negative breast"',
+        // --- MAMMELLA ---
+        "Luminali":      '"luminal" OR "HR positive" OR "HR-positive" OR "hormone receptor positive" OR "ER positive" OR "ER-positive" OR "estrogen receptor positive" OR "estrogen-dependent" OR "HR+/HER2-" OR "HR+/HER2" OR "HR+ / HER2-"',
+        "TNBC":          '"TNBC" OR "triple negative" OR "triple-negative" OR "triple negative breast"',
         "HER2 positive": '"HER2 positive" OR "HER2-positive" OR "HER-2 positive" OR "HER-2-positive" OR "HER2+" OR "HER2 amplified" OR "HER2-overexpressing"',
-        "Mesotelioma": '"mesothelioma" OR "pleural mesothelioma"',
-        "NSCLC": '"NSCLC" OR "non-small cell lung cancer" OR "non small cell lung cancer" OR "non-small-cell lung"',
-        "SCLC": '"SCLC" OR "small cell lung cancer" OR "small-cell lung cancer"',
-        "Esofago": '"esophagus" OR "esophageal" OR "esophageal cancer"',
-        "Stomaco": '"gastric" OR "stomach" OR "gastric cancer"',
-        "Colon": '"colon" OR "colonic" OR "colorectal"',
-        "Retto": '"rectum" OR "rectal" OR "colorectal"',
-        "Ano": '"anal" OR "anus"',
-        "Vie biliari": '"biliary" OR "cholangiocarcinoma" OR "gallbladder"',
-        "Pancreas": '"pancreas" OR "pancreatic" OR "pancreatic ductal adenocarcinoma"',
-        "Fegato": '"liver" OR "hepatocellular" OR "HCC"',
-        "Endometrio": '"endometrial" OR "endometrium"',
-        "Ovaio": '"ovarian" OR "ovary"',
-        "Cervice": '"cervical" OR "cervix"',
-        "Vulva": '"vulvar" OR "vulva"',
-        "Altri": "",
-        "Prostata": '"prostate" OR "prostatic" OR "prostate cancer"',
-        "Rene": '"renal" OR "kidney" OR "renal cell carcinoma" OR "RCC"',
-        "Vescica": '"bladder" OR "urothelial" OR "urothelial carcinoma"',
-        "Altre vie Urinarie": '"urinary" OR "urothelial"',
-        "Melanoma": '"melanoma" OR "cutaneous melanoma"',
-        "SCC": '"squamous cell skin" OR "cutaneous squamous cell" OR "cSCC"',
-        "Basalioma": '"basal cell skin" OR "basal cell carcinoma" OR "BCC"',
+        // --- POLMONE ---
+        "NSCLC":         '"NSCLC" OR "non-small cell lung cancer" OR "non small cell lung cancer" OR "non-small-cell lung"',
+        "SCLC":          '"SCLC" OR "small cell lung cancer" OR "small-cell lung cancer"',
+        "Mesotelioma":   '"mesothelioma" OR "pleural mesothelioma" OR "peritoneal mesothelioma"',
+        // --- GASTRO-INTESTINALE ---
+        "Esofago":       '"esophagus" OR "esophageal" OR "esophageal cancer" OR "oesophagus" OR "oesophageal" OR "gastroesophageal junction" OR "GEJ" OR "Siewert"',
+        "Stomaco":       '"gastric" OR "stomach" OR "gastric cancer" OR "gastric adenocarcinoma" OR "gastroesophageal" OR "GEJ" OR "gastric carcinoma"',
+        "Colon":         '"colon" OR "colonic" OR "colorectal" OR "colon cancer" OR "colonic cancer"',
+        "Retto":         '"rectum" OR "rectal" OR "colorectal" OR "rectal cancer" OR "rectal carcinoma"',
+        "Ano":           '"anal" OR "anus" OR "anal canal" OR "anal carcinoma" OR "anal squamous cell"',
+        "Vie biliari":   '"biliary" OR "cholangiocarcinoma" OR "gallbladder" OR "bile duct" OR "biliary tract" OR "intrahepatic cholangiocarcinoma" OR "extrahepatic cholangiocarcinoma" OR "hilar" OR "Klatskin"',
+        "Pancreas":      '"pancreas" OR "pancreatic" OR "pancreatic ductal adenocarcinoma" OR "PDAC" OR "pancreatic cancer" OR "exocrine pancreas"',
+        "Fegato":        '"liver" OR "hepatocellular" OR "HCC" OR "hepatocellular carcinoma" OR "hepatic cancer" OR "liver cancer"',
+        // --- GINECOLOGICO ---
+        "Endometrio":    '"endometrial" OR "endometrium" OR "endometrial cancer" OR "uterine cancer" OR "uterine corpus" OR "corpus uteri"',
+        "Ovaio":         '"ovarian" OR "ovary" OR "ovarian cancer" OR "ovarian carcinoma" OR "fallopian tube" OR "peritoneal carcinoma" OR "primary peritoneal"',
+        "Cervice":       '"cervical" OR "cervix" OR "cervical cancer" OR "cervix uteri"',
+        "Vulva":         '"vulvar" OR "vulva" OR "vulval" OR "vulvar cancer" OR "vulvar carcinoma"',
+        "Altri":         "",
+        // --- PROSTATA E VIE URINARIE ---
+        "Prostata":      '"prostate" OR "prostatic" OR "prostate cancer" OR "prostatic adenocarcinoma" OR "castration"',
+        "Rene":          '"renal" OR "kidney" OR "renal cell carcinoma" OR "RCC" OR "renal cell cancer" OR "clear cell renal"',
+        "Vescica":       '"bladder" OR "urothelial" OR "urothelial carcinoma" OR "bladder cancer" OR "transitional cell carcinoma"',
+        "Altre vie Urinarie": '"urinary" OR "urothelial" OR "renal pelvis" OR "ureter" OR "ureteral" OR "urethral" OR "upper tract urothelial"',
+        // --- MELANOMA E CUTE ---
+        "Melanoma":      '"melanoma" OR "cutaneous melanoma" OR "malignant melanoma" OR "uveal melanoma" OR "acral melanoma" OR "mucosal melanoma"',
+        "SCC":           '"squamous cell skin" OR "cutaneous squamous cell" OR "cSCC" OR "skin squamous cell carcinoma" OR "cutaneous SCC"',
+        "Basalioma":     '"basal cell skin" OR "basal cell carcinoma" OR "BCC" OR "basal cell cancer" OR "basalioma"',
+        // --- TESTA-COLLO ---
+        "Cavo orale: lingua anteriore, labbra, gengive, mucosa buccale, pavimento della bocca, palato duro":
+            '"oral cavity" OR "oral cancer" OR "tongue" OR "mouth" OR "buccal" OR "gingival" OR "lip" OR "floor of mouth" OR "hard palate"',
+        "Orofaringe: base della lingua, tonsille palatine, palato molle":
+            '"oropharynx" OR "oropharyngeal" OR "tonsil" OR "tonsillar" OR "base of tongue" OR "soft palate"',
+        "Laringe: sopraglottica, glottide, sottoglottica":
+            '"larynx" OR "laryngeal" OR "glottic" OR "supraglottic" OR "subglottic" OR "laryngeal cancer"',
+        "Ipofaringe":
+            '"hypopharynx" OR "hypopharyngeal" OR "pyriform sinus" OR "posterior pharyngeal wall"',
+        "Nasofaringe (o rinofaringe)":
+            '"nasopharynx" OR "nasopharyngeal" OR "nasopharyngeal carcinoma" OR "NPC" OR "rhinopharynx"',
+        "Cavità nasali e seni paranasali: seni mascellari, etmoidali, sfenoidali e frontali":
+            '"nasal cavity" OR "paranasal" OR "maxillary sinus" OR "ethmoid" OR "sphenoid" OR "frontal sinus" OR "sinonasal"',
+        "Ghiandole Salivari: parotide, sottomandibolare, sottolinguale, ghiandole salivari minori":
+            '"salivary gland" OR "salivary" OR "parotid" OR "submandibular" OR "sublingual" OR "minor salivary"',
     };
 
     const CTGOV_FURTHER_MAP = {
-        // Polmone / Istologie & Biomarcatori Generali
-        "ADK": '"adenocarcinoma" OR "adenocarcinomas" OR "ADK" OR "glandular carcinoma"',
-        "SCC": '"squamous" OR "squamous cell" OR "squamous cell carcinoma" OR "SCC" OR "epidermoid" OR "epidermoid carcinoma"',
-        "PDL1": '"PD-L1" OR "PDL1" OR "PD L1" OR "CD274" OR "programmed death-ligand 1" OR "programmed cell death ligand 1" OR "programmed death ligand 1"',
-        "EGFR": '"EGFR" OR "E.G.F.R." OR "ERBB1" OR "ERBB-1" OR "ERBB 1" OR "epidermal growth factor receptor"',
-        "ALK": '"ALK" OR "A.L.K." OR "anaplastic lymphoma kinase" OR "ALK-positive" OR "ALK positive" OR "ALK rearrangement" OR "ALK fusion"',
-        "KRAS": '"KRAS" OR "K-RAS" OR "K RAS" OR "K-ras proto-oncogene"',
-        "ROS1": '"ROS1" OR "ROS-1" OR "ROS 1" OR "ROS proto-oncogene 1"',
-        "BRAF-V600": '"BRAF" OR "B-RAF" OR "B RAF" OR "V600" OR "V600E" OR "V600K" OR "BRAF-V600" OR "BRAF V600" OR "BRAF-V600E"',
-        "RET": '"RET" OR "RET-rearranged" OR "RET rearrangement" OR "RET fusion" OR "RET proto-oncogene"',
-        "NTRK": '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "neurotrophic tyrosine receptor kinase" OR "NTRK fusion"',
-        "HER2": '"HER2" OR "HER-2" OR "HER 2" OR "ERBB2" OR "ERBB-2" OR "ERBB 2" OR "human epidermal growth factor receptor 2" OR "neu"',
-        "MET": '"MET" OR "c-MET" OR "cMET" OR "c-Met" OR "MET exon 14" OR "MET amplification" OR "hepatocyte growth factor receptor"',
-        "EGFR ex20ins": '"EGFR exon 20" OR "EGFR-exon-20" OR "EGFR ex20ins" OR "exon 20 insertion" OR "exon 20 ins" OR "exon 20 ins EGFR"',
 
-        // Mesotelioma
-        "Epitelioide": '"epithelioid" OR "epithelial mesothelioma" OR "epithelioid mesothelioma"',
-        "Bifasico": '"biphasic" OR "mixed mesothelioma" OR "biphasic mesothelioma"',
-        "Sarcomatoide": '"sarcomatoid" OR "sarcomatous" OR "sarcomatoid mesothelioma"',
+        // ============================================================
+        // POLMONE — Istologie & Biomarcatori
+        // ============================================================
+        "ADK":           '"adenocarcinoma" OR "adenocarcinomas" OR "ADK" OR "glandular carcinoma" OR "acinar" OR "papillary adenocarcinoma" OR "mucinous adenocarcinoma"',
+        "SCC-NSCLC":     '"squamous" OR "squamous cell" OR "squamous cell carcinoma" OR "SCC" OR "epidermoid" OR "epidermoid carcinoma" OR "squamous lung"',
+        "PDL1":          '"PD-L1" OR "PDL1" OR "PD L1" OR "CD274" OR "programmed death-ligand 1" OR "programmed cell death ligand 1" OR "programmed death ligand 1"',
+        "EGFR":          '"EGFR" OR "E.G.F.R." OR "ERBB1" OR "ERBB-1" OR "ERBB 1" OR "epidermal growth factor receptor"',
+        "ALK":           '"ALK" OR "A.L.K." OR "anaplastic lymphoma kinase" OR "ALK-positive" OR "ALK positive" OR "ALK rearrangement" OR "ALK fusion"',
+        "KRAS":          '"KRAS" OR "K-RAS" OR "K RAS" OR "K-ras proto-oncogene" OR "KRAS mutation" OR "KRAS mutated"',
+        "ROS1":          '"ROS1" OR "ROS-1" OR "ROS 1" OR "ROS proto-oncogene 1" OR "ROS1 rearrangement" OR "ROS1 fusion"',
+        "BRAF-V600":     '"BRAF" OR "B-RAF" OR "B RAF" OR "V600" OR "V600E" OR "V600K" OR "BRAF-V600" OR "BRAF V600" OR "BRAF-V600E"',
+        "RET":           '"RET" OR "RET-rearranged" OR "RET rearrangement" OR "RET fusion" OR "RET proto-oncogene"',
+        "NTRK":          '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "neurotrophic tyrosine receptor kinase" OR "NTRK fusion" OR "TRK fusion"',
+        "HER2":          '"HER2" OR "HER-2" OR "HER 2" OR "ERBB2" OR "ERBB-2" OR "ERBB 2" OR "human epidermal growth factor receptor 2" OR "neu"',
+        "MET":           '"MET" OR "c-MET" OR "cMET" OR "c-Met" OR "MET exon 14" OR "MET amplification" OR "hepatocyte growth factor receptor" OR "MET skipping"',
+        "EGFR ex20ins":  '"EGFR exon 20" OR "EGFR-exon-20" OR "EGFR ex20ins" OR "exon 20 insertion" OR "exon 20 ins" OR "exon 20 ins EGFR"',
 
-        // Mammella
-        "Duttale": '"ductal" OR "ductal carcinoma" OR "infiltrating ductal" OR "invasive ductal" OR "IDC"',
-        "Lobulare": '"lobular" OR "lobular carcinoma" OR "infiltrating lobular" OR "invasive lobular" OR "ILC"',
-        "ESR1mut": '"ESR1" OR "ESR-1" OR "ESR 1" OR "estrogen receptor 1" OR "ESR1 mutation" OR "ESR1 mutated"',
-        "PIK3CAmut": '"PIK3CA" OR "PIK3-CA" OR "PI3K" OR "PI3Kalpha" OR "phosphatidylinositol-4,5-bisphosphate 3-kinase catalytic subunit alpha"',
-        "AKTmut": '"AKT" OR "AKT1" OR "AKT-1" OR "AKT 1" OR "AKT1 E17K" OR "protein kinase B"',
-        "PTENmut": '"PTEN" OR "phosphatase and tensin homolog"',
-        "BRCA1/2mut": '"BRCA" OR "BRCA1" OR "BRCA-1" OR "BRCA 1" OR "BRCA2" OR "BRCA-2" OR "BRCA 2" OR "breast cancer gene" OR "BRCA mutated" OR "BRCA mutation"',
-        "PALB2": '"PALB2" OR "PALB-2" OR "partner and localizer of BRCA2"',
-        "HER2 low": '"HER2 low" OR "HER2-low" OR "HER-2 low" OR "HER-2-low" OR "HER 2 low" OR "HER2 1+" OR "HER2 2+" OR "HER2 1-plus" OR "HER2 2-plus"',
-        "HER2 ultra-low": '"HER2 ultra-low" OR "HER2-ultralow" OR "HER2 ultralow" OR "HER-2 ultra low" OR "HER-2 ultralow" OR "HER-2-ultralow"',
+        // ============================================================
+        // MESOTELIOMA
+        // ============================================================
+        "Epitelioide":   '"epithelioid" OR "epithelial mesothelioma" OR "epithelioid mesothelioma"',
+        "Bifasico":      '"biphasic" OR "mixed mesothelioma" OR "biphasic mesothelioma"',
+        "Sarcomatoide":  '"sarcomatoid" OR "sarcomatous" OR "sarcomatoid mesothelioma"',
 
-        // Testa-Collo
-        "Cavo orale": '"oral cavity" OR "oral" OR "tongue" OR "mouth" OR "buccal" OR "gingival" OR "lip" OR "floor of mouth"',
-        "Orofaringe": '"oropharynx" OR "oropharyngeal" OR "tonsil" OR "tonsillar" OR "base of tongue" OR "soft palate"',
-        "Laringe": '"larynx" OR "laryngeal" OR "glottic" OR "supraglottic" OR "subglottic"',
-        "Ipofaringe": '"hypopharynx" OR "hypopharyngeal"',
-        "Nasofaringe": '"nasopharynx" OR "nasopharyngeal" OR "rhinopharynx" OR "rhinopharyngeal"',
-        "Cavità nasali e seni paranasali": '"nasal cavity" OR "paranasal" OR "maxillary sinus" OR "ethmoid" OR "sphenoid" OR "frontal sinus"',
-        "Ghiandole Salivari": '"salivary gland" OR "salivary" OR "parotid" OR "submandibular" OR "sublingual"',
+        // ============================================================
+        // MAMMELLA
+        // ============================================================
+        "Duttale":       '"ductal" OR "ductal carcinoma" OR "infiltrating ductal" OR "invasive ductal" OR "IDC"',
+        "Lobulare":      '"lobular" OR "lobular carcinoma" OR "infiltrating lobular" OR "invasive lobular" OR "ILC"',
+        "ESR1mut":       '"ESR1" OR "ESR-1" OR "ESR 1" OR "estrogen receptor 1" OR "ESR1 mutation" OR "ESR1 mutated"',
+        "PIK3CAmut":     '"PIK3CA" OR "PIK3-CA" OR "PI3K" OR "PI3Kalpha" OR "phosphatidylinositol-4,5-bisphosphate 3-kinase catalytic subunit alpha"',
+        "AKTmut":        '"AKT" OR "AKT1" OR "AKT-1" OR "AKT 1" OR "AKT1 E17K" OR "protein kinase B"',
+        "PTENmut":       '"PTEN" OR "phosphatase and tensin homolog" OR "PTEN loss" OR "PTEN deletion"',
+        "BRCA1/2mut":    '"BRCA" OR "BRCA1" OR "BRCA-1" OR "BRCA 1" OR "BRCA2" OR "BRCA-2" OR "BRCA 2" OR "breast cancer gene" OR "BRCA mutated" OR "BRCA mutation" OR "gBRCA" OR "germline BRCA"',
+        "PALB2":         '"PALB2" OR "PALB-2" OR "partner and localizer of BRCA2"',
+        "HER2 low":      '"HER2 low" OR "HER2-low" OR "HER-2 low" OR "HER-2-low" OR "HER 2 low" OR "HER2 1+" OR "HER2 2+" OR "HER2 1-plus" OR "HER2 2-plus"',
+        "HER2 ultra-low":'"HER2 ultra-low" OR "HER2-ultralow" OR "HER2 ultralow" OR "HER-2 ultra low" OR "HER-2 ultralow" OR "HER-2-ultralow"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Esofago
+        // ============================================================
+        "Adenocarcinoma-esofago": '"esophageal adenocarcinoma" OR "adenocarcinoma of the esophagus" OR "gastroesophageal junction adenocarcinoma" OR "GEJ adenocarcinoma" OR "AEG"',
+        "SCC-esofago":            '"esophageal squamous" OR "squamous cell carcinoma of the esophagus" OR "esophageal SCC" OR "esophageal squamous cell carcinoma" OR "ESCC"',
+        "HER2-esofago":           '"HER2" OR "HER-2" OR "ERBB2" OR "HER2 positive" OR "HER2-positive" OR "HER2 amplified"',
+        "PDL1-CPS-esofago":       '"PD-L1" OR "PDL1" OR "PD L1" OR "CPS" OR "combined positive score" OR "programmed death-ligand 1"',
+        "MSI-H-esofago":          '"MSI-H" OR "MSI" OR "microsatellite instability" OR "microsatellite instability-high" OR "dMMR" OR "mismatch repair deficient" OR "MMR deficient"',
+        "NTRK-esofago":           '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK" OR "neurotrophic tyrosine receptor kinase" OR "NTRK fusion"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Stomaco
+        // ============================================================
+        "Adenocarcinoma-gastrico": '"gastric adenocarcinoma" OR "adenocarcinoma of the stomach" OR "gastric cancer" OR "stomach adenocarcinoma"',
+        "Signet-ring-gastrico":   '"signet ring" OR "signet-ring cell" OR "signet ring cell carcinoma" OR "poorly cohesive carcinoma"',
+        "HER2-stomaco":           '"HER2 gastric" OR "HER2-positive gastric" OR "gastric HER2" OR "ERBB2 gastric" OR "trastuzumab gastric"',
+        "PDL1-CPS-stomaco":       '"PD-L1" OR "PDL1" OR "CPS" OR "combined positive score" OR "programmed death-ligand 1"',
+        "FGFR2b":                 '"FGFR2b" OR "FGFR2" OR "fibroblast growth factor receptor 2" OR "FGFR2b overexpression" OR "bemarituzumab"',
+        "CLDN18-2":               '"CLDN18.2" OR "CLDN18" OR "claudin 18.2" OR "claudin-18.2" OR "claudin 18" OR "zolbetuximab" OR "IMAB362"',
+        "EBV-stomaco":            '"EBV" OR "Epstein-Barr" OR "Epstein Barr virus" OR "EBV-positive" OR "EBV-associated" OR "EBV-associated gastric"',
+        "MSI-H-stomaco":          '"MSI-H" OR "MSI" OR "microsatellite instability" OR "microsatellite instability-high" OR "dMMR" OR "mismatch repair deficient"',
+        "NTRK-stomaco":           '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK fusion" OR "neurotrophic tyrosine receptor kinase"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Colon
+        // ============================================================
+        "MSI-H-colon":            '"MSI-H" OR "MSI" OR "microsatellite instability" OR "microsatellite instability-high" OR "dMMR" OR "mismatch repair" OR "MMR-deficient"',
+        "KRAS-colon":             '"KRAS" OR "KRAS mutation" OR "KRAS mutated" OR "KRAS-mutant" OR "KRAS mutant"',
+        "KRAS-G12C-colon":        '"KRAS G12C" OR "KRAS-G12C" OR "KRAS G12C mutation" OR "G12C mutation" OR "sotorasib" OR "adagrasib" OR "KRAS p.G12C"',
+        "BRAF-V600E-colon":       '"BRAF V600E" OR "BRAF-V600E" OR "BRAF mutation" OR "BRAF-mutant" OR "encorafenib" OR "BRAF V600E colorectal"',
+        "HER2-colon":             '"HER2 amplification" OR "HER2-amplified" OR "HER2 amplified colorectal" OR "HER2 colorectal" OR "ERBB2 amplification" OR "HER2 positive colorectal"',
+        "NTRK-colon":             '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK" OR "TRK fusion" OR "neurotrophic tyrosine receptor kinase"',
+        "lato-dx-colon":          '"right colon" OR "right-sided colon" OR "right-sided colorectal" OR "ascending colon" OR "cecum" OR "hepatic flexure" OR "right colon cancer" OR "right-sided"',
+        "lato-sx-colon":          '"left colon" OR "left-sided colon" OR "left-sided colorectal" OR "descending colon" OR "sigmoid" OR "splenic flexure" OR "left colon cancer" OR "left-sided"',
+        "signet-ring-colon":      '"signet ring" OR "signet-ring cell" OR "signet ring cell carcinoma" OR "poorly cohesive"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Retto
+        // ============================================================
+        "MSI-H-retto":            '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient" OR "MSI-H rectal"',
+        "KRAS-retto":             '"KRAS" OR "KRAS mutated" OR "KRAS mutation" OR "KRAS-mutant rectal"',
+        "KRAS-G12C-retto":        '"KRAS G12C" OR "KRAS-G12C" OR "G12C mutation" OR "sotorasib rectal" OR "adagrasib rectal"',
+        "BRAF-V600E-retto":       '"BRAF V600E" OR "BRAF-V600E" OR "BRAF mutation rectal" OR "encorafenib rectal"',
+        "HER2-retto":             '"HER2 amplification rectal" OR "HER2 rectal" OR "ERBB2 amplification rectal"',
+        "NTRK-retto":             '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK fusion"',
+        "retto-alto":             '"upper rectal" OR "high rectal" OR "upper third rectum" OR "upper rectal cancer"',
+        "retto-medio":            '"mid rectal" OR "middle rectal" OR "middle third rectum" OR "mid-rectal cancer"',
+        "retto-basso":            '"low rectal" OR "lower rectal" OR "lower third rectum" OR "low rectal cancer"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Ano
+        // ============================================================
+        "SCC-anale":              '"anal squamous" OR "anal squamous cell carcinoma" OR "squamous cell carcinoma of the anus" OR "anal SCC" OR "anal canal squamous"',
+        "HPV-ano":                '"HPV" OR "human papillomavirus" OR "HPV-associated" OR "HPV-positive anal" OR "HPV-related"',
+        "PDL1-ano":               '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "pembrolizumab anal" OR "immune checkpoint"',
+        "MSI-H-ano":              '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Vie Biliari
+        // ============================================================
+        "CCA-intraepatico":       '"intrahepatic cholangiocarcinoma" OR "intrahepatic CCA" OR "iCCA" OR "intrahepatic bile duct" OR "intrahepatic biliary"',
+        "CCA-ilare":              '"hilar cholangiocarcinoma" OR "Klatskin tumor" OR "Klatskin" OR "perihilar cholangiocarcinoma" OR "perihilar CCA" OR "pCCA"',
+        "CCA-distale":            '"distal cholangiocarcinoma" OR "distal bile duct" OR "distal CCA" OR "extrahepatic distal"',
+        "Colecisti":              '"gallbladder cancer" OR "gallbladder carcinoma" OR "gallbladder adenocarcinoma" OR "cholecystic"',
+        "FGFR2-fus":              '"FGFR2" OR "FGFR2 fusion" OR "FGFR2 rearrangement" OR "fibroblast growth factor receptor 2" OR "pemigatinib" OR "infigratinib" OR "futibatinib" OR "FGFR inhibitor"',
+        "IDH1mut":                '"IDH1" OR "IDH1 mutation" OR "IDH1-mutated" OR "IDH1 mutant" OR "ivosidenib" OR "isocitrate dehydrogenase 1"',
+        "IDH2mut":                '"IDH2" OR "IDH2 mutation" OR "IDH2-mutated" OR "IDH2 mutant" OR "enasidenib" OR "isocitrate dehydrogenase 2"',
+        "BRAF-V600E-vb":          '"BRAF V600E" OR "BRAF-V600E" OR "BRAF mutation" OR "BRAF biliary" OR "BRAF cholangiocarcinoma"',
+        "HER2-vb":                '"HER2 amplification" OR "HER2-amplified" OR "ERBB2 amplification" OR "HER2 biliary" OR "HER2 cholangiocarcinoma"',
+        "ERBB2mut-vb":            '"ERBB2 mutation" OR "HER2 mutation" OR "ERBB2 mutated" OR "HER2-mutated" OR "ERBB2 mutant"',
+        "PDL1-vb":                '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "durvalumab" OR "TOPAZ" OR "immune checkpoint biliary"',
+        "MSI-H-vb":               '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient"',
+        "NTRK-vb":                '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK" OR "neurotrophic tyrosine receptor kinase"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Pancreas
+        // ============================================================
+        "PDAC":                   '"pancreatic ductal adenocarcinoma" OR "PDAC" OR "ductal adenocarcinoma" OR "exocrine pancreatic"',
+        "pNET":                   '"pancreatic neuroendocrine" OR "pNET" OR "neuroendocrine tumor pancreas" OR "islet cell tumor" OR "carcinoid pancreas" OR "NET pancreas" OR "pancreatic NET"',
+        "BRCA1-panc":             '"BRCA1" OR "BRCA-1" OR "BRCA1 mutation" OR "BRCA1 mutated" OR "germline BRCA1" OR "gBRCA1"',
+        "BRCA2-panc":             '"BRCA2" OR "BRCA-2" OR "BRCA2 mutation" OR "BRCA2 mutated" OR "germline BRCA2" OR "gBRCA2" OR "olaparib pancreatic"',
+        "PALB2-panc":             '"PALB2" OR "PALB-2" OR "partner and localizer of BRCA2" OR "PALB2 mutation"',
+        "ATM-panc":               '"ATM" OR "ATM mutation" OR "ATM-mutated" OR "ataxia telangiectasia mutated" OR "ATM deficient"',
+        "KRAS-panc":              '"KRAS" OR "KRAS mutation" OR "KRAS-mutated" OR "KRAS mutant pancreatic"',
+        "KRAS-G12C-panc":         '"KRAS G12C" OR "KRAS-G12C" OR "G12C pancreatic" OR "sotorasib pancreatic" OR "adagrasib pancreatic"',
+        "MSI-H-panc":             '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient" OR "MSI pancreatic"',
+        "NTRK-panc":              '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK fusion" OR "neurotrophic tyrosine receptor kinase"',
+
+        // ============================================================
+        // GASTRO-INTESTINALE — Fegato
+        // ============================================================
+        "Child-Pugh-A":           '"Child-Pugh A" OR "Child-Pugh class A" OR "CPA" OR "Child Pugh A" OR "preserved liver function" OR "well-compensated cirrhosis"',
+        "Child-Pugh-B7":          '"Child-Pugh B" OR "Child-Pugh B7" OR "Child-Pugh B score 7" OR "CPS B7" OR "compensated cirrhosis B"',
+        "HBV":                    '"HBV" OR "hepatitis B" OR "hepatitis B virus" OR "HBV-related" OR "HBV-associated" OR "HBsAg positive" OR "hepatitis B surface antigen"',
+        "HCV":                    '"HCV" OR "hepatitis C" OR "hepatitis C virus" OR "HCV-related" OR "HCV-associated" OR "anti-HCV positive"',
+        "AFP-alto":               '"AFP" OR "alpha-fetoprotein" OR "alpha fetoprotein" OR "AFP elevated" OR "AFP high" OR "AFP >400"',
+
+        // ============================================================
+        // GINECOLOGICO — Endometrio
+        // ============================================================
+        "Endometrioide-end":      '"endometrioid" OR "endometrioid endometrial" OR "endometrioid adenocarcinoma" OR "endometrioid carcinoma"',
+        "Sieroso-end":            '"serous endometrial" OR "endometrial serous" OR "uterine serous" OR "serous carcinoma endometrial" OR "serous uterine"',
+        "CelluleChiare-end":      '"clear cell endometrial" OR "clear cell carcinoma endometrial" OR "endometrial clear cell" OR "uterine clear cell"',
+        "Carcinosarcoma-end":     '"carcinosarcoma" OR "uterine carcinosarcoma" OR "malignant mixed Mullerian tumor" OR "MMMT" OR "mixed carcinosarcoma"',
+        "MSI-H-end":              '"MSI-H" OR "MSI" OR "microsatellite instability" OR "microsatellite instability-high" OR "dMMR" OR "mismatch repair deficient" OR "MSI-H endometrial"',
+        "p53mut-end":             '"p53" OR "TP53" OR "TP53 mutation" OR "p53 mutated" OR "p53-abnormal" OR "TCGA group IV" OR "serous-like endometrial"',
+        "POLEmut-end":            '"POLE" OR "POLE mutation" OR "POLE-mutated" OR "POLE mutant" OR "polymerase epsilon" OR "TCGA group I" OR "ultramutated" OR "ultra-mutated"',
+        "HER2-end":               '"HER2" OR "HER-2" OR "ERBB2" OR "HER2-positive endometrial" OR "HER2 endometrial" OR "HER2-positive serous endometrial"',
+        "FGFR2mut-end":           '"FGFR2" OR "FGFR2 mutation" OR "fibroblast growth factor receptor 2" OR "FGFR2 mutated" OR "FGFR2-mutant"',
+        "ERPR-end":               '"estrogen receptor" OR "ER positive" OR "progesterone receptor" OR "PR positive" OR "hormone receptor" OR "ER/PR" OR "progestin" OR "medroxyprogesterone" OR "levonorgestrel"',
+
+        // ============================================================
+        // GINECOLOGICO — Ovaio
+        // ============================================================
+        "HGSOC":                  '"high grade serous" OR "HGSOC" OR "high-grade serous ovarian" OR "high grade serous ovarian carcinoma" OR "high-grade ovarian"',
+        "LGSOC":                  '"low grade serous" OR "LGSOC" OR "low-grade serous ovarian" OR "low grade serous ovarian carcinoma" OR "low-grade ovarian"',
+        "Mucinoso-ov":            '"mucinous ovarian" OR "mucinous ovarian carcinoma" OR "ovarian mucinous" OR "mucinous epithelial ovarian"',
+        "Endometrioide-ov":       '"endometrioid ovarian" OR "endometrioid ovarian carcinoma" OR "ovarian endometrioid"',
+        "CelluleChiare-ov":       '"clear cell ovarian" OR "clear cell carcinoma ovarian" OR "ovarian clear cell"',
+        "BRCA1/2-ov":             '"BRCA" OR "BRCA1" OR "BRCA2" OR "BRCA-1" OR "BRCA-2" OR "BRCA1/2" OR "germline BRCA" OR "BRCA-mutated ovarian"',
+        "HRD-pos-ov":             '"HRD" OR "homologous recombination deficiency" OR "HRD positive" OR "HRD-positive" OR "BRCAness" OR "BRCA-like" OR "homologous recombination" OR "HRD score"',
+        "HRD-neg-ov":             '"HRD negative" OR "HRD-negative" OR "HRD-low" OR "homologous recombination proficient" OR "HRP"',
+        "platino-sens-ov":        '"platinum sensitive" OR "platinum-sensitive" OR "platinum-sensitive ovarian" OR "platinum sensitive relapsed"',
+        "platino-res-ov":         '"platinum resistant" OR "platinum-resistant" OR "platinum-resistant ovarian" OR "platinum resistance" OR "platinum-refractory ovarian"',
+        "platino-refr-ov":        '"platinum refractory" OR "platinum-refractory" OR "refractory to platinum" OR "primary platinum refractory"',
+        "FRalfa-ov":              '"folate receptor" OR "folate receptor alpha" OR "FRalpha" OR "FOLR1" OR "mirvetuximab" OR "mirvetuximab soravtansine" OR "IMGN853" OR "folate receptor-positive"',
+
+        // ============================================================
+        // GINECOLOGICO — Cervice
+        // ============================================================
+        "SCC-cervice":            '"cervical squamous" OR "squamous cell carcinoma of the cervix" OR "cervical SCC" OR "squamous cervical cancer"',
+        "Adenocarcinoma-cervice": '"cervical adenocarcinoma" OR "adenocarcinoma of the cervix" OR "endocervical adenocarcinoma"',
+        "HPV-cervice":            '"HPV" OR "human papillomavirus" OR "HPV-associated cervical" OR "HPV-positive cervical" OR "HPV-related cervical"',
+        "PDL1-CPS-cervice":       '"PD-L1" OR "PDL1" OR "CPS" OR "combined positive score" OR "pembrolizumab cervical" OR "programmed death-ligand 1"',
+        "MSI-H-cervice":          '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient"',
+
+        // ============================================================
+        // GINECOLOGICO — Vulva
+        // ============================================================
+        "SCC-vulva":              '"vulvar squamous" OR "squamous cell carcinoma of the vulva" OR "vulvar SCC" OR "squamous vulvar cancer"',
+        "HPV-vulva":              '"HPV" OR "human papillomavirus" OR "HPV-associated vulvar" OR "HPV-positive vulvar"',
+        "TP53mut-vulva":          '"TP53" OR "p53" OR "TP53 mutation" OR "p53 mutated" OR "TP53-mutated vulvar" OR "differentiated VIN"',
+        "PDL1-vulva":             '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "pembrolizumab vulvar" OR "immune checkpoint vulvar"',
+
+        // ============================================================
+        // PROSTATA
+        // ============================================================
+        "Adenocarcinoma-prost":   '"prostate adenocarcinoma" OR "prostatic adenocarcinoma" OR "acinar adenocarcinoma prostate"',
+        "NEPC-prost":             '"neuroendocrine prostate" OR "NEPC" OR "prostate small cell" OR "small cell prostate cancer" OR "neuroendocrine carcinoma prostate" OR "CRPC-NE"',
+        "CRPC-prost":             '"CRPC" OR "castration-resistant" OR "castration resistant prostate cancer" OR "castration-resistant prostate cancer" OR "enzalutamide" OR "abiraterone" OR "darolutamide"',
+        "mHSPC-prost":            '"mHSPC" OR "metastatic hormone-sensitive prostate" OR "hormone-sensitive prostate cancer" OR "castration-sensitive" OR "CSPC" OR "mCSPC" OR "hormone naive prostate"',
+        "BRCA1/2-prost":          '"BRCA" OR "BRCA1" OR "BRCA2" OR "BRCA-1" OR "BRCA-2" OR "BRCA1/2" OR "gBRCA" OR "olaparib prostate" OR "PROfound"',
+        "ATM-prost":              '"ATM" OR "ATM mutation prostate" OR "ATM-mutated prostate" OR "ataxia telangiectasia mutated prostate"',
+        "MSI-H-prost":            '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient prostate" OR "pembrolizumab prostate"',
+        "PTEN-loss-prost":        '"PTEN loss" OR "PTEN deletion" OR "PTEN-deficient" OR "PTEN lost" OR "ipatasertib" OR "capivasertib" OR "PI3K pathway prostate"',
+        "Gleason-prost":          '"Gleason" OR "Gleason score" OR "ISUP" OR "Gleason 6" OR "Gleason 7" OR "Gleason 8" OR "Gleason 9" OR "Gleason 10"',
+
+        // ============================================================
+        // RENE
+        // ============================================================
+        "ccRCC":                  '"clear cell renal" OR "clear cell RCC" OR "ccRCC" OR "clear cell renal cell carcinoma" OR "clear cell kidney cancer"',
+        "pRCC1":                  '"papillary renal" OR "papillary RCC type 1" OR "type 1 papillary" OR "papillary type 1 renal" OR "MET-driven papillary"',
+        "pRCC2":                  '"papillary renal type 2" OR "type 2 papillary" OR "papillary type 2 renal" OR "FH-deficient" OR "HLRCC" OR "hereditary leiomyomatosis"',
+        "chRCC":                  '"chromophobe renal" OR "chromophobe RCC" OR "chRCC" OR "chromophobe renal cell carcinoma"',
+        "VHL-rene":               '"VHL" OR "VHL mutation" OR "von Hippel-Lindau" OR "VHL-mutated" OR "belzutifan" OR "HIF inhibitor" OR "VHL-deficient"',
+
+        // ============================================================
+        // VESCICA
+        // ============================================================
+        "Uroteliale-vesc":        '"urothelial carcinoma" OR "transitional cell carcinoma" OR "urothelial bladder" OR "bladder urothelial" OR "TCC"',
+        "SCC-vesc":               '"squamous cell carcinoma bladder" OR "bladder SCC" OR "squamous bladder" OR "squamous cell bladder cancer"',
+        "Adenocarcinoma-vesc":    '"bladder adenocarcinoma" OR "adenocarcinoma of the bladder" OR "urachal adenocarcinoma"',
+        "PDL1-vesc":              '"PD-L1" OR "PDL1" OR "PD-L1 IC" OR "PD-L1 CPS" OR "atezolizumab bladder" OR "pembrolizumab bladder"',
+        "FGFR3-vesc":             '"FGFR3" OR "FGFR3 mutation" OR "FGFR3 alteration" OR "FGFR3-mutated" OR "erdafitinib" OR "fibroblast growth factor receptor 3" OR "FGFR3 rearrangement"',
+        "FGFR2-fus-vesc":         '"FGFR2 fusion" OR "FGFR2 rearrangement" OR "FGFR2 alteration" OR "fibroblast growth factor receptor 2 fusion"',
+        "HER2-vesc":              '"HER2 bladder" OR "HER2-positive bladder" OR "ERBB2 bladder" OR "HER2 amplification bladder" OR "HER2 urothelial"',
+        "MSI-H-vesc":             '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient"',
+        "platino-elig-vesc":      '"platinum-eligible" OR "cisplatin-eligible" OR "fit for cisplatin" OR "gemcitabine cisplatin" OR "GC" OR "MVAC"',
+        "platino-inelig-vesc":    '"platinum-ineligible" OR "cisplatin-ineligible" OR "unfit for cisplatin" OR "platinum unfit" OR "carboplatin" OR "gemcitabine carboplatin"',
+
+        // ============================================================
+        // ALTRE VIE URINARIE
+        // ============================================================
+        "Uroteliale-pelvi":       '"renal pelvis" OR "upper tract urothelial" OR "pelvic urothelial" OR "urothelial carcinoma of the renal pelvis" OR "renal pelvic carcinoma" OR "UTUC"',
+        "Uroteliale-uretere":     '"ureter" OR "ureteral" OR "urothelial carcinoma of the ureter" OR "ureteral carcinoma" OR "UTUC" OR "upper urinary tract"',
+        "Carcinoma-uretrale":     '"urethral carcinoma" OR "urethra cancer" OR "urethral cancer" OR "urethral squamous" OR "urethral adenocarcinoma"',
+        "FGFR3-altreVU":          '"FGFR3" OR "FGFR3 mutation" OR "FGFR3 alteration" OR "erdafitinib upper tract" OR "FGFR3-mutated upper tract"',
+        "PDL1-altreVU":           '"PD-L1" OR "PDL1" OR "programmed death-ligand 1"',
+        "HER2-altreVU":           '"HER2" OR "ERBB2" OR "HER2 amplification"',
+        "FGFR2-fus-altreVU":      '"FGFR2 fusion" OR "FGFR2 rearrangement"',
+        "MSI-H-altreVU":          '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient"',
+
+        // ============================================================
+        // MELANOMA
+        // ============================================================
+        "Cutaneo-mel":            '"cutaneous melanoma" OR "skin melanoma" OR "primary cutaneous" OR "melanoma of the skin"',
+        "Mucosale-mel":           '"mucosal melanoma" OR "mucosal" OR "sinonasal melanoma" OR "anorectal melanoma" OR "vaginal melanoma" OR "mucosal primary"',
+        "Uveale-mel":             '"uveal melanoma" OR "ocular melanoma" OR "choroidal melanoma" OR "ciliary body melanoma" OR "iris melanoma" OR "tebentafusp" OR "HLA-A*02:01"',
+        "Acrale-mel":             '"acral melanoma" OR "acral lentiginous" OR "acral lentiginous melanoma" OR "ALM" OR "subungual melanoma" OR "plantar melanoma"',
+        "BRAF-V600E-mel":         '"BRAF V600E" OR "BRAF-V600E" OR "V600E" OR "BRAF-mutated melanoma" OR "vemurafenib" OR "dabrafenib" OR "encorafenib" OR "BRAF V600E melanoma"',
+        "BRAF-V600K-mel":         '"BRAF V600K" OR "BRAF-V600K" OR "V600K" OR "V600 non-E" OR "BRAF non-V600E"',
+        "NRAS-mel":               '"NRAS" OR "NRAS mutation" OR "NRAS-mutated" OR "NRAS mutant" OR "NRAS Q61" OR "binimetinib" OR "MEK inhibitor melanoma"',
+        "KIT-mel":                '"KIT" OR "c-KIT" OR "KIT mutation" OR "KIT-mutated" OR "imatinib melanoma" OR "KIT-driven" OR "acral KIT"',
+        "PDL1-mel":               '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "pembrolizumab melanoma" OR "nivolumab melanoma" OR "immune checkpoint melanoma"',
+        "MSI-H-mel":              '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR"',
+        "met-encefaliche-mel":    '"brain metastasis" OR "brain metastases" OR "CNS metastasis" OR "brain met" OR "brain mets" OR "intracranial metastasis"',
+        "LDH-elevata-mel":        '"LDH" OR "lactate dehydrogenase" OR "elevated LDH" OR "LDH elevated" OR "LDH high" OR "LDH elevated melanoma"',
+
+        // ============================================================
+        // SCC CUTANEO
+        // ============================================================
+        "PDL1-SCC-cut":           '"PD-L1" OR "PDL1" OR "programmed death-ligand 1" OR "cemiplimab" OR "pembrolizumab cSCC" OR "immune checkpoint cSCC"',
+
+        // ============================================================
+        // TESTA-COLLO — Specifiche per sottosede
+        // ============================================================
+        // Comuni a tutte le sottosedi HNSCC
+        "SCC-HNSCC":              '"squamous cell carcinoma" OR "SCC" OR "HNSCC" OR "head and neck squamous" OR "squamous head neck"',
+        "PDL1-CPS-HNSCC":         '"PD-L1" OR "PDL1" OR "CPS" OR "combined positive score" OR "pembrolizumab head neck" OR "nivolumab head neck" OR "immune checkpoint HNSCC"',
+        "EGFR-over-HNSCC":        '"EGFR" OR "epidermal growth factor receptor" OR "cetuximab" OR "EGFR overexpression" OR "EGFR-overexpressing HNSCC"',
+        "MSI-H-HNSCC":            '"MSI-H" OR "MSI" OR "microsatellite instability" OR "dMMR" OR "mismatch repair deficient"',
+        "platino-eligible-HNSCC": '"platinum-eligible" OR "cisplatin-eligible" OR "fit for cisplatin" OR "platinum-based head neck"',
+        "platino-refrattario-HNSCC": '"platinum-refractory" OR "platinum refractory" OR "platinum resistant HNSCC" OR "post-platinum" OR "refractory to platinum"',
+        // Orofaringe
+        "HPV-p16-OF":             '"HPV" OR "HPV-positive" OR "p16" OR "p16-positive" OR "HPV-related oropharyngeal" OR "HPV-associated oropharyngeal" OR "oropharyngeal HPV"',
+        "HPV-neg-OF":             '"HPV-negative" OR "HPV negative oropharyngeal" OR "p16 negative oropharyngeal" OR "HPV-unrelated"',
+        // Laringe
+        "Sovraglottica-LAR":      '"supraglottic" OR "supraglottis" OR "supraglottic laryngeal" OR "epiglottis"',
+        "Glottide-LAR":           '"glottic" OR "glottis" OR "glottic laryngeal" OR "vocal cord carcinoma" OR "vocal fold"',
+        "Sottoglottica-LAR":      '"subglottic" OR "subglottis" OR "subglottic laryngeal"',
+        // Nasofaringe
+        "EBV-NPC":                '"EBV" OR "Epstein-Barr virus" OR "EBV-positive nasopharyngeal" OR "EBV-associated NPC" OR "EBV-driven" OR "EBV nasopharyngeal"',
+        // Seni paranasali
+        "Adenocarcinoma-SNS":     '"sinonasal adenocarcinoma" OR "intestinal-type adenocarcinoma" OR "ITAC" OR "non-intestinal-type adenocarcinoma" OR "sinonasal adenocarcinoma woodworker"',
+        "Esthesioneuroblastoma":  '"esthesioneuroblastoma" OR "olfactory neuroblastoma" OR "olfactory neuroepithelial tumor" OR "Kadish"',
+        "SNUC":                   '"sinonasal undifferentiated carcinoma" OR "SNUC" OR "undifferentiated sinonasal" OR "sinonasal carcinoma undifferentiated"',
+        // Ghiandole Salivari
+        "Mucoepidermoide-GS":     '"mucoepidermoid carcinoma" OR "mucoepidermoid" OR "MEC salivary" OR "mucoepidermoid salivary gland"',
+        "Adenoidocistico-GS":     '"adenoid cystic carcinoma" OR "adenoidocystic" OR "ACC salivary" OR "adenoid cystic salivary" OR "cribriform" OR "cylindroma"',
+        "Acinico-GS":             '"acinic cell carcinoma" OR "acinar cell carcinoma" OR "acinic cell" OR "acinic cell salivary gland"',
+        "HER2-GS":                '"HER2" OR "HER-2" OR "ERBB2" OR "HER2-positive salivary" OR "HER2 salivary gland"',
+        "NTRK-GS":                '"NTRK" OR "NTRK1" OR "NTRK2" OR "NTRK3" OR "TRK fusion" OR "neurotrophic tyrosine receptor kinase" OR "TRK salivary"',
+        "HRAS-GS":                '"HRAS" OR "HRAS mutation" OR "H-RAS" OR "HRAS mutated" OR "HRAS-mutant salivary"',
+        // Cavo Orale
+        "Adenocarcinoma-CO":     '"oral cavity adenocarcinoma" OR "adenocarcinoma of the oral cavity" OR "oral adenocarcinoma" OR "glandular carcinoma oral"',
+        "Mucoepidermoide-CO":    '"oral mucoepidermoid" OR "mucoepidermoid carcinoma of the oral cavity" OR "mucoepidermoid oral" OR "MEC oral"',
     };
 
     /** Restituisce i sinonimi ampliati per una chiave, con fallback generatore dinamico per chiavi future */
@@ -2600,8 +2820,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const CTGOV_REGEX_MAP = {
         // Polmone / Istologie & Biomarcatori
-        "ADK": /\b(adenocarcinoma|adenocarcinomas|ADK|glandular carcinoma)\b/i,
-        "SCC": /\b(squamous|squamous cell|squamous cell carcinoma|SCC|epidermoid)\b/i,
+        "ADK": /\b(adenocarcinoma|adenocarcinomas|ADK|glandular carcinoma|acinar|mucinous adenocarcinoma)\b/i,
+        "SCC-NSCLC": /\b(squamous|squamous cell|squamous cell carcinoma|SCC|epidermoid)\b/i,
         "PDL1": /\b(PD-L1|PDL1|PD L1|CD274|programmed death-ligand 1|programmed cell death ligand 1)\b/i,
         "EGFR": /\b(EGFR|ERBB1|epidermal growth factor receptor)\b/i,
         "ALK": /\b(ALK|anaplastic lymphoma kinase)\b/i,
@@ -2636,6 +2856,155 @@ document.addEventListener("DOMContentLoaded", () => {
         2: /\b(second-line|second line|2nd-line|2nd line|2L|previously treated|prior therapy|relapsed|refractory)\b/i,
         3: /\b(third-line|third line|3rd-line|3rd line|3L|heavily pretreated)\b/i,
 
+        // Gastro-Intestinale
+        "Adenocarcinoma-esofago": /\b(adenocarcinoma|AEG|GEJ|gastroesophageal junction)\b/i,
+        "SCC-esofago": /\b(squamous|squamous cell|ESCC|SCC)\b/i,
+        "HER2-esofago": /\b(HER2|HER-2|ERBB2)\b/i,
+        "PDL1-CPS-esofago": /\b(PD-L1|PDL1|CPS|combined positive score)\b/i,
+        "MSI-H-esofago": /\b(MSI-H|MSI|microsatellite instability|dMMR|mismatch repair)\b/i,
+        "NTRK-esofago": /\b(NTRK|NTRK1|NTRK2|NTRK3|TRK)\b/i,
+        "Adenocarcinoma-gastrico": /\b(adenocarcinoma|gastric cancer|stomach adenocarcinoma)\b/i,
+        "Signet-ring-gastrico": /\b(signet ring|signet-ring|poorly cohesive)\b/i,
+        "HER2-stomaco": /\b(HER2|HER-2|ERBB2)\b/i,
+        "PDL1-CPS-stomaco": /\b(PD-L1|PDL1|CPS|combined positive score)\b/i,
+        "FGFR2b": /\b(FGFR2b|FGFR2|bemarituzumab)\b/i,
+        "CLDN18-2": /\b(CLDN18|claudin|zolbetuximab|IMAB362)\b/i,
+        "EBV-stomaco": /\b(EBV|Epstein-Barr)\b/i,
+        "MSI-H-stomaco": /\b(MSI-H|MSI|microsatellite instability|dMMR|mismatch repair)\b/i,
+        "NTRK-stomaco": /\b(NTRK|NTRK1|NTRK2|NTRK3|TRK)\b/i,
+        "MSI-H-colon": /\b(MSI-H|MSI|microsatellite instability|dMMR|mismatch repair)\b/i,
+        "KRAS-colon": /\b(KRAS)\b/i,
+        "KRAS-G12C-colon": /\b(G12C|sotorasib|adagrasib)\b/i,
+        "BRAF-V600E-colon": /\b(BRAF|V600E|encorafenib)\b/i,
+        "HER2-colon": /\b(HER2|ERBB2)\b/i,
+        "NTRK-colon": /\b(NTRK|NTRK1|NTRK2|NTRK3|TRK)\b/i,
+        "lato-dx-colon": /\b(right|right-sided|ascending|cecum|hepatic flexure)\b/i,
+        "lato-sx-colon": /\b(left|left-sided|descending|sigmoid|splenic flexure)\b/i,
+        "signet-ring-colon": /\b(signet ring|signet-ring|poorly cohesive)\b/i,
+        "MSI-H-retto": /\b(MSI-H|MSI|microsatellite instability|dMMR|mismatch repair)\b/i,
+        "KRAS-retto": /\b(KRAS)\b/i,
+        "KRAS-G12C-retto": /\b(G12C|sotorasib|adagrasib)\b/i,
+        "BRAF-V600E-retto": /\b(BRAF|V600E|encorafenib)\b/i,
+        "HER2-retto": /\b(HER2|ERBB2)\b/i,
+        "NTRK-retto": /\b(NTRK|NTRK1|NTRK2|NTRK3|TRK)\b/i,
+        "retto-alto": /\b(high rectal|upper rectal|upper third)\b/i,
+        "retto-medio": /\b(mid rectal|middle rectal|middle third)\b/i,
+        "retto-basso": /\b(low rectal|lower rectal|lower third)\b/i,
+        "SCC-anale": /\b(squamous|squamous cell|SCC)\b/i,
+        "HPV-ano": /\b(HPV|human papillomavirus)\b/i,
+        "PDL1-ano": /\b(PD-L1|PDL1|pembrolizumab)\b/i,
+        "MSI-H-ano": /\b(MSI-H|MSI|microsatellite instability|dMMR)\b/i,
+        "CCA-intraepatico": /\b(intrahepatic|iCCA)\b/i,
+        "CCA-ilare": /\b(hilar|Klatskin|perihilar|pCCA)\b/i,
+        "CCA-distale": /\b(distal cholangiocarcinoma|distal bile duct)\b/i,
+        "Colecisti": /\b(gallbladder|cholecystic)\b/i,
+        "FGFR2-fus": /\b(FGFR2|pemigatinib|infigratinib|futibatinib)\b/i,
+        "IDH1mut": /\b(IDH1|ivosidenib)\b/i,
+        "IDH2mut": /\b(IDH2|enasidenib)\b/i,
+        "BRAF-V600E-vb": /\b(BRAF|V600E)\b/i,
+        "HER2-vb": /\b(HER2|ERBB2)\b/i,
+        "ERBB2mut-vb": /\b(ERBB2|HER2)\b/i,
+        "PDL1-vb": /\b(PD-L1|PDL1|durvalumab)\b/i,
+        "MSI-H-vb": /\b(MSI-H|MSI|microsatellite instability|dMMR)\b/i,
+        "NTRK-vb": /\b(NTRK|NTRK1|NTRK2|NTRK3|TRK)\b/i,
+        "PDAC": /\b(PDAC|ductal adenocarcinoma|exocrine)\b/i,
+        "pNET": /\b(neuroendocrine|pNET|islet cell|carcinoid)\b/i,
+        "BRCA1-panc": /\b(BRCA1|BRCA-1)\b/i,
+        "BRCA2-panc": /\b(BRCA2|BRCA-2|olaparib)\b/i,
+        "PALB2-panc": /\b(PALB2)\b/i,
+        "ATM-panc": /\b(ATM)\b/i,
+        "KRAS-panc": /\b(KRAS)\b/i,
+        "KRAS-G12C-panc": /\b(G12C|sotorasib|adagrasib)\b/i,
+        "MSI-H-panc": /\b(MSI-H|MSI|microsatellite instability|dMMR)\b/i,
+        "NTRK-panc": /\b(NTRK|NTRK1|NTRK2|NTRK3|TRK)\b/i,
+        "Child-Pugh-A": /\b(Child-Pugh A|Child Pugh A|CPA)\b/i,
+        "Child-Pugh-B7": /\b(Child-Pugh B|Child Pugh B|CPS B7)\b/i,
+        "HBV": /\b(HBV|hepatitis B|HBsAg)\b/i,
+        "HCV": /\b(HCV|hepatitis C)\b/i,
+        "AFP-alto": /\b(AFP|alpha-fetoprotein|fetoprotein)\b/i,
+
+        // Ginecologico
+        "Endometrioide-end": /\b(endometrioid)\b/i,
+        "Sieroso-end": /\b(serous)\b/i,
+        "CelluleChiare-end": /\b(clear cell)\b/i,
+        "Carcinosarcoma-end": /\b(carcinosarcoma|MMMT|mixed Mullerian)\b/i,
+        "MSI-H-end": /\b(MSI-H|MSI|microsatellite instability|dMMR)\b/i,
+        "p53mut-end": /\b(p53|TP53)\b/i,
+        "POLEmut-end": /\b(POLE|polymerase epsilon)\b/i,
+        "HER2-end": /\b(HER2|ERBB2)\b/i,
+        "FGFR2mut-end": /\b(FGFR2)\b/i,
+        "ERPR-end": /\b(estrogen|progesterone|ER|PR|progestin)\b/i,
+        "HGSOC": /\b(high grade serous|HGSOC|high-grade serous)\b/i,
+        "LGSOC": /\b(low grade serous|LGSOC|low-grade serous)\b/i,
+        "Mucinoso-ov": /\b(mucinous)\b/i,
+        "Endometrioide-ov": /\b(endometrioid)\b/i,
+        "CelluleChiare-ov": /\b(clear cell)\b/i,
+        "BRCA1/2-ov": /\b(BRCA|BRCA1|BRCA2|BRCA-1|BRCA-2)\b/i,
+        "HRD-pos-ov": /\b(HRD|homologous recombination deficiency|BRCAness)\b/i,
+        "HRD-neg-ov": /\b(HRD negative|HRP|homologous recombination proficient)\b/i,
+        "platino-sens-ov": /\b(platinum sensitive|platinum-sensitive)\b/i,
+        "platino-res-ov": /\b(platinum resistant|platinum-resistant)\b/i,
+        "platino-refr-ov": /\b(platinum refractory|platinum-refractory)\b/i,
+        "FRalfa-ov": /\b(folate receptor|FRalpha|FOLR1|mirvetuximab)\b/i,
+        "SCC-cervice": /\b(squamous|squamous cell|SCC)\b/i,
+        "Adenocarcinoma-cervice": /\b(adenocarcinoma)\b/i,
+        "HPV-cervice": /\b(HPV|human papillomavirus)\b/i,
+        "PDL1-CPS-cervice": /\b(PD-L1|PDL1|CPS|pembrolizumab)\b/i,
+        "MSI-H-cervice": /\b(MSI-H|MSI|dMMR)\b/i,
+        "SCC-vulva": /\b(squamous|squamous cell|SCC)\b/i,
+        "HPV-vulva": /\b(HPV|human papillomavirus)\b/i,
+        "TP53mut-vulva": /\b(TP53|p53|TP53 mutation)\b/i,
+        "PDL1-vulva": /\b(PD-L1|PDL1|pembrolizumab)\b/i,
+
+        // Prostata, Rene, Vescica, Altre Vie Urinarie
+        "Adenocarcinoma-prost": /\b(adenocarcinoma|acinar)\b/i,
+        "NEPC-prost": /\b(neuroendocrine|NEPC|small cell)\b/i,
+        "CRPC-prost": /\b(CRPC|castration-resistant|castrate-resistant|enzalutamide|abiraterone|darolutamide)\b/i,
+        "mHSPC-prost": /\b(mHSPC|hormone-sensitive|castration-sensitive|CSPC|mCSPC)\b/i,
+        "BRCA1/2-prost": /\b(BRCA|BRCA1|BRCA2|BRCA-1|BRCA-2)\b/i,
+        "ATM-prost": /\b(ATM)\b/i,
+        "MSI-H-prost": /\b(MSI-H|MSI|dMMR)\b/i,
+        "PTEN-loss-prost": /\b(PTEN|ipatasertib|capivasertib)\b/i,
+        "Gleason-prost": /\b(Gleason|ISUP)\b/i,
+        "ccRCC": /\b(clear cell|ccRCC)\b/i,
+        "pRCC1": /\b(papillary|pRCC|type 1|MET)\b/i,
+        "pRCC2": /\b(papillary|pRCC|type 2|FH|HLRCC)\b/i,
+        "chRCC": /\b(chromophobe|chRCC)\b/i,
+        "VHL-rene": /\b(VHL|belzutifan|HIF)\b/i,
+        "Uroteliale-vesc": /\b(urothelial|transitional cell|TCC)\b/i,
+        "SCC-vesc": /\b(squamous|squamous cell|SCC)\b/i,
+        "Adenocarcinoma-vesc": /\b(adenocarcinoma|urachal)\b/i,
+        "PDL1-vesc": /\b(PD-L1|PDL1)\b/i,
+        "FGFR3-vesc": /\b(FGFR3|erdafitinib)\b/i,
+        "FGFR2-fus-vesc": /\b(FGFR2|FGFR2 fusion)\b/i,
+        "HER2-vesc": /\b(HER2|ERBB2)\b/i,
+        "MSI-H-vesc": /\b(MSI-H|MSI|dMMR)\b/i,
+        "platino-elig-vesc": /\b(platinum-eligible|cisplatin-eligible|fit for cisplatin|GC|MVAC)\b/i,
+        "platino-inelig-vesc": /\b(platinum-ineligible|cisplatin-ineligible|unfit|carboplatin)\b/i,
+        "Uroteliale-pelvi": /\b(renal pelvis|pelvic urothelial|UTUC)\b/i,
+        "Uroteliale-uretere": /\b(ureter|ureteral|UTUC)\b/i,
+        "Carcinoma-uretrale": /\b(urethral|urethra)\b/i,
+        "FGFR3-altreVU": /\b(FGFR3|erdafitinib)\b/i,
+        "PDL1-altreVU": /\b(PD-L1|PDL1)\b/i,
+        "HER2-altreVU": /\b(HER2|ERBB2)\b/i,
+        "FGFR2-fus-altreVU": /\b(FGFR2|FGFR2 fusion)\b/i,
+        "MSI-H-altreVU": /\b(MSI-H|MSI|dMMR)\b/i,
+
+        // Melanoma & Cute
+        "Cutaneo-mel": /\b(cutaneous|skin melanoma)\b/i,
+        "Mucosale-mel": /\b(mucosal)\b/i,
+        "Uveale-mel": /\b(uveal|ocular|choroidal|ciliary|tebentafusp)\b/i,
+        "Acrale-mel": /\b(acral|acral lentiginous|ALM)\b/i,
+        "BRAF-V600E-mel": /\b(BRAF|V600E|vemurafenib|dabrafenib|encorafenib)\b/i,
+        "BRAF-V600K-mel": /\b(BRAF|V600K)\b/i,
+        "NRAS-mel": /\b(NRAS|binimetinib)\b/i,
+        "KIT-mel": /\b(KIT|c-KIT|imatinib)\b/i,
+        "PDL1-mel": /\b(PD-L1|PDL1|pembrolizumab|nivolumab)\b/i,
+        "MSI-H-mel": /\b(MSI-H|MSI|dMMR)\b/i,
+        "met-encefaliche-mel": /\b(brain metastas|CNS metastas|brain mets)\b/i,
+        "LDH-elevata-mel": /\b(LDH|lactate dehydrogenase)\b/i,
+        "PDL1-SCC-cut": /\b(PD-L1|PDL1|cemiplimab|pembrolizumab)\b/i,
+
         // Testa-Collo
         "Cavo orale": /\b(oral cavity|oral|tongue|mouth|buccal|gingival|lip|floor of mouth)\b/i,
         "Orofaringe": /\b(oropharynx|oropharyngeal|tonsil|tonsillar|base of tongue|soft palate)\b/i,
@@ -2644,6 +3013,30 @@ document.addEventListener("DOMContentLoaded", () => {
         "Nasofaringe": /\b(nasopharynx|nasopharyngeal|rhinopharynx|rhinopharyngeal)\b/i,
         "Cavità nasali e seni paranasali": /\b(nasal cavity|paranasal|maxillary sinus|ethmoid|sphenoid|frontal sinus)\b/i,
         "Ghiandole Salivari": /\b(salivary gland|salivary|parotid|submandibular|sublingual)\b/i,
+        "SCC-HNSCC": /\b(squamous|squamous cell|SCC|HNSCC)\b/i,
+        "PDL1-CPS-HNSCC": /\b(PD-L1|PDL1|CPS|pembrolizumab|nivolumab)\b/i,
+        "EGFR-over-HNSCC": /\b(EGFR|cetuximab)\b/i,
+        "MSI-H-HNSCC": /\b(MSI-H|MSI|dMMR)\b/i,
+        "platino-eligible-HNSCC": /\b(platinum-eligible|cisplatin-eligible)\b/i,
+        "platino-refrattario-HNSCC": /\b(platinum-refractory|platinum refractory|platinum resistant)\b/i,
+        "Adenocarcinoma-CO": /\b(adenocarcinoma)\b/i,
+        "Mucoepidermoide-CO": /\b(mucoepidermoid)\b/i,
+        "HPV-p16-OF": /\b(HPV|p16|HPV-positive|p16-positive)\b/i,
+        "HPV-neg-OF": /\b(HPV-negative|p16-negative)\b/i,
+        "Sovraglottica-LAR": /\b(supraglottic|supraglottis|epiglottis)\b/i,
+        "Glottide-LAR": /\b(glottic|glottis|vocal cord)\b/i,
+        "Sottoglottica-LAR": /\b(subglottic|subglottis)\b/i,
+        "EBV-NPC": /\b(EBV|Epstein-Barr)\b/i,
+        "Adenocarcinoma-SNS": /\b(adenocarcinoma|ITAC)\b/i,
+        "Esthesioneuroblastoma": /\b(esthesioneuroblastoma|olfactory neuroblastoma|Kadish)\b/i,
+        "SNUC": /\b(sinonasal undifferentiated|SNUC)\b/i,
+        "Mucoepidermoide-GS": /\b(mucoepidermoid|MEC)\b/i,
+        "Adenoidocistico-GS": /\b(adenoid cystic|adenoidocystic|ACC|cylindroma)\b/i,
+        "Acinico-GS": /\b(acinic cell|acinar cell)\b/i,
+        "HER2-GS": /\b(HER2|ERBB2)\b/i,
+        "NTRK-GS": /\b(NTRK|TRK)\b/i,
+        "HRAS-GS": /\b(HRAS|H-RAS)\b/i,
+        "MYBL1-NFIB-GS": /\b(MYBL1|NFIB)\b/i,
     };
 
     /** Analizza lo studio CT.gov restituendo i centri in Italia e la verifica testuale dei criteri con Regex a confini di parola */
