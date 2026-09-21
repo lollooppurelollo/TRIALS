@@ -2787,19 +2787,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // 5. Specifiche Ulteriori (PDL1, mutazioni, istologie) con generatore sinonimi dinamico
-        // IMPORTANTE: le specifiche ulteriori sono DESELEZIONATE di default (enabled.further parte da {}).
-        // Vengono aggiunte alla query SOLO se il medico le ha esplicitamente abilitate (=== true).
-        if (enabled.further && typeof enabled.further === "object" && patientData.furtherSpecifics) {
-            Object.entries(patientData.furtherSpecifics).forEach(([key, val]) => {
-                if (enabled.further[key] === true) {  // Solo se esplicitamente abilitato dal medico
-                    const syn = getExpandedSynonyms(key, CTGOV_FURTHER_MAP);
-                    if (syn) {
-                        queryParts.push(`(${syn})`);
-                    }
-                }
-            });
-        }
+        // 5. Specifiche Ulteriori — SEMPRE GESTITE CLIENT-SIDE, MAI NELLA QUERY API
+        // Motivo: molti studi validi non menzionano esplicitamente l'istologia o il biomarcatore
+        // nel titolo/summary (es. uno studio NSCLC include ADK senza scriverlo).
+        // Aggiungere questi termini alla query API causa una riduzione drastica e artificiale
+        // dei risultati (es. 190 studi → 22). La classificazione avviene in analyzeCtgovStudy.
 
         // Filtro tipo studio tramite query syntax
         if (studyTypeFilter === "INTERVENTIONAL") {
@@ -3112,7 +3104,45 @@ document.addEventListener("DOMContentLoaded", () => {
             else unconfirmed.push(sca);
         }
 
-        // Specifiche Ulteriori (solo quelle attive / spuntate dal medico)
+        // Specifiche Ulteriori (solo quelle attive / spuntate dal medico) — classificazione client-side
+        //
+        // LOGICA UMBRELLA per istologie generali (ADK, SCC, Squamoso, SCLC):
+        //   - Lo studio menziona esplicitamente l'istologia → CONFERMATO ✅
+        //   - Lo studio menziona SOLO l'istologia opposta (es. squamoso ma non ADK) → DA VERIFICARE ⚠️
+        //   - Lo studio non specifica l'istologia (es. "NSCLC") → CONFERMATO ✅ (assume include tutti)
+        //
+        // LOGICA STANDARD per biomarcatori molecolari (EGFR, KRAS, ALK, PDL1, ecc.):
+        //   - Il marcatore è menzionato nel testo → CONFERMATO ✅
+        //   - Non è menzionato → DA VERIFICARE ⚠️
+
+        // Definizione dei termini umbrella (istologie generali che si escludono a vicenda)
+        const HISTOLOGY_UMBRELLA = {
+            "ADK": {
+                matchRx: /\b(adenocarcinoma|adenocarcinomas|ADK|glandular carcinoma|acinar|mucinous|non-squamous)\b/i,
+                excludeRx: /\b(squamous(?:\s+cell)?(?:\s+carcinoma)?|SCC|epidermoid|squamoso)\b/i,
+            },
+            "SCC": {
+                matchRx: /\b(squamous(?:\s+cell)?(?:\s+carcinoma)?|SCC|epidermoid|squamoso)\b/i,
+                excludeRx: /\b(adenocarcinoma|ADK|non-squamous|glandular)\b/i,
+            },
+            "Squamoso": {
+                matchRx: /\b(squamous(?:\s+cell)?(?:\s+carcinoma)?|SCC|epidermoid|squamoso)\b/i,
+                excludeRx: /\b(adenocarcinoma|ADK|non-squamous|glandular)\b/i,
+            },
+            "Adenocarcinoma": {
+                matchRx: /\b(adenocarcinoma|adenocarcinomas|ADK|glandular|acinar|non-squamous)\b/i,
+                excludeRx: /\b(squamous(?:\s+cell)?(?:\s+carcinoma)?|SCC|epidermoid)\b/i,
+            },
+            "Squamocellulare": {
+                matchRx: /\b(squamous(?:\s+cell)?(?:\s+carcinoma)?|SCC|epidermoid|squamocellulare)\b/i,
+                excludeRx: /\b(adenocarcinoma|ADK|non-squamous|glandular)\b/i,
+            },
+            "SCLC": {
+                matchRx: /\b(SCLC|small[\s-]cell(?:\s+lung)?(?:\s+cancer)?|small\s+cell\s+carcinoma)\b/i,
+                excludeRx: /\b(NSCLC|non-small[\s-]cell|adenocarcinoma|squamous)\b/i,
+            },
+        };
+
         if (enabled.further && typeof enabled.further === "object") {
             Object.entries(enabled.further).forEach(([k, isEnabled]) => {
                 if (isEnabled === true) {
@@ -3121,11 +3151,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (k === "PDL1" || (patientVal && typeof patientVal === "object")) label = formatPDL1Value(patientVal);
                     else if (typeof patientVal === "number") label = `${k}: ${patientVal}`;
 
-                    const rx = CTGOV_REGEX_MAP[k] || new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, "i");
-                    if (rx.test(text)) {
-                        confirmed.push(label);
+                    if (HISTOLOGY_UMBRELLA[k]) {
+                        // Logica umbrella: assume compatibile se l'istologia non è esplicitamente esclusa
+                        const { matchRx, excludeRx } = HISTOLOGY_UMBRELLA[k];
+                        if (matchRx.test(text)) {
+                            confirmed.push(label);          // Istologia esplicitamente menzionata ✅
+                        } else if (excludeRx.test(text)) {
+                            unconfirmed.push(label);        // Solo istologia opposta menzionata ⚠️
+                        } else {
+                            confirmed.push(label);          // Nessuna specifica istologica → assume compatibile ✅
+                        }
                     } else {
-                        unconfirmed.push(label);
+                        // Logica standard per biomarcatori molecolari (EGFR, KRAS, ALK, PDL1, ecc.)
+                        const rx = CTGOV_REGEX_MAP[k] || new RegExp(`\\b${k.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, "i");
+                        if (rx.test(text)) confirmed.push(label);
+                        else unconfirmed.push(label);
                     }
                 }
             });
