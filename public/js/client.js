@@ -2767,14 +2767,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (areaSynonyms) queryParts.push(`(${areaSynonyms})`);
         }
 
-        // 2. Setting del Trattamento
-        if (enabled.setting !== false && patientData.treatmentSetting) {
-            const settingSynonyms = CTGOV_SETTING_MAP[patientData.treatmentSetting];
-            if (settingSynonyms) queryParts.push(`(${settingSynonyms})`);
-        }
+        // 2. Setting del Trattamento — RIMOSSO DALLA QUERY API
+        // Il setting viene ora usato SOLO per classificazione client-side in analyzeCtgovStudy.
+        // Motivo: molti studi metastatici validi non usano esplicitamente la parola "metastatic" nel titolo/summary.
 
-        // 3. Linea di trattamento
-        if (enabled.line !== false && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
+        // 3. Linea di trattamento (solo se esplicitamente abilitata dal medico)
+        if (enabled.line === true && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
             const lineSynonyms = CTGOV_LINE_MAP[patientData.treatmentLine];
             if (lineSynonyms) queryParts.push(`(${lineSynonyms})`);
         }
@@ -2810,13 +2808,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const queryTerm = queryParts.join(" AND ") || "cancer";
 
+        // pageSize=400 per massima copertura; il filtro location è gestito client-side
+        // sulla base dei dati strutturati locations[].country (più affidabile di query.locn testuale)
         const params = new URLSearchParams({
             "query.term": queryTerm,
-            "pageSize": "50",
+            "pageSize": "400",
             "format": "json",
         });
         if (statusFilter !== "all") params.set("filter.overallStatus", statusFilter);
-        if (countryFilter !== "all") params.set("query.locn", countryFilter);
+        // NOTA: query.locn rimosso — il filtro per paese è applicato client-side dopo il fetch
         return params;
     }
 
@@ -3071,6 +3071,30 @@ document.addEventListener("DOMContentLoaded", () => {
         const confirmed = [];
         const unconfirmed = [];
         const enabled = enabledParams || {};
+
+        // Setting del Trattamento — classificazione client-side
+        // Per "Metastatico": se lo studio NON è esplicitamente adiuvante/neoadiuvante → compatibile.
+        // Logica: studi privi di indicazione di setting si assumono metastatici (la maggior parte degli RCT oncologici).
+        if (enabled.setting !== false && patientData.treatmentSetting) {
+            const setting = patientData.treatmentSetting;
+            const adjuvantRx = /\b(adjuvant|neoadjuvant|neo-adjuvant|post-?operative|pre-?operative|early[\s-]stage|perioperative|curative[\s-]intent|resect(able|ed)|localized)\b/i;
+            const metastaticRx = /\b(metastatic|metastases?|advanced|stage\s*(iv|4)|disseminated|unresectable|inoperable|palliative)\b/i;
+
+            if (setting === "Metastatico") {
+                // Compatibile se: menziona metastatic/advanced, OPPURE non menziona esplicitamente adiuvante/neoadiuvante
+                const isExplicitlyNonMetastatic = adjuvantRx.test(text) && !metastaticRx.test(text);
+                if (isExplicitlyNonMetastatic) unconfirmed.push("Setting: Metastatico");
+                else confirmed.push("Setting: Metastatico");
+            } else if (setting === "Adiuvante") {
+                const adiuvRx = /\b(adjuvant|post-?operative|post-?resection|postoperative)\b/i;
+                if (adiuvRx.test(text)) confirmed.push("Setting: Adiuvante");
+                else unconfirmed.push("Setting: Adiuvante");
+            } else if (setting === "Neo-adiuvante") {
+                const neoAdjRx = /\b(neoadjuvant|neo-adjuvant|pre-?operative|preoperative|induction|primary\s*systemic)\b/i;
+                if (neoAdjRx.test(text)) confirmed.push("Setting: Neo-adiuvante");
+                else unconfirmed.push("Setting: Neo-adiuvante");
+            }
+        }
 
         // Linea di trattamento
         if (enabled.line === true && patientData.treatmentLine !== null && patientData.treatmentLine !== undefined) {
@@ -3342,6 +3366,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const intlComplete  = [];
             const intlPartial   = [];
 
+            // Filtro location CLIENT-SIDE sui dati strutturati locations[].country (più preciso di query.locn testuale API)
+            const activeCountryFilter = countryFilter; // "Italy" o "all"
+
             rawStudies.forEach(s => {
                 const analysis = analyzeCtgovStudy(s, patientData, enabledParams);
                 s._analysis = analysis;
@@ -3349,6 +3376,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (analysis.isCompleteMatch) italyComplete.push(s);
                     else italyPartial.push(s);
                 } else {
+                    // Se il filtro è "Italy", non mostriamo gli studi senza centri italiani
+                    if (activeCountryFilter === "Italy") return;
                     if (analysis.isCompleteMatch) intlComplete.push(s);
                     else intlPartial.push(s);
                 }
