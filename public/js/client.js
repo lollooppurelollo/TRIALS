@@ -2790,9 +2790,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 5. Specifiche Ulteriori (PDL1, mutazioni, istologie) con generatore sinonimi dinamico
+        // IMPORTANTE: le specifiche ulteriori sono DESELEZIONATE di default (enabled.further parte da {}).
+        // Vengono aggiunte alla query SOLO se il medico le ha esplicitamente abilitate (=== true).
         if (enabled.further && typeof enabled.further === "object" && patientData.furtherSpecifics) {
             Object.entries(patientData.furtherSpecifics).forEach(([key, val]) => {
-                if (enabled.further[key] !== false) {
+                if (enabled.further[key] === true) {  // Solo se esplicitamente abilitato dal medico
                     const syn = getExpandedSynonyms(key, CTGOV_FURTHER_MAP);
                     if (syn) {
                         queryParts.push(`(${syn})`);
@@ -3051,11 +3053,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const locations = locMod.locations || [];
         const hasItalySite = locations.some(l => l.country && (l.country.toLowerCase() === "italy" || l.country.toLowerCase() === "italia"));
 
+        // Corpus di testo ampliato: include titolo ufficiale, condizioni, keyword, bracci e criteri
+        const armsMod = proto.armsInterventionsModule || {};
+        const condKeywords = proto.conditionsModule?.keywords || [];
+        const armsText = (armsMod.interventions || []).map(i => `${i.name || ''} ${i.description || ''}`).join(" ");
         const text = (
             (idMod.briefTitle || "") + " " +
+            (idMod.officialTitle || "") + " " +
             (descMod.briefSummary || "") + " " +
+            (descMod.detailedDescription || "") + " " +
             (eligMod.eligibilityCriteria || "") + " " +
-            (condMod.conditions ? condMod.conditions.join(" ") : "")
+            (condMod.conditions ? condMod.conditions.join(" ") : "") + " " +
+            condKeywords.join(" ") + " " +
+            armsText
         );
 
         const confirmed = [];
@@ -3145,11 +3155,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const italianLocs = locations.filter(l => l.country && (l.country.toLowerCase() === "italy" || l.country.toLowerCase() === "italia"));
             if (italianLocs.length > 0) {
                 const shown = italianLocs.map(l => {
-                    const parts = [l.facility, l.city, l.country].filter(Boolean);
-                    return `<span class="inline-block text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">🇮🇹 ${escapeHtml(parts.join(", "))}</span>`;
+                    const parts = [l.facility, l.city].filter(Boolean);
+                    // Mostra lo stato per sede (RECRUITING vs NOT_YET_RECRUITING)
+                    const siteStatus = l.status;
+                    const siteStatusIcon = siteStatus === "RECRUITING" ? "🟢" :
+                                          siteStatus === "NOT_YET_RECRUITING" ? "🟡" : "";
+                    const siteStatusLabel = siteStatus === "RECRUITING" ? " (attivo)" :
+                                            siteStatus === "NOT_YET_RECRUITING" ? " (apertura imminente)" : "";
+                    const bgClass = siteStatus === "NOT_YET_RECRUITING"
+                        ? "bg-amber-50 text-amber-900 border-amber-200"
+                        : "bg-emerald-50 text-emerald-800 border-emerald-200";
+                    return `<span class="inline-block text-xs ${bgClass} border px-2 py-0.5 rounded-full font-medium">${siteStatusIcon} 🇮🇹 ${escapeHtml(parts.join(", "))}${siteStatusLabel}</span>`;
                 });
                 const extraCount = locations.length - italianLocs.length;
-                const extra = extraCount > 0 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${extraCount} altri esteri</span>` : "";
+                const extra = extraCount > 0 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${extraCount} altri centri esteri</span>` : "";
                 centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
             } else {
                 const shown = locations.slice(0, 4).map(l => {
