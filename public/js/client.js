@@ -819,7 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function normalizeTreatmentSetting(v) {
         const s = String(v ?? "").trim();
-        const allowed = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+        const allowed = ["Metastatico", "Adiuvante", "Neo-adiuvante", "Localmente Avanzato"];
         return allowed.includes(s) ? s : "";
     }
 
@@ -884,7 +884,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const treatment_setting = normalizeTreatmentSetting(study.treatment_setting);
         if (!treatment_setting) {
             throw new Error(
-                "Manca o non è valido 'treatment_setting' (Metastatico/Adiuvante/Neo-adiuvante).",
+                "Manca o non è valido 'treatment_setting' (Metastatico/Localmente Avanzato/Adiuvante/Neo-adiuvante).",
             );
         }
 
@@ -1261,9 +1261,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const SETTING_CONFIG = {
-        "Metastatico": { icon: "fas fa-disease", badge: "💥", title: "Metastatico", desc: "Fase avanzata / IV stadio" },
-        "Adiuvante": { icon: "fas fa-shield-alt", badge: "🛡️", title: "Adiuvante", desc: "Post-operatorio" },
-        "Neo-adiuvante": { icon: "fas fa-rocket", badge: "🚀", title: "Neo-adiuvante", desc: "Pre-operatorio" },
+        "Metastatico":         { icon: "fas fa-disease",    badge: "🔴", title: "Metastatico",         desc: "Stadio IV / malattia sistemica" },
+        "Localmente Avanzato": { icon: "fas fa-crosshairs", badge: "🎯", title: "Localmente Avanzato", desc: "Irresecabile senza metastasi a distanza" },
+        "Adiuvante":           { icon: "fas fa-shield-alt", badge: "🛡️", title: "Adiuvante",           desc: "Post-operatorio / post-resezione" },
+        "Neo-adiuvante":       { icon: "fas fa-rocket",     badge: "🟣", title: "Neo-adiuvante",       desc: "Pre-operatorio / downstaging" },
     };
 
     /** Inizializza la griglia visiva di card per Area Clinica */
@@ -1348,7 +1349,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!selectEl || !gridContainerEl) return;
         gridContainerEl.innerHTML = "";
 
-        const settings = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+        const settings = ["Metastatico", "Localmente Avanzato", "Adiuvante", "Neo-adiuvante"];
+        gridContainerEl.className = "grid grid-cols-2 sm:grid-cols-4 gap-3";
 
         settings.forEach(setting => {
             const cfg = SETTING_CONFIG[setting];
@@ -2309,9 +2311,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const CTGOV_SETTING_MAP = {
-        "Metastatico": '"metastatic" OR "advanced" OR "stage IV" OR "disseminated" OR "stage 4"',
-        "Adiuvante": '"adjuvant" OR "postoperative" OR "post-operative" OR "post-resection" OR "post resection"',
-        "Neo-adiuvante": '"neoadjuvant" OR "preoperative" OR "pre-operative" OR "induction chemotherapy" OR "primary systemic therapy"',
+        "Metastatico":         '"metastatic" OR "advanced" OR "stage IV" OR "disseminated" OR "stage 4" OR "unresectable"',
+        "Localmente Avanzato": '"locally advanced" OR "unresectable" OR "stage III" OR "locoregional" OR "loco-regional" OR "definitive chemoradiation" OR "chemoradiotherapy" OR "concurrent CRT"',
+        "Adiuvante":           '"adjuvant" OR "postoperative" OR "post-operative" OR "post-resection" OR "post resection"',
+        "Neo-adiuvante":       '"neoadjuvant" OR "preoperative" OR "pre-operative" OR "induction chemotherapy" OR "primary systemic therapy" OR "perioperative"',
     };
 
     const CTGOV_LINE_MAP = {
@@ -3201,12 +3204,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isExplicitlyNonMetastatic = adjuvantRx.test(text) && !metastaticRx.test(text);
                 if (isExplicitlyNonMetastatic) unconfirmed.push("Setting: Metastatico");
                 else confirmed.push("Setting: Metastatico");
+            } else if (setting === "Localmente Avanzato") {
+                const locallyAdvRx = /\b(locally\s+advanced|unresectable|stage\s*III|locoregional|loco-regional|chemoradiat|chemoradiotherapy|definitive\s+chemo|concurrent\s+CRT|CRT)\b/i;
+                // Escludiamo se è esplicitamente stage IV/metastatico senza menzione locoregionale
+                const explicitlyMetaRx = /\b(metastatic|stage\s*(iv|4)|disseminated)\b/i;
+                if (locallyAdvRx.test(text)) confirmed.push("Setting: Localmente Avanzato");
+                else if (explicitlyMetaRx.test(text)) unconfirmed.push("Setting: Localmente Avanzato");
+                else confirmed.push("Setting: Localmente Avanzato"); // non specificato → assume compatibile
             } else if (setting === "Adiuvante") {
                 const adiuvRx = /\b(adjuvant|post-?operative|post-?resection|postoperative)\b/i;
                 if (adiuvRx.test(text)) confirmed.push("Setting: Adiuvante");
                 else unconfirmed.push("Setting: Adiuvante");
             } else if (setting === "Neo-adiuvante") {
-                const neoAdjRx = /\b(neoadjuvant|neo-adjuvant|pre-?operative|preoperative|induction|primary\s*systemic)\b/i;
+                const neoAdjRx = /\b(neoadjuvant|neo-adjuvant|pre-?operative|preoperative|induction|primary\s*systemic|perioperative)\b/i;
                 if (neoAdjRx.test(text)) confirmed.push("Setting: Neo-adiuvante");
                 else unconfirmed.push("Setting: Neo-adiuvante");
             }
@@ -4606,9 +4616,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Colori setting — palette separata dalle card
         const settingMeta = {
-            "Metastatico":   { dot: "rgb(220,38,38)",  bg: "rgb(254,242,242)",  border: "rgb(252,165,165)", label: "rgb(153,27,27)"  },
-            "Adiuvante":     { dot: "rgb(37,99,235)",  bg: "rgb(239,246,255)",  border: "rgb(147,197,253)", label: "rgb(29,78,216)"  },
-            "Neo-adiuvante": { dot: "rgb(5,150,105)",  bg: "rgb(236,253,245)",  border: "rgb(110,231,183)", label: "rgb(4,120,87)"   }
+            "Metastatico":         { dot: "rgb(220,38,38)",  bg: "rgb(254,242,242)",  border: "rgb(252,165,165)", label: "rgb(153,27,27)"  },
+            "Localmente Avanzato": { dot: "rgb(217,119,6)",   bg: "rgb(255,251,235)",  border: "rgb(253,230,138)", label: "rgb(146,64,14)"   },
+            "Adiuvante":           { dot: "rgb(37,99,235)",  bg: "rgb(239,246,255)",  border: "rgb(147,197,253)", label: "rgb(29,78,216)"  },
+            "Neo-adiuvante":       { dot: "rgb(147,51,234)", bg: "rgb(250,245,255)",  border: "rgb(233,213,255)", label: "rgb(107,33,168)"  }
         };
 
         // 1. Filtra gli studi
@@ -4641,7 +4652,7 @@ document.addEventListener("DOMContentLoaded", () => {
         columns = columns.filter(c => c && c.toLowerCase() !== "altro" && c.toLowerCase() !== "non specificato");
 
         // 3. Setting (righe)
-        const settings = selectedSetting ? [selectedSetting] : ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+        const settings = selectedSetting ? [selectedSetting] : ["Metastatico", "Localmente Avanzato", "Adiuvante", "Neo-adiuvante"];
 
         if (columns.length === 0) {
             studyMapCanvasOuter.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:200px;color:#94a3b8;font-size:14px;">Seleziona almeno un'area specifica</div>`;

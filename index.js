@@ -134,7 +134,7 @@ const ALLOWED_CLINICAL_AREAS = [
   "Fase 1",
   "Altro",
 ];
-const ALLOWED_TREATMENT_SETTINGS = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
+const ALLOWED_TREATMENT_SETTINGS = ["Metastatico", "Localmente Avanzato", "Adiuvante", "Neo-adiuvante"];
 const ALLOWED_STUDY_STATUSES = ["in_attivazione", "attivo", "arruolamento_terminato"];
 const ALLOWED_EVENT_TYPES = [
   "oncological_visit",
