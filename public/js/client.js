@@ -867,7 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const study_code = String(study.study_code ?? study.code ?? "").trim();
         const internal_notes = String(study.internal_notes ?? study.notes ?? "").trim();
         const pi_contacts = String(study.pi_contacts ?? study.contacts ?? study.pi ?? "").trim();
-        const status = study.status && ["in_attivazione", "attivo"].includes(study.status) ? study.status : null;
+        const status = study.status && ["in_attivazione", "attivo", "arruolamento_terminato"].includes(study.status) ? study.status : null;
 
         const title = String(study.title ?? "").trim();
         if (!title) throw new Error("Manca 'title'.");
@@ -1498,9 +1498,10 @@ document.addEventListener("DOMContentLoaded", () => {
         gridContainerEl.innerHTML = "";
 
         const statuses = [
-            { val: "", badge: "⚪", title: "Non Specificato", desc: "Nessun dettaglio sullo stato", activeStyle: "border-2 border-slate-600 bg-slate-100 text-slate-900" },
-            { val: "in_attivazione", badge: "🟡", title: "In Attivazione", desc: "Studio in preparazione", activeStyle: "border-2 border-amber-500 bg-amber-50/70 text-amber-950" },
-            { val: "attivo", badge: "🟢", title: "Attivo", desc: "Aperto ed arruolante", activeStyle: "border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950" },
+            { val: "", badge: "⚪", title: "Non Specificato", desc: "Nessun dettaglio sullo stato", activeStyle: "border-2 border-slate-600 bg-slate-100 text-slate-900", checkColor: "text-slate-600" },
+            { val: "in_attivazione", badge: "🟡", title: "In Attivazione", desc: "Studio in preparazione", activeStyle: "border-2 border-amber-500 bg-amber-50/70 text-amber-950", checkColor: "text-amber-600" },
+            { val: "attivo", badge: "🟢", title: "Attivo", desc: "Aperto ed arruolante", activeStyle: "border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950", checkColor: "text-emerald-600" },
+            { val: "arruolamento_terminato", badge: "🔴", title: "Arruolamento terminato", desc: "Chiuso all'arruolamento", activeStyle: "border-2 border-rose-500 bg-rose-50/70 text-rose-950", checkColor: "text-rose-600" },
         ];
 
         statuses.forEach(st => {
@@ -1520,7 +1521,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="block text-[10px] text-slate-500 font-normal">${st.desc}</span>
                     </div>
                 </div>
-                <i class="fas fa-check-circle ${st.val === 'in_attivazione' ? 'text-amber-600' : 'text-emerald-600'} text-xs ${isSelected ? 'block' : 'hidden'} visual-status-check"></i>
+                <i class="fas fa-check-circle ${st.checkColor} text-xs ${isSelected ? 'block' : 'hidden'} visual-status-check"></i>
             `;
 
             card.addEventListener("click", () => {
@@ -1541,7 +1542,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusesMap = {
             "": "border-2 border-slate-600 bg-slate-100 text-slate-900",
             "in_attivazione": "border-2 border-amber-500 bg-amber-50/70 text-amber-950",
-            "attivo": "border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950"
+            "attivo": "border-2 border-emerald-600 bg-emerald-50/70 text-emerald-950",
+            "arruolamento_terminato": "border-2 border-rose-500 bg-rose-50/70 text-rose-950"
         };
 
         gridContainerEl.querySelectorAll(".visual-status-card").forEach(card => {
@@ -1956,6 +1958,7 @@ document.addEventListener("DOMContentLoaded", () => {
         studyFormCancelEditBtn.addEventListener("click", () => {
             resetFormEditMode();
             if (studyForm) studyForm.reset();
+            if (studyStatusSelect && studyStatusGrid) syncVisualStudyStatusState(studyStatusSelect, studyStatusGrid);
             if (criteriaListDiv) { criteriaListDiv.innerHTML = ""; addCriteriaRow(); }
             if (studySpecificClinicalAreaContainer) studySpecificClinicalAreaContainer.classList.add("hidden");
             if (studyTreatmentLineContainer) studyTreatmentLineContainer.classList.add("hidden");
@@ -2141,6 +2144,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (studyInternalNotesInput) studyInternalNotesInput.value = "";
                 if (studyPiContactsInput) studyPiContactsInput.value = "";
                 if (studyStatusSelect) studyStatusSelect.value = "";
+                if (studyStatusSelect && studyStatusGrid) syncVisualStudyStatusState(studyStatusSelect, studyStatusGrid);
                 studySpecificClinicalAreaContainer.classList.add("hidden");
                 studyTreatmentLineContainer.classList.add("hidden");
                 criteriaListDiv.innerHTML = "";
@@ -2808,7 +2812,9 @@ document.addEventListener("DOMContentLoaded", () => {
             "format": "json",
         });
         if (statusFilter !== "all") params.set("filter.overallStatus", statusFilter);
-        // NOTA: query.locn rimosso — il filtro per paese è applicato client-side dopo il fetch
+        if (countryFilter && countryFilter !== "all") {
+            params.set("query.locn", countryFilter);
+        }
         return params;
     }
 
@@ -3033,17 +3039,135 @@ document.addEventListener("DOMContentLoaded", () => {
         "MYBL1-NFIB-GS": /\b(MYBL1|NFIB)\b/i,
     };
 
+    /** Determina lo stato effettivo di arruolamento di un centro (facility) su ClinicalTrials.gov */
+    function getCtgovFacilityStatus(loc, overallStatus) {
+        const raw = String(loc?.status || overallStatus || "").trim().toUpperCase();
+        if (raw === "RECRUITING") {
+            return {
+                code: "RECRUITING",
+                label: "attivo / arruolante",
+                badge: "🟢",
+                isRecruiting: true,
+                isPending: false,
+                isClosed: false,
+                bgClass: "bg-emerald-50 text-emerald-900 border-emerald-300"
+            };
+        }
+        if (raw === "NOT_YET_RECRUITING") {
+            return {
+                code: "NOT_YET_RECRUITING",
+                label: "apertura imminente",
+                badge: "🟡",
+                isRecruiting: false,
+                isPending: true,
+                isClosed: false,
+                bgClass: "bg-amber-50 text-amber-900 border-amber-300"
+            };
+        }
+        if (raw === "ACTIVE_NOT_RECRUITING") {
+            return {
+                code: "ACTIVE_NOT_RECRUITING",
+                label: "arruolamento terminato",
+                badge: "🔴",
+                isRecruiting: false,
+                isPending: false,
+                isClosed: true,
+                bgClass: "bg-rose-50 text-rose-900 border-rose-300"
+            };
+        }
+        if (raw === "COMPLETED") {
+            return {
+                code: "COMPLETED",
+                label: "completato",
+                badge: "⚪",
+                isRecruiting: false,
+                isPending: false,
+                isClosed: true,
+                bgClass: "bg-slate-100 text-slate-700 border-slate-300"
+            };
+        }
+        if (raw === "WITHDRAWN") {
+            return {
+                code: "WITHDRAWN",
+                label: "ritirato",
+                badge: "🔴",
+                isRecruiting: false,
+                isPending: false,
+                isClosed: true,
+                bgClass: "bg-rose-50 text-rose-900 border-rose-300"
+            };
+        }
+        if (raw === "TERMINATED") {
+            return {
+                code: "TERMINATED",
+                label: "interrotto",
+                badge: "🔴",
+                isRecruiting: false,
+                isPending: false,
+                isClosed: true,
+                bgClass: "bg-rose-50 text-rose-900 border-rose-300"
+            };
+        }
+        if (raw === "SUSPENDED") {
+            return {
+                code: "SUSPENDED",
+                label: "sospeso",
+                badge: "🔴",
+                isRecruiting: false,
+                isPending: false,
+                isClosed: true,
+                bgClass: "bg-rose-50 text-rose-900 border-rose-300"
+            };
+        }
+        if (raw === "ENROLLING_BY_INVITATION") {
+            return {
+                code: "ENROLLING_BY_INVITATION",
+                label: "solo su invito",
+                badge: "🔵",
+                isRecruiting: false,
+                isPending: false,
+                isClosed: false,
+                bgClass: "bg-blue-50 text-blue-900 border-blue-300"
+            };
+        }
+        return {
+            code: raw || "UNKNOWN",
+            label: raw ? raw.toLowerCase() : "stato non indicato",
+            badge: "⚪",
+            isRecruiting: false,
+            isPending: false,
+            isClosed: false,
+            bgClass: "bg-slate-100 text-slate-700 border-slate-300"
+        };
+    }
+
     /** Analizza lo studio CT.gov restituendo i centri in Italia e la verifica testuale dei criteri con Regex a confini di parola */
     function analyzeCtgovStudy(study, patientData, enabledParams) {
         const proto = study.protocolSection || {};
         const idMod = proto.identificationModule || {};
+        const statusMod = proto.statusModule || {};
         const descMod = proto.descriptionModule || {};
         const locMod = proto.contactsLocationsModule || {};
         const eligMod = proto.eligibilityModule || {};
         const condMod = proto.conditionsModule || {};
 
+        const overallStatus = statusMod.overallStatus || "";
         const locations = locMod.locations || [];
-        const hasItalySite = locations.some(l => l.country && (l.country.toLowerCase() === "italy" || l.country.toLowerCase() === "italia"));
+        const isItalianLoc = l => l.country && /ital/i.test(l.country);
+        const italianLocs = locations.filter(isItalianLoc);
+
+        const itStatusList = italianLocs.map(l => ({
+            loc: l,
+            statusInfo: getCtgovFacilityStatus(l, overallStatus)
+        }));
+
+        const activeItalyLocs = itStatusList.filter(item => item.statusInfo.isRecruiting);
+        const pendingItalyLocs = itStatusList.filter(item => item.statusInfo.isPending);
+        const closedItalyLocs = itStatusList.filter(item => item.statusInfo.isClosed);
+
+        const hasItalySite = italianLocs.length > 0;
+        const hasActiveItalySite = activeItalyLocs.length > 0;
+        const hasPendingItalySite = pendingItalyLocs.length > 0;
 
         // Corpus di testo ampliato: include titolo ufficiale, condizioni, keyword, bracci e criteri
         const armsMod = proto.armsInterventionsModule || {};
@@ -3173,6 +3297,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return {
             hasItalySite,
+            hasActiveItalySite,
+            hasPendingItalySite,
+            activeItalyCount: activeItalyLocs.length,
+            pendingItalyCount: pendingItalyLocs.length,
+            closedItalyCount: closedItalyLocs.length,
+            totalItalyCount: italianLocs.length,
+            itStatusList,
             confirmed,
             unconfirmed,
             isCompleteMatch: unconfirmed.length === 0,
@@ -3213,31 +3344,55 @@ document.addEventListener("DOMContentLoaded", () => {
                             status === "NOT_YET_RECRUITING" ? "🟡 Apertura imminente" :
                             status === "COMPLETED" ? "Completato" : escapeHtml(status);
 
-        // Centri — mostra prioritariamente tutti i centri italiani se disponibili, altrimenti max 4 centri
-        let centersHtml = "<span class='text-slate-400 text-xs'>Nessun centro registrato</span>";
+        // Centri — mostra con precisione lo stato effettivo di ciascun centro di arruolamento
+        let centersHtml = "<span class='text-slate-400 text-xs'>Nessun centro registrato su ClinicalTrials.gov</span>";
         if (locations.length > 0) {
-            const italianLocs = locations.filter(l => l.country && (l.country.toLowerCase() === "italy" || l.country.toLowerCase() === "italia"));
+            const isItalianLoc = l => l.country && /ital/i.test(l.country);
+            const italianLocs = locations.filter(isItalianLoc);
             if (italianLocs.length > 0) {
-                const shown = italianLocs.map(l => {
-                    const parts = [l.facility, l.city].filter(Boolean);
-                    // Mostra lo stato per sede (RECRUITING vs NOT_YET_RECRUITING)
-                    const siteStatus = l.status;
-                    const siteStatusIcon = siteStatus === "RECRUITING" ? "🟢" :
-                                          siteStatus === "NOT_YET_RECRUITING" ? "🟡" : "";
-                    const siteStatusLabel = siteStatus === "RECRUITING" ? " (attivo)" :
-                                            siteStatus === "NOT_YET_RECRUITING" ? " (apertura imminente)" : "";
-                    const bgClass = siteStatus === "NOT_YET_RECRUITING"
-                        ? "bg-amber-50 text-amber-900 border-amber-200"
-                        : "bg-emerald-50 text-emerald-800 border-emerald-200";
-                    return `<span class="inline-block text-xs ${bgClass} border px-2 py-0.5 rounded-full font-medium">${siteStatusIcon} 🇮🇹 ${escapeHtml(parts.join(", "))}${siteStatusLabel}</span>`;
+                // Ordina: prima attivi (🟢), poi apertura imminente (🟡), poi chiusi/ritirati (🔴/⚪)
+                const sortedIt = [...italianLocs].map(l => ({
+                    loc: l,
+                    st: getCtgovFacilityStatus(l, status)
+                })).sort((a, b) => {
+                    const order = { "RECRUITING": 1, "NOT_YET_RECRUITING": 2, "ENROLLING_BY_INVITATION": 3, "ACTIVE_NOT_RECRUITING": 4, "SUSPENDED": 5, "WITHDRAWN": 6, "TERMINATED": 7, "COMPLETED": 8 };
+                    return (order[a.st.code] || 99) - (order[b.st.code] || 99);
                 });
+
+                const activeCount = sortedIt.filter(x => x.st.isRecruiting).length;
+                const pendingCount = sortedIt.filter(x => x.st.isPending).length;
+                const closedCount = sortedIt.filter(x => x.st.isClosed).length;
+
+                const summaryParts = [];
+                if (activeCount > 0) summaryParts.push(`<span class="text-emerald-700 font-bold">🟢 ${activeCount} ${activeCount === 1 ? 'attivo' : 'attivi'}</span>`);
+                if (pendingCount > 0) summaryParts.push(`<span class="text-amber-700 font-bold">🟡 ${pendingCount} in attivazione</span>`);
+                if (closedCount > 0) summaryParts.push(`<span class="text-rose-600 font-medium">🔴 ${closedCount} non arruolanti / chiusi</span>`);
+
+                const shown = sortedIt.map(({ loc: l, st }) => {
+                    const parts = [l.facility || "Centro clinico", l.city].filter(Boolean);
+                    return `<span class="inline-flex items-center gap-1.5 text-xs ${st.bgClass} border px-2.5 py-1 rounded-full font-medium shadow-2xs">${st.badge} 🇮🇹 ${escapeHtml(parts.join(", "))} <span class="text-[10px] opacity-80 font-normal">(${st.label})</span></span>`;
+                });
+
                 const extraCount = locations.length - italianLocs.length;
                 const extra = extraCount > 0 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${extraCount} altri centri esteri</span>` : "";
-                centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
+
+                centersHtml = `
+                    <div class="mt-1">
+                        ${summaryParts.length > 0 ? `<div class="text-[11px] font-semibold text-slate-600 mb-1.5 flex flex-wrap items-center gap-2"><span>Centri in Italia:</span> ${summaryParts.join(" · ")}</div>` : ''}
+                        <div class="flex flex-wrap gap-1.5">${shown.join("") + extra}</div>
+                    </div>`;
             } else {
-                const shown = locations.slice(0, 4).map(l => {
-                    const parts = [l.facility, l.city, l.country].filter(Boolean);
-                    return `<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">${escapeHtml(parts.join(", "))}</span>`;
+                const sortedIntl = [...locations].map(l => ({
+                    loc: l,
+                    st: getCtgovFacilityStatus(l, status)
+                })).sort((a, b) => {
+                    const order = { "RECRUITING": 1, "NOT_YET_RECRUITING": 2, "ENROLLING_BY_INVITATION": 3, "ACTIVE_NOT_RECRUITING": 4 };
+                    return (order[a.st.code] || 99) - (order[b.st.code] || 99);
+                });
+
+                const shown = sortedIntl.slice(0, 4).map(({ loc: l, st }) => {
+                    const parts = [l.facility || "Centro clinico", l.city, l.country].filter(Boolean);
+                    return `<span class="inline-flex items-center gap-1 text-xs ${st.bgClass} border px-2 py-0.5 rounded-full font-medium">${st.badge} ${escapeHtml(parts.join(", "))} <span class="text-[10px] opacity-80 font-normal">(${st.label})</span></span>`;
                 });
                 const extra = locations.length > 4 ? `<span class="text-xs text-slate-400 font-semibold ml-1">+${locations.length - 4} altri</span>` : "";
                 centersHtml = `<div class="flex flex-wrap gap-1.5 mt-1">${shown.join("") + extra}</div>`;
@@ -3266,6 +3421,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        const italyBadgeHtml = analysis?.hasActiveItalySite
+            ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">🇮🇹 ${analysis.activeItalyCount} ${analysis.activeItalyCount === 1 ? 'Centro attivo' : 'Centri attivi'} in Italia</span>`
+            : analysis?.hasPendingItalySite
+            ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">🟡 Centri in attivazione in Italia</span>`
+            : analysis?.hasItalySite
+            ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">🔴 Centri arruolamento terminato</span>`
+            : "";
+
         const card = document.createElement("div");
         card.className = "ctgov-card";
         card.innerHTML = `
@@ -3275,7 +3438,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="ctgov-badge">ClinicalTrials.gov</span>
                         <span class="text-[10px] font-mono text-slate-400">${escapeHtml(nctId)}</span>
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#eff6ff;color:${statusColor}">${statusLabel}</span>
-                        ${analysis?.hasItalySite ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">🇮🇹 Centro in Italia</span>` : ""}
+                        ${italyBadgeHtml}
                     </div>
                     <h3 class="font-bold text-slate-800 text-sm leading-snug">${title}</h3>
                     ${sponsor ? `<p class="text-xs text-slate-500 mt-0.5">${sponsor}</p>` : ""}
@@ -3399,22 +3562,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Analizza e ordina gli studi in 4 gruppi gerarchici
+            // Analizza e ordina gli studi in gruppi gerarchici
             const enabledParams = window._ctgovEnabledParams || {};
-            const italyComplete = [];
-            const italyPartial  = [];
-            const intlComplete  = [];
-            const intlPartial   = [];
+            const italyActiveComplete = [];
+            const italyActivePartial  = [];
+            const italyPending        = [];
+            const italyClosed         = [];
+            const intlComplete        = [];
+            const intlPartial         = [];
 
-            // Filtro location CLIENT-SIDE sui dati strutturati locations[].country (più preciso di query.locn testuale API)
             const activeCountryFilter = countryFilter; // "Italy" o "all"
 
             rawStudies.forEach(s => {
                 const analysis = analyzeCtgovStudy(s, patientData, enabledParams);
                 s._analysis = analysis;
                 if (analysis.hasItalySite) {
-                    if (analysis.isCompleteMatch) italyComplete.push(s);
-                    else italyPartial.push(s);
+                    if (analysis.hasActiveItalySite) {
+                        if (analysis.isCompleteMatch) italyActiveComplete.push(s);
+                        else italyActivePartial.push(s);
+                    } else if (analysis.hasPendingItalySite) {
+                        italyPending.push(s);
+                    } else {
+                        // Centri italiani presenti ma nessuno arruolante
+                        if (statusFilter !== "RECRUITING") {
+                            italyClosed.push(s);
+                        }
+                    }
                 } else {
                     // Se il filtro è "Italy", non mostriamo gli studi senza centri italiani
                     if (activeCountryFilter === "Italy") return;
@@ -3424,8 +3597,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const groups = [
-                { title: "🇮🇹 Studi con Centri in Italia — Corrispondenza Completa", subtitle: "Soddisfano tutti i criteri specificati", items: italyComplete, badgeBg: "bg-emerald-100 text-emerald-900 border-emerald-300" },
-                { title: "🇮🇹 Studi con Centri in Italia — Criteri Parziali / Da Verificare", subtitle: "Centri italiani presenti; alcuni sottocriteri richiedono verifica manuale", items: italyPartial, badgeBg: "bg-amber-100 text-amber-900 border-amber-300" },
+                { title: "🇮🇹 Studi con Centri Attivi in Italia — Corrispondenza Completa", subtitle: "Arruolamento attualmente attivo ed effettivo nei centri italiani; soddisfano tutti i criteri", items: italyActiveComplete, badgeBg: "bg-emerald-100 text-emerald-900 border-emerald-300" },
+                { title: "🇮🇹 Studi con Centri Attivi in Italia — Criteri Parziali / Da Verificare", subtitle: "Centri italiani attualmente attivi; alcuni criteri richiedono verifica manuale nel protocollo", items: italyActivePartial, badgeBg: "bg-amber-100 text-amber-900 border-amber-300" },
+                { title: "🟡 Studi con Centri in Attivazione in Italia", subtitle: "Centri italiani registrati ma non ancora arruolanti (apertura imminente)", items: italyPending, badgeBg: "bg-amber-50 text-amber-900 border-amber-200" },
+                { title: "🔴 Studi con Centri in Italia ad Arruolamento Chiuso", subtitle: "Centri italiani con arruolamento terminato o completato", items: italyClosed, badgeBg: "bg-rose-50 text-rose-900 border-rose-200" },
                 { title: "🌍 Studi Internazionali — Corrispondenza Completa", subtitle: "Studi esteri che soddisfano tutti i criteri", items: intlComplete, badgeBg: "bg-blue-100 text-blue-900 border-blue-300" },
                 { title: "🌐 Studi Internazionali — Criteri Parziali / Da Verificare", subtitle: "Studi esteri con requisiti da verificare nel protocollo", items: intlPartial, badgeBg: "bg-slate-100 text-slate-800 border-slate-300" },
             ];
@@ -3553,6 +3728,8 @@ document.addEventListener("DOMContentLoaded", () => {
             ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Attivo</span>`
             : study.status === "in_attivazione"
             ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">In attivazione</span>`
+            : study.status === "arruolamento_terminato"
+            ? `<span class="px-2 py-0.5 ml-1 text-[10px] font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200">Arruolamento terminato</span>`
             : "";
 
         let furtherSpecificsBadge = "";
@@ -3861,6 +4038,9 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (status === "in_attivazione") {
                 modalStudyStatusBadge.textContent = "🟡 In Attivazione";
                 modalStudyStatusBadge.className = "flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-800";
+            } else if (status === "arruolamento_terminato") {
+                modalStudyStatusBadge.textContent = "🔴 Arruolamento terminato";
+                modalStudyStatusBadge.className = "flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border border-rose-200 bg-rose-50 text-rose-800";
             } else {
                 modalStudyStatusBadge.textContent = "";
                 modalStudyStatusBadge.className = "hidden";
@@ -4433,6 +4613,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 1. Filtra gli studi
         const filtered = _mapAllStudies.filter(study => {
+            // Esclude gli studi con arruolamento terminato (non hanno arruolamento attivo)
+            if (String(study.status || "").toLowerCase() === "arruolamento_terminato") return false;
+
             const hasArea = Array.isArray(study.clinical_areas) && study.clinical_areas.includes(selectedArea);
             if (!hasArea) return false;
 

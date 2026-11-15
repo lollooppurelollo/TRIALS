@@ -135,7 +135,7 @@ const ALLOWED_CLINICAL_AREAS = [
   "Altro",
 ];
 const ALLOWED_TREATMENT_SETTINGS = ["Metastatico", "Adiuvante", "Neo-adiuvante"];
-const ALLOWED_STUDY_STATUSES = ["in_attivazione", "attivo"];
+const ALLOWED_STUDY_STATUSES = ["in_attivazione", "attivo", "arruolamento_terminato"];
 const ALLOWED_EVENT_TYPES = [
   "oncological_visit",
   "blood_test",
@@ -448,8 +448,8 @@ app.patch("/api/studies/:id", editAuthLimiter, requireEditAuth, async (req, res)
     ) {
       return res.status(400).json({ error: "total_weeks non valido" });
     }
-    if (bodyHasStatus && !ALLOWED_STUDY_STATUSES.includes(status)) {
-      return res.status(400).json({ error: "status non valido (usa: in_attivazione, attivo)" });
+    if (bodyHasStatus && status && !ALLOWED_STUDY_STATUSES.includes(status)) {
+      return res.status(400).json({ error: "status non valido (usa: in_attivazione, attivo, arruolamento_terminato)" });
     }
 
     // 1) verifica che lo studio esista
